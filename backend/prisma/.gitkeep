@@ -1,0 +1,8 @@
+/*
+  Warnings:
+
+  - You are about to drop the `User` table. If the table has data it will be lost.
+
+*/
+-- DropTable
+DROP TABLE IF EXISTS "User" CASCADE;

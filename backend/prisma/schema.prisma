@@ -1,0 +1,112 @@
+// schema.prisma
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// --- ENUMS ---
+
+enum Role {
+  ADMIN    // SaaS Owner
+  HR       // Organization Admin
+  EMPLOYEE // Organization Staff
+}
+
+enum LeaveStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  CANCELLED
+}
+
+// --- MODELS ---
+
+model Organization {
+  id            Int            @id @default(autoincrement())
+  name          String
+  
+  // Relations
+  users         User[]
+  subscriptions Subscription[]
+
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+}
+
+model User {
+  id            Int          @id @default(autoincrement())
+  email         String       @unique
+  name          String?
+  avatar        String?
+  
+  // Auth Fields (Both optional to allow Google OR Email/Pass)
+  password      String?      // Always store HASHED
+  googleLoginId String?      @unique 
+  
+  isVerified    Boolean      @default(false)
+  verificationToken String?
+  
+  role          Role         @default(EMPLOYEE)
+  
+  // Multi-tenancy
+  organizationId Int
+  organization   Organization @relation(fields: [organizationId], references: [id])
+  
+  leaves        Leave[]
+  
+  createdAt     DateTime     @default(now())
+  updatedAt     DateTime     @updatedAt
+}
+
+model Subscription {
+  id               Int          @id @default(autoincrement())
+  organizationId   Int
+  planId           Int
+  
+  // Billing Info
+  orderId          String       @unique // From Razorpay/Stripe
+  amountPaid       Int
+  status           String       @default("COMPLETED") 
+  
+  // Validity
+  startDate        DateTime     @default(now())
+  endDate          DateTime     // Calculated as startDate + plan.durationDays
+
+  organization     Organization @relation(fields: [organizationId], references: [id])
+  plan             Plan         @relation(fields: [planId], references: [id])
+
+  createdAt        DateTime     @default(now())
+}
+
+model Plan {
+  id            Int            @id @default(autoincrement())
+  name          String   
+  price         Int      
+  durationDays  Int      
+  maxEmployees  Int      
+
+  subscriptions Subscription[]
+}
+
+model Leave {
+  id          Int         @id @default(autoincrement())
+  userId      Int
+  
+  startDate   DateTime
+  endDate     DateTime
+  totalDays   Float       // Supports half-days (e.g., 0.5)
+  reason      String?
+  
+  status      LeaveStatus @default(PENDING)
+  adminNotes  String?     // HR feedback for rejection
+
+  user        User        @relation(fields: [userId], references: [id])
+
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+}
