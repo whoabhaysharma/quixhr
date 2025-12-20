@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>About Us | Quixhr</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Lexend:wght@400;700;900&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Lexend', sans-serif;
+            background-color: #F0F0F0;
+        }
+        .neo-brutal-border {
+            border: 3px solid #000000;
+        }
+        .neo-brutal-shadow {
+            box-shadow: 8px 8px 0px 0px rgba(0,0,0,1);
+        }
+        .neo-brutal-shadow-sm {
+            box-shadow: 4px 4px 0px 0px rgba(0,0,0,1);
+        }
+        .bg-quixhr-yellow { background-color: #FFDE03; }
+        .bg-quixhr-pink { background-color: #FF6AC1; }
+        .bg-quixhr-blue { background-color: #3B82F6; }
+        .bg-quixhr-green { background-color: #00FF66; }
+    </style>
+    <meta name="description" content="Learn more about Quixhr, the simplest way to manage employee leave. Our mission is to make HR tasks effortless.">
+    <meta name="keywords" content="about Quixhr, HR software, leave management">
+    <meta name="author" content="Quixhr">
+    <script type="application/ld+json">
+        {
+            "@context": "https://schema.org",
+            "@type": "AboutPage",
+            "name": "About Quixhr",
+            "url": "https://quixhr.com/about.html",
+            "description": "Learn about Quixhr and our mission to simplify HR tasks."
+        }
+    </script>
+</head>
+<body class="p-4 md:p-8">
+
+    <nav class="flex justify-between items-center mb-12">
+        <a href="index.html" class="neo-brutal-border bg-black text-white px-4 py-2 font-black text-2xl uppercase tracking-tighter">
+            Quixhr
+        </a>
+        <div class="hidden md:flex gap-8 font-bold">
+            <a href="index.html" class="hover:underline">Home</a>
+            <a href="about.html" class="hover:underline text-quixhr-pink">About</a>
+            <a href="contact-us.html" class="hover:underline">Contact Us</a>
+            <a href="pricing.html" class="hover:underline">Pricing</a>
+        </div>
+        <button class="neo-brutal-border bg-quixhr-green px-6 py-2 font-black neo-brutal-shadow-sm">
+            LOGIN
+        </button>
+    </nav>
+
+    <div class="max-w-4xl mx-auto mb-20">
+        <h1 class="text-4xl md:text-6xl font-black uppercase mb-8 text-center">
+            About <span class="bg-quixhr-pink px-2">Quixhr</span>
+        </h1>
+        
+        <div class="neo-brutal-border bg-white p-8 md:p-12 neo-brutal-shadow mb-8">
+            <h2 class="text-3xl font-black uppercase mb-6">Our Mission</h2>
+            <p class="text-xl font-bold mb-6">
+                We are on a mission to kill the spreadsheet.
+            </p>
+            <p class="mb-6 font-bold">
+                Quixhr was born out of frustration. We were tired of chasing emails, updating shared drives, and wondering how many vacation days we had left. 
+                So we built the tool we wanted to use.
+            </p>
+            <p class="font-bold">
+                We believe HR software shouldn't be boring, complicated, or enterprise-only. It should be fast, fun, and accessible to teams of all sizes.
+            </p>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+            <div class="neo-brutal-border bg-quixhr-yellow p-8 neo-brutal-shadow">
+                <h3 class="text-2xl font-black uppercase mb-4">Virtual First</h3>
+                <p class="font-bold">
+                    We are a fully remote team spread across 4 continents. We understand the challenges of distributed teams because we live them every day.
+                </p>
+            </div>
+            <div class="neo-brutal-border bg-quixhr-blue p-8 neo-brutal-shadow text-white">
+                <h3 class="text-2xl font-black uppercase mb-4">Simplicity</h3>
+                <p class="font-bold">
+                    If it requires a manual, we failed. Our goal is zero-training onboarding for every employee.
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <footer class="neo-brutal-border bg-black text-white p-8 md:p-12">
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-8">
+            <div class="col-span-1 md:col-span-2">
+                <div class="text-3xl font-black uppercase tracking-tighter mb-4">Quixhr</div>
+                <p class="font-bold max-w-xs">Making leave management less sucky since 2024.</p>
+            </div>
+            <div>
+                <h4 class="font-black uppercase text-quixhr-yellow mb-4">Company</h4>
+                <ul class="space-y-2 font-bold">
+                    <li><a href="contact-us.html" class="hover:text-quixhr-pink">Contact Us</a></li>
+                    <li><a href="about.html" class="hover:text-quixhr-pink">About</a></li>
+                </ul>
+            </div>
+            <div>
+                <h4 class="font-black uppercase text-quixhr-green mb-4">Legal</h4>
+                <ul class="space-y-2 font-bold">
+                    <li><a href="privacy-policy.html" class="hover:text-quixhr-pink">Privacy Policy</a></li>
+                    <li><a href="terms-of-service.html" class="hover:text-quixhr-pink">Terms of Service</a></li>
+                    <li><a href="shipping-policy.html" class="hover:text-quixhr-pink">Shipping Policy</a></li>
+                    <li><a href="cancellation-refund.html" class="hover:text-quixhr-pink">Cancellation & Refund</a></li>
+                </ul>
+            </div>
+        </div>
+        <div class="mt-12 pt-8 border-t-2 border-white/20 text-center font-bold text-sm">
+            &copy; <span id="year"></span> Quixhr Inc. All rights reserved.
+        </div>
+        <script>
+            document.getElementById('year').textContent = new Date().getFullYear();
+        </script>
+    </footer>
+
+</body>
+</html>
