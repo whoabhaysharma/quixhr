@@ -1,13 +1,14 @@
 import { Router } from 'express';
 import { subscriptionController } from '../controllers/subscriptionController';
-import { authenticateToken } from '../middleware/auth';
+import { authenticate, authorize } from '../middleware/auth';
+import { Role } from '@prisma/client';
 
 const router = Router();
 
-router.use(authenticateToken);
+router.use(authenticate);
 
-router.get('/plans', subscriptionController.getPlans);
-router.get('/current', subscriptionController.getCurrentSubscription);
-router.post('/', subscriptionController.createSubscription);
+router.get('/organization/:organizationId', authorize(Role.ADMIN, Role.HR), subscriptionController.getSubscriptionByOrganizationId);
+router.post('/', authorize(Role.ADMIN), subscriptionController.createSubscription);
+router.patch('/:id/status', authorize(Role.ADMIN), subscriptionController.updateSubscriptionStatus);
 
 export default router;

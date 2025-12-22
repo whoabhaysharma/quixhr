@@ -1,108 +1,74 @@
-import { prisma } from '../config/database';
-import { Role } from '@prisma/client';
+import prisma from './prisma';
+import { User, Role } from '@prisma/client';
+import bcrypt from 'bcryptjs';
 
-export class UserService {
-  async createUser(email: string, name: string, organizationId: number, role: Role = Role.EMPLOYEE) {
-    const existingUser = await prisma.user.findUnique({
-      where: { email },
-    });
+export const userService = {
+    async findByEmail(email: string): Promise<User | null> {
+        return prisma.user.findUnique({
+            where: { email },
+        });
+    },
 
-    if (existingUser) {
-      throw new Error('User already exists');
-    }
+    async getAllUsers(organizationId?: number): Promise<User[]> {
+        if (organizationId) {
+            return prisma.user.findMany({
+                where: { organizationId },
+            });
+        }
+        return prisma.user.findMany();
+    },
 
-    const user = await prisma.user.create({
-      data: {
-        email,
-        name,
-        role,
-        organizationId,
-        googleLoginId: `${email}-${Date.now()}`,
-      },
-      select: {
-        id: true,
-        email: true,
-        name: true,
-        avatar: true,
-        role: true,
-        createdAt: true,
-      },
-    });
+    async getUserById(id: number): Promise<User | null> {
+        return prisma.user.findUnique({
+            where: { id },
+            include: {
+                organization: true,
+                leaves: true,
+            },
+        });
+    },
 
-    return user;
-  }
+    async createUser(data: {
+        email: string;
+        name?: string;
+        password?: string;
+        organizationId: number;
+        role?: Role;
+        googleLoginId?: string;
+        avatar?: string;
+    }): Promise<User> {
+        const { password, ...rest } = data;
+        let hashedPassword = undefined;
 
-  async getUserByEmail(email: string) {
-    return prisma.user.findUnique({
-      where: { email },
-    });
-  }
+        if (password) {
+            hashedPassword = await bcrypt.hash(password, 10);
+        }
 
-  async getUserById(id: number) {
-    return prisma.user.findUnique({
-      where: { id },
-      select: {
-        id: true,
-        email: true,
-        name: true,
-        avatar: true,
-        role: true,
-        organizationId: true,
-        createdAt: true,
-        updatedAt: true,
-      },
-    });
-  }
+        return prisma.user.create({
+            data: {
+                ...rest,
+                password: hashedPassword,
+            },
+        });
+    },
 
-  async getAllUsers(organizationId: number) {
-    return prisma.user.findMany({
-      where: { organizationId },
-      select: {
-        id: true,
-        email: true,
-        name: true,
-        avatar: true,
-        role: true,
-        createdAt: true,
-      },
-      orderBy: {
-        createdAt: 'desc',
-      },
-    });
-  }
+    async updateUser(id: number, data: Partial<User> & { password?: string }): Promise<User> {
+        const { password, ...rest } = data;
+        let updateData: any = { ...rest };
 
-  async getUsersByRole(role: Role, organizationId: number) {
-    return prisma.user.findMany({
-      where: { role, organizationId },
-      select: {
-        id: true,
-        email: true,
-        name: true,
-        avatar: true,
-        role: true,
-        createdAt: true,
-      },
-    });
-  }
+        if (password) {
+            updateData.password = await bcrypt.hash(password, 10);
+        }
 
-  async updateUser(id: number, data: Partial<{ name: string; avatar: string; role: Role }>) {
-    return prisma.user.update({
-      where: { id },
-      data,
-      select: {
-        id: true,
-        email: true,
-        name: true,
-        avatar: true,
-        role: true,
-        updatedAt: true,
-      },
-    });
-  }
+        return prisma.user.update({
+            where: { id },
+            data: updateData,
+        });
+    },
 
-  async deleteUser(id: number) {
-    return prisma.user.delete({
-      where: { id },
-    });
-  }
-}
+    async deleteUser(id: number): Promise<void> {
+        await prisma.user.delete({
+            where: { id },
+        });
+    },
+};

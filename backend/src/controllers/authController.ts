@@ -1,59 +1,77 @@
-import { Response } from 'express';
-import { AuthRequest } from '../middleware/auth';
-import { AuthService } from '../services/authService';
-import { UserService } from '../services/userService';
-const authService = new AuthService();
-const userService = new UserService();
+import { Request, Response, NextFunction } from 'express';
+import { authService } from '../services/authService';
 
-export class AuthController {
-  async register(req: AuthRequest, res: Response): Promise<void> {
-    try {
-      const { email, name, password, organizationName } = req.body;
-      const result = await authService.register(email, name, password, organizationName);
-      res.status(201).json(result);
-    } catch (error: any) {
-      res.status(400).json({ message: error.message });
+class AuthController {
+    async login(req: Request, res: Response, next: NextFunction): Promise<void> {
+        try {
+            const { email, password } = req.body;
+
+            if (!email || !password) {
+                res.status(400).json({ success: false, error: { message: 'Email and password are required' } });
+                return;
+            }
+
+            const result = await authService.login(email, password);
+            res.json({ success: true, data: result });
+        } catch (error) {
+            res.status(401).json({ success: false, error: { message: 'Invalid credentials' } });
+        }
     }
-  }
 
-  async verifyEmail(req: AuthRequest, res: Response): Promise<void> {
-    try {
-      const { token } = req.query;
-      if (!token || typeof token !== 'string') {
-        res.status(400).json({ message: 'Invalid token' });
-        return;
-      }
-      const result = await authService.verifyEmail(token);
-      res.status(200).json(result);
-    } catch (error: any) {
-      res.status(400).json({ message: error.message });
+    async firebaseLogin(req: Request, res: Response, next: NextFunction): Promise<void> {
+        try {
+            const { idToken } = req.body;
+
+            if (!idToken) {
+                res.status(400).json({ success: false, error: { message: 'ID Token is required' } });
+                return;
+            }
+
+            const result = await authService.loginWithFirebase(idToken);
+            res.json({ success: true, data: result });
+        } catch (error: any) {
+            res.status(401).json({ success: false, error: { message: error.message || 'Invalid Firebase Token' } });
+        }
     }
-  }
 
-  async login(req: AuthRequest, res: Response): Promise<void> {
-    try {
-      const { email, password } = req.body;
-      const result = await authService.login(email, password);
-      res.status(200).json(result);
-    } catch (error: any) {
-      res.status(401).json({ message: error.message });
+    async register(req: Request, res: Response, next: NextFunction): Promise<void> {
+        try {
+            const { idToken, name, email, password } = req.body;
+
+            if (idToken) {
+                const result = await authService.registerWithFirebase(idToken, name);
+                res.json({ success: true, data: result });
+                return;
+            }
+
+            if (email && password) {
+                const result = await authService.registerWithEmail(email, password, name);
+                res.json({ success: true, data: result });
+                return;
+            }
+
+            res.status(400).json({ success: false, error: { message: 'Either ID Token or Email/Password is required' } });
+
+        } catch (error: any) {
+            res.status(400).json({ success: false, error: { message: error.message || 'Registration failed' } });
+        }
     }
-  }
 
-  async getProfile(req: AuthRequest, res: Response): Promise<void> {
-    try {
-      const userId = req.userId;
-      if (!userId) {
-        res.status(401).json({ message: 'Unauthorized' });
-        return;
-      }
+    async forgotPassword(req: Request, res: Response, next: NextFunction): Promise<void> {
+        try {
+            const { email } = req.body;
 
-      const user = await userService.getUserById(userId);
-      res.status(200).json(user);
-    } catch (error: any) {
-      res.status(400).json({ message: error.message });
+            if (!email) {
+                res.status(400).json({ success: false, error: { message: 'Email is required' } });
+                return;
+            }
+
+            const result = await authService.forgotPassword(email);
+            res.json({ success: true, data: result });
+        } catch (error: any) {
+            res.status(400).json({ success: false, error: { message: error.message || 'Failed to generate reset link' } });
+        }
     }
-  }
 }
 
 export const authController = new AuthController();

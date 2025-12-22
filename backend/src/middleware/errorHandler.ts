@@ -1,23 +1,45 @@
 import { Request, Response, NextFunction } from 'express';
 
+interface ApiError extends Error {
+  statusCode?: number;
+  isOperational?: boolean;
+}
+
 export const errorHandler = (
-  err: Error,
+  error: ApiError,
   req: Request,
   res: Response,
   next: NextFunction
 ): void => {
-  console.error(err.message);
+  let { statusCode = 500, message } = error;
 
-  if (err.message === 'Validation error') {
-    res.status(400).json({
-      message: 'Validation failed',
-      error: err.message,
-    });
-    return;
+  if (process.env.NODE_ENV === 'development') {
+    console.error('🔥 Error:', error);
   }
 
-  res.status(500).json({
-    message: 'Internal server error',
-    error: process.env.NODE_ENV === 'development' ? err.message : 'Unknown error',
-  });
+  // Handle specific error types
+  if (error.name === 'ValidationError') {
+    statusCode = 400;
+    message = 'Validation Error';
+  }
+
+  if (error.name === 'UnauthorizedError') {
+    statusCode = 401;
+    message = 'Unauthorized';
+  }
+
+  // Don't leak error details in production
+  if (process.env.NODE_ENV === 'production' && statusCode === 500) {
+    message = 'Something went wrong!';
+  }
+
+  const response = {
+    success: false,
+    error: {
+      message,
+      ...(process.env.NODE_ENV === 'development' && { stack: error.stack }),
+    },
+  };
+
+  res.status(statusCode).json(response);
 };

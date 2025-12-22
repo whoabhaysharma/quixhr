@@ -1,31 +1,16 @@
 import { Router } from 'express';
 import { userController } from '../controllers/userController';
-import { authenticateToken, authorize } from '../middleware/auth';
-import { validate } from '../middleware/validation';
-import Joi from 'joi';
-import { ROLES, ROLE_VALUES } from '../constants';
+import { authenticate, authorize } from '../middleware/auth';
+import { Role } from '@prisma/client';
 
 const router = Router();
 
-const updateUserSchema = Joi.object({
-  name: Joi.string().min(2).optional(),
-  avatar: Joi.string().optional(),
-  role: Joi.string().valid(...ROLE_VALUES).optional(),
-}).min(1);
+router.use(authenticate);
 
-router.use(authenticateToken);
-
-// Public user routes
-router.get('/profile/:id', (req, res) => userController.getUserById(req, res));
-router.put('/:id', validate(updateUserSchema), (req, res) =>
-  userController.updateUser(req, res)
-);
-router.delete('/:id', (req, res) => userController.deleteUser(req, res));
-
-// Admin only routes
-router.get('/', authorize(ROLES.ADMIN), (req, res) => userController.getAllUsers(req, res));
-router.get('/role/:role', authorize(ROLES.ADMIN), (req, res) =>
-  userController.getUsersByRole(req, res)
-);
+router.get('/', authorize(Role.ADMIN, Role.HR), userController.getAllUsers);
+router.get('/:id', authorize(Role.ADMIN, Role.HR, Role.EMPLOYEE), userController.getUserById);
+router.post('/', authorize(Role.ADMIN, Role.HR), userController.createUser);
+router.put('/:id', authorize(Role.ADMIN, Role.HR, Role.EMPLOYEE), userController.updateUser); // Controller should ensure Employee only updates own profile
+router.delete('/:id', authorize(Role.ADMIN, Role.HR), userController.deleteUser);
 
 export default router;

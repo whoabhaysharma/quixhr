@@ -1,136 +1,219 @@
-import { prisma } from '../config/database';
-import { hashPassword, comparePassword } from '../utils/password';
-import { generateToken } from '../utils/jwt';
-import { sendVerificationEmail } from '../utils/email';
-import { v4 as uuidv4 } from 'uuid';
+import jwt from 'jsonwebtoken';
+import bcrypt from 'bcryptjs';
+import admin from '../config/firebase';
+import { config } from '../config';
+import prisma from './prisma';
+import { userService } from './userService';
+import { Role } from '@prisma/client';
 
-export class AuthService {
-  async register(email: string, name: string, password: string, organizationName: string) {
-    const existingUser = await prisma.user.findUnique({
-      where: { email },
-    });
+export const authService = {
+    async login(email: string, password: string) {
+        const user = await userService.findByEmail(email);
 
-    if (existingUser) {
-      throw new Error('User already exists');
+        if (!user || !user.password) {
+            throw new Error('Invalid credentials');
+        }
+
+        const isPasswordValid = await bcrypt.compare(password, user.password);
+
+        if (!isPasswordValid) {
+            throw new Error('Invalid credentials');
+        }
+
+        const token = jwt.sign(
+            {
+                id: user.id,
+                role: user.role,
+                organizationId: user.organizationId,
+            },
+            process.env.JWT_SECRET || 'default_secret',
+            { expiresIn: '1d' }
+        );
+
+        const { password: _, ...userWithoutPassword } = user;
+
+        return {
+            token,
+            user: userWithoutPassword,
+        };
+    },
+
+    async loginWithFirebase(idToken: string) {
+        try {
+            const decodedToken = await admin.auth().verifyIdToken(idToken);
+            const { email } = decodedToken;
+
+            if (!email) {
+                throw new Error('Firebase token does not contain an email address');
+            }
+
+            const user = await userService.findByEmail(email);
+
+            if (!user) {
+                throw new Error('User not found. Please register first.');
+            }
+
+            const token = jwt.sign(
+                {
+                    id: user.id,
+                    role: user.role,
+                    organizationId: user.organizationId,
+                },
+                process.env.JWT_SECRET || 'default_secret',
+                { expiresIn: '1d' }
+            );
+
+            const { password: _, ...userWithoutPassword } = user;
+
+            return {
+                token,
+                user: userWithoutPassword,
+            };
+
+        } catch (error) {
+            console.error('Firebase Auth Error:', error);
+            if (error instanceof Error) {
+                throw error;
+            }
+            throw new Error('Invalid Firebase Token');
+        }
+    },
+
+    async registerWithFirebase(idToken: string, name?: string) {
+        try {
+            const decodedToken = await admin.auth().verifyIdToken(idToken);
+            const { email, uid, picture } = decodedToken;
+
+            if (!email) {
+                throw new Error('Firebase token does not contain an email address');
+            }
+
+            const existingUser = await userService.findByEmail(email);
+            if (existingUser) {
+                throw new Error('User already exists. Please login.');
+            }
+
+            const isSuperAdmin = email === config.superAdminEmail;
+            const role = isSuperAdmin ? Role.SUPER_ADMIN : Role.ADMIN;
+
+            // Proceed to create user WITHOUT organization
+            const newUser = await prisma.user.create({
+                data: {
+                    email,
+                    name: name || decodedToken.name || email.split('@')[0],
+                    avatar: picture,
+                    role: role,
+                    googleLoginId: uid,
+                    // organizationId is now optional, so we don't set it
+                }
+            });
+
+            const token = jwt.sign(
+                {
+                    id: newUser.id,
+                    role: newUser.role,
+                    organizationId: newUser.organizationId,
+                },
+                process.env.JWT_SECRET || 'default_secret',
+                { expiresIn: '1d' }
+            );
+
+            return {
+                token,
+                user: newUser
+            };
+
+        } catch (error) {
+            console.error('Firebase Register Error:', error);
+            if (error instanceof Error) {
+                throw error;
+            }
+            throw new Error('Registration failed');
+        }
+    },
+
+    async registerWithEmail(email: string, password: string, name: string) {
+        try {
+            const existingUser = await userService.findByEmail(email);
+            if (existingUser) {
+                throw new Error('User already exists. Please login.');
+            }
+
+            // 1. Create User in Firebase (Admin SDK)
+            try {
+                await admin.auth().createUser({
+                    email,
+                    password,
+                    displayName: name,
+                    emailVerified: false,
+                    disabled: false
+                });
+            } catch (firebaseError: any) {
+                if (firebaseError.code === 'auth/email-already-exists') {
+                    // Start: Edge case handling
+                    // If user exists in Firebase but NOT in Postgres (checked above), we might need to sync or error.
+                    // For now, let's treat it as user exists.
+                    throw new Error('User already exists. Please login.');
+                }
+                throw firebaseError;
+            }
+
+            // 2. Hash Password for Postgres
+            const hashedPassword = await bcrypt.hash(password, 10);
+
+            // 3. Create User in Postgres
+            const isSuperAdmin = email === config.superAdminEmail;
+            const role = isSuperAdmin ? Role.SUPER_ADMIN : Role.ADMIN;
+
+            const newUser = await prisma.user.create({
+                data: {
+                    email,
+                    name,
+                    password: hashedPassword,
+                    role: role,
+                    // organizationId: null
+                }
+            });
+
+            // 4. Generate JWT
+            const token = jwt.sign(
+                {
+                    id: newUser.id,
+                    role: newUser.role,
+                    organizationId: newUser.organizationId,
+                },
+                process.env.JWT_SECRET || 'default_secret',
+                { expiresIn: '1d' }
+            );
+
+            const { password: _, ...userWithoutPassword } = newUser;
+
+            return {
+                token,
+                user: userWithoutPassword
+            };
+
+        } catch (error) {
+            console.error('Register With Email Error:', error);
+            if (error instanceof Error) {
+                throw error;
+            }
+            throw new Error('Registration failed');
+        }
+    },
+
+    async forgotPassword(email: string) {
+        try {
+            const user = await userService.findByEmail(email);
+            if (!user) {
+                throw new Error('User not found');
+            }
+
+            const link = await admin.auth().generatePasswordResetLink(email);
+            return { link };
+        } catch (error) {
+            console.error('Forgot Password Error:', error);
+            throw new Error('Could not generate reset link');
+        }
     }
-
-    const hashedPassword = await hashPassword(password);
-    const verificationToken = uuidv4();
-
-    // Create Organization and User in a transaction
-    const user = await prisma.$transaction(async (tx) => {
-      const organization = await tx.organization.create({
-        data: {
-          name: organizationName,
-        },
-      });
-
-      return tx.user.create({
-        data: {
-          email,
-          name,
-          password: hashedPassword,
-          role: 'HR', // First user is Admin/HR
-          organizationId: organization.id,
-          googleLoginId: `${email}-${Date.now()}`, // Temporary placeholder if needed
-          verificationToken,
-          isVerified: false,
-        },
-      });
-    });
-
-    // Send verification email
-    // We do NOT await this to avoid blocking the response, but in prod you might want to ensure it sends
-    sendVerificationEmail(user.email, verificationToken).catch(err => {
-      console.error('Failed to send verification email:', err);
-    });
-
-    const token = generateToken({
-      id: user.id,
-      email: user.email,
-      role: user.role,
-      organizationId: user.organizationId,
-    });
-
-    return {
-      user: {
-        id: user.id,
-        email: user.email,
-        name: user.name,
-        role: user.role,
-        organizationId: user.organizationId,
-        isVerified: user.isVerified,
-      },
-      token,
-      message: 'Registration successful. Please check your email to verify your account.',
-    };
-  }
-
-  async verifyEmail(token: string) {
-    const user = await prisma.user.findFirst({
-      where: { verificationToken: token },
-    });
-
-    if (!user) {
-      throw new Error('Invalid or expired verification token');
-    }
-
-    await prisma.user.update({
-      where: { id: user.id },
-      data: {
-        isVerified: true,
-        verificationToken: null, // Clear the token after usage
-      },
-    });
-
-    return { message: 'Email verified successfully' };
-  }
-
-  async login(email: string, password: string) {
-    const user = await prisma.user.findUnique({
-      where: { email },
-    });
-
-    if (!user) {
-      throw new Error('Invalid credentials');
-    }
-
-    const isPasswordValid = await comparePassword(password, user.password);
-
-    if (!isPasswordValid) {
-      throw new Error('Invalid credentials');
-    }
-
-    const token = generateToken({
-      id: user.id,
-      email: user.email,
-      role: user.role,
-      organizationId: user.organizationId,
-    });
-
-    return {
-      user: {
-        id: user.id,
-        email: user.email,
-        name: user.name,
-        role: user.role,
-        organizationId: user.organizationId,
-      },
-      token,
-    };
-  }
-
-  async getUserById(id: string) {
-    return prisma.user.findUnique({
-      where: { id },
-      select: {
-        id: true,
-        email: true,
-        name: true,
-        role: true,
-        organizationId: true,
-        createdAt: true,
-      },
-    });
-  }
-}
+};

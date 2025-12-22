@@ -1,53 +1,60 @@
-import { Response } from 'express';
-import { AuthRequest } from '../middleware/auth';
-import { OrganizationService } from '../services/organizationService';
-import { ROLES } from '../constants';
+import { Request, Response, NextFunction } from 'express';
+import { organizationService } from '../services/organizationService';
 
-const organizationService = new OrganizationService();
-
-export class OrganizationController {
-    async getOrganization(req: AuthRequest, res: Response): Promise<void> {
+class OrganizationController {
+    async getAllOrganizations(req: Request, res: Response, next: NextFunction): Promise<void> {
         try {
-            if (!req.user?.organizationId) {
-                res.status(400).json({ message: 'Organization context required' });
-                return;
-            }
-
-            const organization = await organizationService.getOrganizationById(req.user.organizationId);
-
-            if (!organization) {
-                res.status(404).json({ message: 'Organization not found' });
-                return;
-            }
-
-            res.status(200).json(organization);
-        } catch (error: any) {
-            res.status(400).json({ message: error.message });
+            const organizations = await organizationService.getAllOrganizations();
+            res.json({ success: true, data: { organizations } });
+        } catch (error) {
+            next(error);
         }
     }
 
-    async updateOrganization(req: AuthRequest, res: Response): Promise<void> {
+    async getOrganizationById(req: Request, res: Response, next: NextFunction): Promise<void> {
         try {
-            // Only Admin (HR) can update organization details
-            if (req.user?.role !== ROLES.HR && req.user?.role !== ROLES.ADMIN) {
-                res.status(403).json({ message: 'Insufficient permissions' });
+            const id = Number(req.params.id);
+            const organization = await organizationService.getOrganizationById(id);
+
+            if (!organization) {
+                res.status(404).json({ success: false, error: { message: 'Organization not found' } });
                 return;
             }
 
-            if (!req.user?.organizationId) {
-                res.status(400).json({ message: 'Organization context required' });
-                return;
-            }
+            res.json({ success: true, data: { organization } });
+        } catch (error) {
+            next(error);
+        }
+    }
 
+    async createOrganization(req: Request, res: Response, next: NextFunction): Promise<void> {
+        try {
             const { name } = req.body;
-            const organization = await organizationService.updateOrganization(req.user.organizationId, { name });
+            const organization = await organizationService.createOrganization({ name });
+            res.status(201).json({ success: true, data: { organization } });
+        } catch (error) {
+            next(error);
+        }
+    }
 
-            res.status(200).json({
-                message: 'Organization updated successfully',
-                organization
-            });
-        } catch (error: any) {
-            res.status(400).json({ message: error.message });
+    async updateOrganization(req: Request, res: Response, next: NextFunction): Promise<void> {
+        try {
+            const id = Number(req.params.id);
+            const { name } = req.body;
+            const organization = await organizationService.updateOrganization(id, { name });
+            res.json({ success: true, data: { organization } });
+        } catch (error) {
+            next(error);
+        }
+    }
+
+    async deleteOrganization(req: Request, res: Response, next: NextFunction): Promise<void> {
+        try {
+            const id = Number(req.params.id);
+            await organizationService.deleteOrganization(id);
+            res.json({ success: true, message: 'Organization deleted successfully' });
+        } catch (error) {
+            next(error);
         }
     }
 }

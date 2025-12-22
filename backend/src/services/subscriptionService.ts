@@ -1,34 +1,36 @@
-import { prisma } from '../config/database';
-import { calculateLeaveDays } from '../utils/dateHelper'; // Reusing existing helper if suitable or new Date() logic
+import prisma from './prisma';
+import { Subscription } from '@prisma/client';
 
-export class SubscriptionService {
-    async getPlans() {
-        return prisma.plan.findMany();
-    }
-
-    async getSubscription(organizationId: number) {
+export const subscriptionService = {
+    async getSubscriptionByOrganizationId(organizationId: number): Promise<Subscription | null> {
         return prisma.subscription.findFirst({
-            where: { organizationId, status: 'COMPLETED' },
-            include: { plan: true },
-            orderBy: { createdAt: 'desc' },
-        });
-    }
-
-    async createSubscription(organizationId: number, planId: number, orderId: string, amountPaid: number, durationDays: number) {
-        const startDate = new Date();
-        const endDate = new Date();
-        endDate.setDate(startDate.getDate() + durationDays);
-
-        return prisma.subscription.create({
-            data: {
-                organizationId,
-                planId,
-                orderId,
-                amountPaid,
-                startDate,
-                endDate,
-                status: 'COMPLETED',
+            where: { organizationId },
+            include: {
+                plan: true,
+            },
+            orderBy: {
+                createdAt: 'desc',
             },
         });
-    }
-}
+    },
+
+    async createSubscription(data: {
+        organizationId: number;
+        planId: number;
+        orderId: string;
+        amountPaid: number;
+        startDate: Date;
+        endDate: Date;
+    }): Promise<Subscription> {
+        return prisma.subscription.create({
+            data,
+        });
+    },
+
+    async updateSubscriptionStatus(id: number, status: string): Promise<Subscription> {
+        return prisma.subscription.update({
+            where: { id },
+            data: { status },
+        });
+    },
+};

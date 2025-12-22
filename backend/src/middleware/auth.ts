@@ -1,51 +1,46 @@
 import { Request, Response, NextFunction } from 'express';
 import jwt from 'jsonwebtoken';
-import { config } from '../config';
+import { Role } from '@prisma/client';
 
-export interface AuthRequest extends Request {
-  userId?: number;
-  user?: {
+interface TokenPayload {
     id: number;
-    email: string;
-    role: string;
-    organizationId?: number;
-  };
+    role: Role;
+    organizationId?: number; // Optional until onboarding is complete
+    iat: number;
+    exp: number;
 }
 
-export const authenticateToken = (
-  req: AuthRequest,
-  res: Response,
-  next: NextFunction
-): void => {
-  try {
-    const authHeader = req.headers['authorization'];
-    const token = authHeader && authHeader.split(' ')[1];
+export const authenticate = (req: Request, res: Response, next: NextFunction) => {
+    const authHeader = req.headers.authorization;
 
-    if (!token) {
-      res.status(401).json({ message: 'Access token required' });
-      return;
+    if (!authHeader) {
+        res.status(401).json({ success: false, error: { message: 'No token provided' } });
+        return;
     }
 
-    const decoded = jwt.verify(token, config.jwt.secret) as {
-      id: number;
-      email: string;
-      role: string;
-      organizationId?: number;
-    };
-    req.user = decoded;
-    req.userId = decoded.id;
-    next();
-  } catch (error) {
-    res.status(403).json({ message: 'Invalid or expired token' });
-  }
+    const token = authHeader.split(' ')[1];
+
+    try {
+        const decoded = jwt.verify(token, process.env.JWT_SECRET || 'default_secret') as TokenPayload;
+        req.user = decoded;
+        next();
+    } catch (error) {
+        res.status(401).json({ success: false, error: { message: 'Invalid token' } });
+    }
 };
 
-export const authorize = (...roles: string[]) => {
-  return (req: AuthRequest, res: Response, next: NextFunction): void => {
-    if (!req.user || !roles.includes(req.user.role)) {
-      res.status(403).json({ message: 'Insufficient permissions' });
-      return;
-    }
-    next();
-  };
+export const authorize = (...roles: Role[]) => {
+    return (req: Request, res: Response, next: NextFunction) => {
+        if (!req.user) {
+            res.status(401).json({ success: false, error: { message: 'User not authenticated' } });
+            return;
+        }
+
+        if (!roles.includes(req.user.role)) {
+            res.status(403).json({ success: false, error: { message: 'Forbidden: Insufficient permissions' } });
+            return;
+        }
+
+        next();
+    };
 };

@@ -1,107 +1,118 @@
-import { Response } from 'express';
-import { AuthRequest } from '../middleware/auth';
-import { UserService } from '../services/userService';
+import { Request, Response, NextFunction } from 'express';
+import { userService } from '../services/userService';
 import { Role } from '@prisma/client';
-import { ROLES, ROLE_VALUES } from '../constants';
-const userService = new UserService();
 
-export class UserController {
-  async getAllUsers(req: AuthRequest, res: Response): Promise<void> {
+class UserController {
+  // GET /api/v1/users
+  async getAllUsers(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
-      if (!req.user?.organizationId) {
-        // If for some reason orgId is missing (e.g. super admin not belonging to org?), handle gracefully or throw
-        // For now assuming all users should have orgId except maybe super admin.
-        // But even super admin might want to see users of a specific org, passed as query param in that case.
-        // Sticking to "current user's org" for now as per requirement.
-        res.status(400).json({ message: 'Organization context required' });
-        return;
-      }
-      const users = await userService.getAllUsers(req.user.organizationId);
-      res.status(200).json(users);
-    } catch (error: any) {
-      res.status(400).json({ message: error.message });
+      const organizationId = req.query.organizationId ? Number(req.query.organizationId) : undefined;
+      const users = await userService.getAllUsers(organizationId);
+      res.json({
+        success: true,
+        data: {
+          users,
+          total: users.length,
+        },
+      });
+    } catch (error) {
+      next(error);
     }
   }
 
-  async getUserById(req: AuthRequest, res: Response): Promise<void> {
+  // GET /api/v1/users/:id
+  async getUserById(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
-      const { id } = req.params;
-      const user = await userService.getUserById(parseInt(id));
+      const id = Number(req.params.id);
+      const user = await userService.getUserById(id);
 
       if (!user) {
-        res.status(404).json({ message: 'User not found' });
+        res.status(404).json({
+          success: false,
+          error: { message: 'User not found' },
+        });
         return;
       }
 
-      // Check if user belongs to the same organization
-      if (req.user?.role !== ROLES.ADMIN && user.organizationId !== req.user?.organizationId) {
-        res.status(403).json({ message: 'Access denied' });
-        return;
-      }
-
-      res.status(200).json(user);
-    } catch (error: any) {
-      res.status(400).json({ message: error.message });
-    }
-  }
-
-  async getUsersByRole(req: AuthRequest, res: Response): Promise<void> {
-    try {
-      const { role } = req.params;
-
-      if (!ROLE_VALUES.includes(role as Role)) {
-        res.status(400).json({ message: 'Invalid role' });
-        return;
-      }
-
-      if (!req.user?.organizationId) {
-        res.status(400).json({ message: 'Organization context required' });
-        return;
-      }
-
-      const users = await userService.getUsersByRole(role as Role, req.user.organizationId);
-      res.status(200).json(users);
-    } catch (error: any) {
-      res.status(400).json({ message: error.message });
-    }
-  }
-
-  async updateUser(req: AuthRequest, res: Response): Promise<void> {
-    try {
-      const { id } = req.params;
-      const userId = req.userId;
-
-      // Users can only update their own profile, except admins
-      if (userId !== parseInt(id) && req.user?.role !== ROLES.ADMIN) {
-        res.status(403).json({ message: 'You can only update your own profile' });
-        return;
-      }
-
-      const user = await userService.updateUser(parseInt(id), req.body);
-      res.status(200).json({
-        message: 'User updated successfully',
-        user,
+      res.json({
+        success: true,
+        data: { user },
       });
-    } catch (error: any) {
-      res.status(400).json({ message: error.message });
+    } catch (error) {
+      next(error);
     }
   }
 
-  async deleteUser(req: AuthRequest, res: Response): Promise<void> {
+  // POST /api/v1/users
+  async createUser(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
-      const { id } = req.params;
-      const userId = req.userId;
+      const { name, email, password, organizationId, role, googleLoginId, avatar } = req.body;
 
-      // Users can only delete their own account, except admins
-      if (userId !== parseInt(id) && req.user?.role !== ROLES.ADMIN) {
-        res.status(403).json({ message: 'You can only delete your own account' });
+      if (!email || !organizationId) {
+        res.status(400).json({
+          success: false,
+          error: { message: 'Email and organizationId are required' },
+        });
         return;
       }
 
-      await userService.deleteUser(parseInt(id));
-      res.status(200).json({ message: 'User deleted successfully' });
-    } catch (error: any) {
-      res.status(400).json({ message: error.message });
+      const newUser = await userService.createUser({
+        name,
+        email,
+        password,
+        organizationId: Number(organizationId),
+        role,
+        googleLoginId,
+        avatar,
+      });
+
+      res.status(201).json({
+        success: true,
+        data: { user: newUser },
+        message: 'User created successfully',
+      });
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  // PUT /api/v1/users/:id
+  async updateUser(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      const id = Number(req.params.id);
+
+      // Authorization check: Employees can only update their own profile
+      if (req.user?.role === Role.EMPLOYEE && req.user.id !== id) {
+        res.status(403).json({ success: false, error: { message: 'Forbidden: Cannot update other users profile' } });
+        return;
+      }
+
+      const data = req.body;
+
+      const updatedUser = await userService.updateUser(id, data);
+
+      res.json({
+        success: true,
+        data: { user: updatedUser },
+        message: 'User updated successfully',
+      });
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  // DELETE /api/v1/users/:id
+  async deleteUser(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      const id = Number(req.params.id);
+      await userService.deleteUser(id);
+
+      res.json({
+        success: true,
+        message: `User ${id} deleted successfully`,
+      });
+    } catch (error) {
+      next(error);
     }
   }
 }

@@ -1,13 +1,16 @@
 import { Router } from 'express';
 import { organizationController } from '../controllers/organizationController';
-import { authenticateToken, authorize } from '../middleware/auth';
-import { ROLES } from '../constants';
+import { authenticate, authorize } from '../middleware/auth';
+import { Role } from '@prisma/client';
 
 const router = Router();
 
-router.use(authenticateToken);
+router.use(authenticate);
 
-router.get('/me', organizationController.getOrganization);
-router.put('/me', authorize(ROLES.HR, ROLES.ADMIN), organizationController.updateOrganization);
+router.get('/', authorize(Role.ADMIN), organizationController.getAllOrganizations);
+router.get('/:id', authorize(Role.ADMIN, Role.HR), organizationController.getOrganizationById);
+router.post('/', authorize(Role.ADMIN), organizationController.createOrganization);
+router.put('/:id', authorize(Role.ADMIN, Role.HR), organizationController.updateOrganization);
+router.delete('/:id', authorize(Role.ADMIN), organizationController.deleteOrganization);
 
 export default router;
