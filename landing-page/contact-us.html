@@ -44,7 +44,7 @@
 </head>
 <body class="p-4 md:p-8">
 
-    <nav class="flex justify-between items-center mb-12">
+    <nav class="flex justify-between items-center mb-12 relative">
         <a href="index.html" class="neo-brutal-border bg-black text-white px-4 py-2 font-black text-2xl uppercase tracking-tighter">
             Quixhr
         </a>
@@ -54,10 +54,50 @@
             <a href="contact-us.html" class="hover:underline text-quixhr-pink">Contact Us</a>
             <a href="pricing.html" class="hover:underline">Pricing</a>
         </div>
-        <button class="neo-brutal-border bg-quixhr-green px-6 py-2 font-black neo-brutal-shadow-sm">
+        <div class="flex items-center gap-4">
+            <button class="hidden md:block neo-brutal-border bg-quixhr-green px-6 py-2 font-black neo-brutal-shadow-sm">
             LOGIN
         </button>
+            <button id="mobile-menu-btn" class="md:hidden neo-brutal-border bg-white px-4 py-2 neo-brutal-shadow-sm">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
+                </svg>
+            </button>
+        </div>
     </nav>
+    <!-- Mobile Menu -->
+    <div id="mobile-menu" class="hidden fixed inset-0 bg-white z-50 p-4 overflow-y-auto">
+        <div class="flex justify-end mb-8">
+            <button id="close-menu-btn" class="neo-brutal-border bg-white px-4 py-2 neo-brutal-shadow-sm">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+            </button>
+        </div>
+        <div class="flex flex-col gap-8 font-black text-2xl text-center">
+            <a href="index.html" class="hover:bg-quixhr-yellow p-2">Home</a>
+            <a href="about.html" class="hover:bg-quixhr-pink p-2">About</a>
+            <a href="contact-us.html" class="hover:bg-quixhr-blue p-2">Contact Us</a>
+            <a href="pricing.html" class="hover:bg-quixhr-green p-2">Pricing</a>
+            <button class="neo-brutal-border bg-quixhr-green px-6 py-2 font-black neo-brutal-shadow-sm mt-4">
+                LOGIN
+            </button>
+        </div>
+    </div>
+
+    <script>
+        const mobileMenuBtn = document.getElementById('mobile-menu-btn');
+        const closeMenuBtn = document.getElementById('close-menu-btn');
+        const mobileMenu = document.getElementById('mobile-menu');
+
+        function toggleMenu() {
+            mobileMenu.classList.toggle('hidden');
+            document.body.classList.toggle('overflow-hidden');
+        }
+
+        mobileMenuBtn.addEventListener('click', toggleMenu);
+        closeMenuBtn.addEventListener('click', toggleMenu);
+    </script>
 
     <div class="max-w-4xl mx-auto mb-20">
         <h1 class="text-5xl md:text-7xl font-black uppercase mb-8 text-center">
