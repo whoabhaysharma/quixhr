@@ -7,6 +7,8 @@ import { Label } from "@/components/ui/label"
 import { Badge } from "@/components/ui/badge"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
+import { Skeleton } from "@/components/ui/skeleton"
+import { Spinner } from "@/components/ui/spinner"
 import {
     Table,
     TableBody,
@@ -51,6 +53,7 @@ export default function LeavesPage() {
     const [endDate, setEndDate] = useState("")
     const [reason, setReason] = useState("")
     const [isSubmitting, setIsSubmitting] = useState(false)
+    const [processingLeaveId, setProcessingLeaveId] = useState<number | null>(null)
 
     const fetchLeaves = async () => {
         setIsLoading(true)
@@ -123,6 +126,7 @@ export default function LeavesPage() {
     }
 
     const handleStatusUpdate = async (id: number, status: string) => {
+        setProcessingLeaveId(id)
         try {
             const token = localStorage.getItem("token")
             await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/leaves/${id}/status`, {
@@ -136,6 +140,8 @@ export default function LeavesPage() {
             fetchLeaves()
         } catch (err) {
             console.error(err)
+        } finally {
+            setProcessingLeaveId(null)
         }
     }
 
@@ -209,9 +215,24 @@ export default function LeavesPage() {
                             </TableHeader>
                             <TableBody className="divide-y divide-slate-100">
                                 {isLoading ? (
-                                    <TableRow>
-                                        <TableCell colSpan={6} className="p-8 text-center text-slate-500">Loading requests...</TableCell>
-                                    </TableRow>
+                                    Array.from({ length: 5 }).map((_, i) => (
+                                        <TableRow key={i}>
+                                            <TableCell className="px-6 py-4">
+                                                <div className="flex items-center gap-3">
+                                                    <Skeleton className="h-8 w-8 rounded-lg" />
+                                                    <div className="space-y-1">
+                                                        <Skeleton className="h-4 w-24" />
+                                                        <Skeleton className="h-3 w-32" />
+                                                    </div>
+                                                </div>
+                                            </TableCell>
+                                            <TableCell className="px-6 py-4"><Skeleton className="h-4 w-32" /></TableCell>
+                                            <TableCell className="px-6 py-4"><Skeleton className="h-4 w-16" /></TableCell>
+                                            <TableCell className="px-6 py-4"><Skeleton className="h-4 w-40" /></TableCell>
+                                            <TableCell className="px-6 py-4"><Skeleton className="h-6 w-20 rounded-full" /></TableCell>
+                                            {activeTab === 'TEAM_LEAVES' && <TableCell className="px-6 py-4 text-right"><Skeleton className="h-7 w-20 ml-auto" /></TableCell>}
+                                        </TableRow>
+                                    ))
                                 ) : leaves.length === 0 ? (
                                     <TableRow>
                                         <TableCell colSpan={6} className="p-12 text-center text-slate-400">No leave requests found.</TableCell>
@@ -258,17 +279,23 @@ export default function LeavesPage() {
                                                             <Button
                                                                 onClick={() => handleStatusUpdate(leave.id, 'APPROVED')}
                                                                 size="sm"
+                                                                disabled={processingLeaveId === leave.id}
                                                                 className="h-7 px-3 bg-emerald-600 hover:bg-emerald-700 text-white rounded-md text-xs font-bold"
                                                             >
-                                                                Approve
+                                                                {processingLeaveId === leave.id ? (
+                                                                    <Spinner className="h-3 w-3 animate-spin" />
+                                                                ) : 'Approve'}
                                                             </Button>
                                                             <Button
                                                                 onClick={() => handleStatusUpdate(leave.id, 'REJECTED')}
                                                                 size="sm"
                                                                 variant="outline"
+                                                                disabled={processingLeaveId === leave.id}
                                                                 className="h-7 px-3 text-rose-600 hover:text-rose-700 hover:bg-rose-50 border-rose-200 rounded-md text-xs font-bold"
                                                             >
-                                                                Reject
+                                                                {processingLeaveId === leave.id ? (
+                                                                    <Spinner className="h-3 w-3 animate-spin" />
+                                                                ) : 'Reject'}
                                                             </Button>
                                                         </div>
                                                     ) : (
@@ -349,7 +376,12 @@ export default function LeavesPage() {
                                         disabled={isSubmitting}
                                         className="bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl shadow-lg shadow-indigo-200 font-semibold"
                                     >
-                                        {isSubmitting ? 'Submitting...' : 'Submit Request'}
+                                        {isSubmitting ? (
+                                            <>
+                                                <Spinner className="mr-2 h-4 w-4 animate-spin" />
+                                                Submitting...
+                                            </>
+                                        ) : 'Submit Request'}
                                     </Button>
                                 </div>
                             </form>

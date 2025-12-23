@@ -9,6 +9,8 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
+import { Skeleton } from "@/components/ui/skeleton"
+import { Spinner } from "@/components/ui/spinner"
 import {
     Calendar as CalendarIcon,
     Plus,
@@ -57,12 +59,32 @@ export default function HolidaysPage() {
 
     if (isLoading) {
         return (
-            <div className="max-w-[1400px] mx-auto space-y-8 pb-12">
-                <div className="animate-pulse space-y-4">
-                    <div className="h-8 bg-slate-200 rounded w-1/4"></div>
+            <div className="-m-4 lg:-m-8 bg-[#f8fafc] min-h-[calc(100vh-4rem)] pb-20">
+                <div className="max-w-[1400px] mx-auto px-6 pt-8 space-y-8">
+                    <div className="flex flex-col lg:flex-row lg:items-end justify-between gap-6">
+                        <div className="space-y-1">
+                            <Skeleton className="h-8 w-64" />
+                            <Skeleton className="h-4 w-96" />
+                        </div>
+                        <Skeleton className="h-10 w-40" />
+                    </div>
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                         {[1, 2, 3].map((i) => (
-                            <div key={i} className="h-48 bg-slate-200 rounded-xl"></div>
+                            <Card key={i} className="border-none shadow-sm bg-white h-48">
+                                <CardHeader className="pb-3">
+                                    <Skeleton className="h-6 w-3/4 mb-2" />
+                                    <Skeleton className="h-4 w-1/4" />
+                                </CardHeader>
+                                <CardContent>
+                                    <div className="space-y-3">
+                                        <div className="flex justify-between">
+                                            <Skeleton className="h-4 w-20" />
+                                            <Skeleton className="h-4 w-20" />
+                                        </div>
+                                        <Skeleton className="h-10 w-full" />
+                                    </div>
+                                </CardContent>
+                            </Card>
                         ))}
                     </div>
                 </div>
@@ -145,7 +167,12 @@ export default function HolidaysPage() {
                                             disabled={createCalendarMutation.isPending}
                                             className="bg-indigo-600 hover:bg-indigo-700 text-white shadow-md shadow-indigo-100"
                                         >
-                                            {createCalendarMutation.isPending ? "Creating..." : "Create Calendar"}
+                                            {createCalendarMutation.isPending ? (
+                                                <>
+                                                    <Spinner className="mr-2 h-4 w-4 animate-spin" />
+                                                    Creating...
+                                                </>
+                                            ) : "Create Calendar"}
                                         </Button>
                                     </div>
                                 </form>
@@ -190,12 +217,17 @@ export default function HolidaysPage() {
                                                     variant="ghost"
                                                     size="icon"
                                                     className="h-8 w-8"
+                                                    disabled={deleteCalendarMutation.isPending && deleteCalendarMutation.variables === calendar.id}
                                                     onClick={(e) => {
                                                         e.stopPropagation()
                                                         handleDeleteCalendar(calendar.id)
                                                     }}
                                                 >
-                                                    <Trash2 className="w-4 h-4 text-red-500" />
+                                                    {deleteCalendarMutation.isPending && deleteCalendarMutation.variables === calendar.id ? (
+                                                        <Spinner className="w-4 h-4" />
+                                                    ) : (
+                                                        <Trash2 className="w-4 h-4 text-red-500" />
+                                                    )}
                                                 </Button>
                                             </div>
                                         )}

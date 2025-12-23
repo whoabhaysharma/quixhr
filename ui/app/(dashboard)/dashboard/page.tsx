@@ -396,17 +396,22 @@ function HolidayItem({ date, name, subtitle }: any) {
 
 function LoadingSkeleton() {
     return (
-        <div className="p-10 space-y-10 max-w-[1600px] mx-auto animate-pulse">
-            <div className="flex justify-between items-center">
-                <Skeleton className="h-12 w-64 rounded-xl" />
-                <Skeleton className="h-12 w-48 rounded-xl" />
-            </div>
-            <div className="grid grid-cols-4 gap-6">
-                {[1, 2, 3, 4].map(i => <Skeleton key={i} className="h-32 rounded-3xl" />)}
-            </div>
-            <div className="grid grid-cols-3 gap-8">
-                <Skeleton className="col-span-2 h-[500px] rounded-3xl" />
-                <Skeleton className="h-[500px] rounded-3xl" />
+        <div className="-m-4 lg:-m-8 bg-[#f8fafc] min-h-[calc(100vh-4rem)] pb-20">
+            <div className="max-w-[1400px] mx-auto px-6 pt-8 space-y-10 animate-pulse">
+                <header className="flex justify-between items-center">
+                    <div className="space-y-2">
+                        <Skeleton className="h-10 w-80 rounded-xl" />
+                        <Skeleton className="h-4 w-48 rounded-lg" />
+                    </div>
+                    <Skeleton className="h-10 w-40 rounded-xl" />
+                </header>
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+                    {[1, 2, 3, 4].map(i => <Skeleton key={i} className="h-32 rounded-3xl" />)}
+                </div>
+                <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                    <Skeleton className="lg:col-span-2 h-[500px] rounded-3xl" />
+                    <Skeleton className="h-[500px] rounded-3xl" />
+                </div>
             </div>
         </div>
     )

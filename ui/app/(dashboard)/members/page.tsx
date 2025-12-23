@@ -8,6 +8,19 @@ import { Badge } from "@/components/ui/badge"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
+import { Skeleton } from "@/components/ui/skeleton"
+import { Spinner } from "@/components/ui/spinner"
+import {
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuItem,
+    DropdownMenuLabel,
+    DropdownMenuSeparator,
+    DropdownMenuSub,
+    DropdownMenuSubContent,
+    DropdownMenuSubTrigger,
+    DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
 import {
     Table,
     TableBody,
@@ -23,9 +36,11 @@ import {
     MoreVertical,
     Mail,
     Shield,
-    MoreHorizontal
+    MoreHorizontal,
+    Trash2,
+    UserCog,
 } from "lucide-react"
-import { useMembers, useSendInvite } from "@/lib/hooks/useMembers"
+import { useMembers, useSendInvite, useDeleteMember, useUpdateMemberRole } from "@/lib/hooks/useMembers"
 
 interface User {
     id: number
@@ -47,6 +62,11 @@ export default function MembersPage() {
     // TanStack Query hooks
     const { data: members = [], isLoading } = useMembers()
     const sendInviteMutation = useSendInvite()
+    const deleteMemberMutation = useDeleteMember()
+    const updateMemberRoleMutation = useUpdateMemberRole()
+
+    const admins = members.filter((m: any) => m.role === 'ADMIN')
+    const adminCount = admins.length
 
     const handleInviteMember = async (e: React.FormEvent) => {
         e.preventDefault()
@@ -114,9 +134,20 @@ export default function MembersPage() {
                             </TableHeader>
                             <TableBody className="divide-y divide-slate-100">
                                 {isLoading ? (
-                                    <TableRow>
-                                        <TableCell colSpan={5} className="p-8 text-center text-slate-500">Loading directory...</TableCell>
-                                    </TableRow>
+                                    Array.from({ length: 5 }).map((_, i) => (
+                                        <TableRow key={i}>
+                                            <TableCell className="px-6 py-4">
+                                                <div className="flex items-center gap-3">
+                                                    <Skeleton className="h-8 w-8 rounded-lg" />
+                                                    <Skeleton className="h-4 w-32" />
+                                                </div>
+                                            </TableCell>
+                                            <TableCell className="px-6 py-4"><Skeleton className="h-4 w-48" /></TableCell>
+                                            <TableCell className="px-6 py-4"><Skeleton className="h-6 w-20 rounded-full" /></TableCell>
+                                            <TableCell className="px-6 py-4"><Skeleton className="h-4 w-16" /></TableCell>
+                                            <TableCell className="px-6 py-4 text-right"><Skeleton className="h-8 w-8 rounded-md ml-auto" /></TableCell>
+                                        </TableRow>
+                                    ))
                                 ) : members.length === 0 ? (
                                     <TableRow>
                                         <TableCell colSpan={5} className="p-12 text-center text-slate-400">
@@ -156,9 +187,111 @@ export default function MembersPage() {
                                                 </div>
                                             </TableCell>
                                             <TableCell className="px-6 py-4 text-right">
-                                                <Button variant="ghost" size="icon" className="text-slate-400 hover:text-slate-900 h-8 w-8 rounded-md opacity-0 group-hover:opacity-100 transition-opacity">
-                                                    <MoreHorizontal className="w-4 h-4" />
-                                                </Button>
+                                                <DropdownMenu>
+                                                    <DropdownMenuTrigger asChild>
+                                                        <Button variant="ghost" size="icon" className="text-slate-400 hover:text-slate-900 h-8 w-8 rounded-md opacity-0 group-hover:opacity-100 transition-opacity disabled:opacity-100"
+                                                            disabled={(updateMemberRoleMutation.isPending && updateMemberRoleMutation.variables?.memberId === user.id) ||
+                                                                (deleteMemberMutation.isPending && deleteMemberMutation.variables === user.id)}>
+                                                            {(updateMemberRoleMutation.isPending && updateMemberRoleMutation.variables?.memberId === user.id) ||
+                                                                (deleteMemberMutation.isPending && deleteMemberMutation.variables === user.id) ? (
+                                                                <Spinner className="w-4 h-4" />
+                                                            ) : (
+                                                                <MoreHorizontal className="w-4 h-4" />
+                                                            )}
+                                                        </Button>
+                                                    </DropdownMenuTrigger>
+                                                    <DropdownMenuContent align="end" className="w-48">
+                                                        <DropdownMenuLabel>Actions</DropdownMenuLabel>
+                                                        <DropdownMenuSeparator />
+                                                        <DropdownMenuSub>
+                                                            <DropdownMenuSubTrigger>
+                                                                <UserCog className="w-4 h-4 mr-2" />
+                                                                Change Role
+                                                            </DropdownMenuSubTrigger>
+                                                            <DropdownMenuSubContent>
+                                                                <DropdownMenuItem
+                                                                    onClick={() => {
+                                                                        updateMemberRoleMutation.mutate({
+                                                                            memberId: user.id,
+                                                                            role: 'ADMIN'
+                                                                        })
+                                                                    }}
+                                                                    className="cursor-pointer"
+                                                                    disabled={user.role === 'ADMIN' || updateMemberRoleMutation.isPending}
+                                                                >
+                                                                    {updateMemberRoleMutation.isPending &&
+                                                                        updateMemberRoleMutation.variables?.memberId === user.id &&
+                                                                        updateMemberRoleMutation.variables?.role === 'ADMIN' ? (
+                                                                        <Spinner className="w-4 h-4 mr-2" />
+                                                                    ) : (
+                                                                        <Shield className="w-4 h-4 mr-2" />
+                                                                    )}
+                                                                    Admin
+                                                                    {user.role === 'ADMIN' && <span className="ml-auto text-xs text-slate-400">Current</span>}
+                                                                </DropdownMenuItem>
+                                                                <DropdownMenuItem
+                                                                    onClick={() => {
+                                                                        updateMemberRoleMutation.mutate({
+                                                                            memberId: user.id,
+                                                                            role: 'HR'
+                                                                        })
+                                                                    }}
+                                                                    className="cursor-pointer"
+                                                                    disabled={user.role === 'HR' || updateMemberRoleMutation.isPending || (user.role === 'ADMIN' && adminCount === 1)}
+                                                                >
+                                                                    {updateMemberRoleMutation.isPending &&
+                                                                        updateMemberRoleMutation.variables?.memberId === user.id &&
+                                                                        updateMemberRoleMutation.variables?.role === 'HR' ? (
+                                                                        <Spinner className="w-4 h-4 mr-2" />
+                                                                    ) : (
+                                                                        <UserCog className="w-4 h-4 mr-2" />
+                                                                    )}
+                                                                    HR Manager
+                                                                    {user.role === 'HR' && <span className="ml-auto text-xs text-slate-400">Current</span>}
+                                                                    {user.role === 'ADMIN' && adminCount === 1 && <span className="ml-auto text-[9px] text-amber-500 font-bold">Required</span>}
+                                                                </DropdownMenuItem>
+                                                                <DropdownMenuItem
+                                                                    onClick={() => {
+                                                                        updateMemberRoleMutation.mutate({
+                                                                            memberId: user.id,
+                                                                            role: 'EMPLOYEE'
+                                                                        })
+                                                                    }}
+                                                                    className="cursor-pointer"
+                                                                    disabled={user.role === 'EMPLOYEE' || updateMemberRoleMutation.isPending || (user.role === 'ADMIN' && adminCount === 1)}
+                                                                >
+                                                                    {updateMemberRoleMutation.isPending &&
+                                                                        updateMemberRoleMutation.variables?.memberId === user.id &&
+                                                                        updateMemberRoleMutation.variables?.role === 'EMPLOYEE' ? (
+                                                                        <Spinner className="w-4 h-4 mr-2" />
+                                                                    ) : (
+                                                                        <Users className="w-4 h-4 mr-2" />
+                                                                    )}
+                                                                    Employee
+                                                                    {user.role === 'EMPLOYEE' && <span className="ml-auto text-xs text-slate-400">Current</span>}
+                                                                    {user.role === 'ADMIN' && adminCount === 1 && <span className="ml-auto text-[9px] text-amber-500 font-bold">Required</span>}
+                                                                </DropdownMenuItem>
+                                                            </DropdownMenuSubContent>
+                                                        </DropdownMenuSub>
+                                                        <DropdownMenuItem
+                                                            onClick={() => {
+                                                                if (confirm(`Are you sure you want to remove ${user.name}?`)) {
+                                                                    deleteMemberMutation.mutate(user.id)
+                                                                }
+                                                            }}
+                                                            className="cursor-pointer text-red-600 focus:text-red-600"
+                                                            disabled={deleteMemberMutation.isPending || (user.role === 'ADMIN' && adminCount === 1)}
+                                                        >
+                                                            {deleteMemberMutation.isPending && deleteMemberMutation.variables === user.id ? (
+                                                                <Spinner className="w-4 h-4 mr-2" />
+                                                            ) : (
+                                                                <Trash2 className="w-4 h-4 mr-2" />
+                                                            )}
+                                                            {deleteMemberMutation.isPending && deleteMemberMutation.variables === user.id ? 'Removing...' : 'Remove Member'}
+                                                            {user.role === 'ADMIN' && adminCount === 1 && <span className="ml-auto text-[9px] text-amber-500 font-bold italic">Last Admin</span>}
+                                                        </DropdownMenuItem>
+                                                    </DropdownMenuContent>
+                                                </DropdownMenu>
                                             </TableCell>
                                         </TableRow>
                                     ))
@@ -228,7 +361,12 @@ export default function MembersPage() {
                                 disabled={sendInviteMutation.isPending}
                                 className="bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl shadow-lg shadow-indigo-200 font-semibold"
                             >
-                                {sendInviteMutation.isPending ? 'Sending...' : 'Send Invitation'}
+                                {sendInviteMutation.isPending ? (
+                                    <>
+                                        <Spinner className="mr-2 h-4 w-4 animate-spin" />
+                                        Sending...
+                                    </>
+                                ) : 'Send Invitation'}
                             </Button>
                         </div>
                     </form>
