@@ -8,6 +8,14 @@ import { Badge } from "@/components/ui/badge"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
+import {
+    Table,
+    TableBody,
+    TableCell,
+    TableHead,
+    TableHeader,
+    TableRow,
+} from "@/components/ui/table"
 import { useAuth } from "@/context/auth-context"
 import {
     Users,
@@ -61,62 +69,65 @@ export default function MembersPage() {
     }
 
     return (
-        <div className="max-w-[1400px] mx-auto space-y-8 pb-12">
-
-            {/* Header Section */}
-            <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 border-b border-slate-200 pb-8">
-                <div>
-                    <h1 className="text-2xl font-bold tracking-tight text-slate-900">Team Members</h1>
-                    <p className="text-slate-500 text-sm font-medium mt-1">Manage your organization's users and access controls.</p>
-                </div>
-                <Button
-                    onClick={() => setIsAddModalOpen(true)}
-                    className="bg-slate-900 text-white hover:bg-slate-800 px-6 h-10 shadow-sm font-semibold"
-                >
-                    <div className="flex items-center gap-2 text-white/90">
-                        <Mail className="w-4 h-4 text-white" />
-                        Invite Member
+        <div className="-m-4 lg:-m-8 bg-[#f8fafc] min-h-[calc(100vh-4rem)] pb-20">
+            <div className="max-w-[1400px] mx-auto px-6 pt-8 space-y-8">
+                {/* Header Section */}
+                <div className="flex flex-col lg:flex-row lg:items-end justify-between gap-6">
+                    <div className="space-y-1">
+                        <h1 className="text-2xl font-bold tracking-tight text-slate-900">Team Members</h1>
+                        <p className="text-slate-500 text-sm max-w-2xl leading-relaxed italic">
+                            Manage your organization's users and access controls.
+                        </p>
                     </div>
-                </Button>
-            </div>
-
-            {/* Members List */}
-            <div className="space-y-4">
-                <div className="flex items-center justify-between px-1">
-                    <h2 className="text-sm font-bold uppercase tracking-widest text-slate-400 text-[10px]">Team Directory</h2>
-                    <span className="text-[10px] uppercase font-bold text-slate-400">
-                        Total: {members.length}
-                    </span>
+                    <div className="flex items-center gap-3">
+                        <Button
+                            onClick={() => setIsAddModalOpen(true)}
+                            className="bg-indigo-600 hover:bg-indigo-700 text-white shadow-lg shadow-indigo-200 border-none"
+                        >
+                            <Mail className="w-4 h-4 mr-2" />
+                            Invite Member
+                        </Button>
+                    </div>
                 </div>
 
-                <Card className="border-slate-200 shadow-sm overflow-hidden bg-white">
-                    <div className="overflow-x-auto">
-                        <table className="w-full text-left text-sm">
-                            <thead className="bg-slate-50/50 border-b border-slate-100">
-                                <tr>
-                                    <th className="px-6 py-3 text-[10px] font-bold text-slate-400 uppercase tracking-wider">User</th>
-                                    <th className="px-6 py-3 text-[10px] font-bold text-slate-400 uppercase tracking-wider">Email Address</th>
-                                    <th className="px-6 py-3 text-[10px] font-bold text-slate-400 uppercase tracking-wider">Role</th>
-                                    <th className="px-6 py-3 text-[10px] font-bold text-slate-400 uppercase tracking-wider">Status</th>
-                                    <th className="px-6 py-3 text-right"></th>
-                                </tr>
-                            </thead>
-                            <tbody className="divide-y divide-slate-100">
+                {/* Members List */}
+                <div className="space-y-4">
+                    <div className="flex items-center justify-between">
+                        <h2 className="text-sm font-bold text-slate-500 uppercase tracking-widest flex items-center gap-2">
+                            Team Directory
+                            <span className="text-[10px] font-bold text-indigo-600 bg-indigo-50 border border-indigo-100 px-2 py-0.5 rounded-full">
+                                {members.length} Total
+                            </span>
+                        </h2>
+                    </div>
+
+                    <Card className="border-none shadow-sm overflow-hidden bg-white">
+                        <Table>
+                            <TableHeader className="bg-slate-50 border-b border-slate-100">
+                                <TableRow className="hover:bg-transparent">
+                                    <TableHead className="px-6 py-3 text-[11px] font-bold text-slate-400 uppercase tracking-wider">User</TableHead>
+                                    <TableHead className="px-6 py-3 text-[11px] font-bold text-slate-400 uppercase tracking-wider">Email Address</TableHead>
+                                    <TableHead className="px-6 py-3 text-[11px] font-bold text-slate-400 uppercase tracking-wider">Role</TableHead>
+                                    <TableHead className="px-6 py-3 text-[11px] font-bold text-slate-400 uppercase tracking-wider">Status</TableHead>
+                                    <TableHead className="px-6 py-3 text-right"></TableHead>
+                                </TableRow>
+                            </TableHeader>
+                            <TableBody className="divide-y divide-slate-100">
                                 {isLoading ? (
-                                    <tr>
-                                        <td colSpan={5} className="p-8 text-center text-slate-500">Loading directory...</td>
-                                    </tr>
+                                    <TableRow>
+                                        <TableCell colSpan={5} className="p-8 text-center text-slate-500">Loading directory...</TableCell>
+                                    </TableRow>
                                 ) : members.length === 0 ? (
-                                    <tr>
-                                        <td colSpan={5} className="p-12 text-center text-slate-400">
+                                    <TableRow>
+                                        <TableCell colSpan={5} className="p-12 text-center text-slate-400">
                                             <Users className="w-12 h-12 mx-auto mb-3 opacity-20" />
                                             <p>No members found</p>
-                                        </td>
-                                    </tr>
+                                        </TableCell>
+                                    </TableRow>
                                 ) : (
                                     members.map((user: any) => (
-                                        <tr key={user.id} className="hover:bg-slate-50/50 transition-colors group">
-                                            <td className="px-6 py-4">
+                                        <TableRow key={user.id} className="hover:bg-slate-50/50 transition-colors group">
+                                            <TableCell className="px-6 py-4">
                                                 <div className="flex items-center gap-3">
                                                     <Avatar className="h-8 w-8 rounded-lg border border-slate-200">
                                                         <AvatarFallback className="bg-slate-100 text-slate-600 font-bold text-xs">
@@ -125,37 +136,37 @@ export default function MembersPage() {
                                                     </Avatar>
                                                     <span className="font-bold text-slate-800">{user.name}</span>
                                                 </div>
-                                            </td>
-                                            <td className="px-6 py-4 text-slate-500 font-medium">{user.email}</td>
-                                            <td className="px-6 py-4">
+                                            </TableCell>
+                                            <TableCell className="px-6 py-4 text-slate-500 font-medium">{user.email}</TableCell>
+                                            <TableCell className="px-6 py-4">
                                                 <Badge className={`
-                                                    font-bold border-none px-2.5 py-0.5 text-[9px] uppercase tracking-widest
+                                                    font-bold border-none px-2.5 py-0.5 text-[10px] uppercase tracking-tight rounded-full flex items-center gap-1 w-fit
                                                     ${user.role === 'ADMIN' ? 'bg-purple-50 text-purple-700' :
                                                         user.role === 'HR' ? 'bg-blue-50 text-blue-700' :
                                                             'bg-slate-100 text-slate-600'}
                                                 `}>
-                                                    {user.role === 'ADMIN' && <Shield className="w-3 h-3 mr-1" />}
+                                                    {user.role === 'ADMIN' && <Shield className="w-3 h-3" />}
                                                     {user.role}
                                                 </Badge>
-                                            </td>
-                                            <td className="px-6 py-4">
+                                            </TableCell>
+                                            <TableCell className="px-6 py-4">
                                                 <div className="flex items-center gap-2">
                                                     <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
                                                     <span className="text-emerald-700 font-bold text-xs">Active</span>
                                                 </div>
-                                            </td>
-                                            <td className="px-6 py-4 text-right">
+                                            </TableCell>
+                                            <TableCell className="px-6 py-4 text-right">
                                                 <Button variant="ghost" size="icon" className="text-slate-400 hover:text-slate-900 h-8 w-8 rounded-md opacity-0 group-hover:opacity-100 transition-opacity">
                                                     <MoreHorizontal className="w-4 h-4" />
                                                 </Button>
-                                            </td>
-                                        </tr>
+                                            </TableCell>
+                                        </TableRow>
                                     ))
                                 )}
-                            </tbody>
-                        </table>
-                    </div>
-                </Card>
+                            </TableBody>
+                        </Table>
+                    </Card>
+                </div>
             </div>
 
 
@@ -215,14 +226,14 @@ export default function MembersPage() {
                             <Button
                                 type="submit"
                                 disabled={sendInviteMutation.isPending}
-                                className="bg-slate-900 hover:bg-slate-800 text-white rounded-xl shadow-lg font-semibold"
+                                className="bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl shadow-lg shadow-indigo-200 font-semibold"
                             >
                                 {sendInviteMutation.isPending ? 'Sending...' : 'Send Invitation'}
                             </Button>
                         </div>
                     </form>
                 </DialogContent>
-            </Dialog >
-        </div >
+            </Dialog>
+        </div>
     )
 }

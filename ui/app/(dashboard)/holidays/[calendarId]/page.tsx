@@ -45,6 +45,7 @@ import {
     AlertDialogHeader,
     AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
+import { Spinner } from "@/components/ui/spinner"
 
 export default function CalendarDetailPage() {
     const { calendarId } = useParams()
@@ -216,6 +217,7 @@ export default function CalendarDetailPage() {
                 selectedMembers={selectedMembers}
                 setSelectedMembers={setSelectedMembers}
                 onConfirm={() => assignCalendarMutation.mutateAsync({ calendarId: calendar.id, userIds: selectedMembers })}
+                isPending={assignCalendarMutation.isPending}
             />
 
             {/* Add Holiday Dialog */}
@@ -257,7 +259,10 @@ export default function CalendarDetailPage() {
                         </div>
                         <div className="flex justify-end gap-3">
                             <Button type="button" variant="ghost" onClick={() => setIsAddHolidayOpen(false)}>Cancel</Button>
-                            <Button type="submit" className="bg-indigo-600 text-white hover:bg-indigo-700 px-8">Save Holiday</Button>
+                            <Button type="submit" className="bg-indigo-600 text-white hover:bg-indigo-700 px-8" disabled={createHolidayMutation.isPending}>
+                                {createHolidayMutation.isPending && <Spinner className="mr-2 h-4 w-4" />}
+                                Save Holiday
+                            </Button>
                         </div>
                     </form>
                 </DialogContent>
@@ -274,7 +279,8 @@ export default function CalendarDetailPage() {
                     </AlertDialogHeader>
                     <AlertDialogFooter>
                         <AlertDialogCancel>Cancel</AlertDialogCancel>
-                        <AlertDialogAction onClick={confirmDelete} className="bg-red-600 hover:bg-red-700 text-white">
+                        <AlertDialogAction onClick={confirmDelete} className="bg-red-600 hover:bg-red-700 text-white" disabled={deleteHolidayMutation.isPending}>
+                            {deleteHolidayMutation.isPending && <Spinner className="mr-2 h-4 w-4 text-white" />}
                             Delete Holiday
                         </AlertDialogAction>
                     </AlertDialogFooter>
@@ -371,7 +377,7 @@ function HolidayRow({ holiday, isAdmin, onDelete }: any) {
     )
 }
 
-function AssignModal({ isOpen, setIsOpen, members, selectedMembers, setSelectedMembers, onConfirm }: any) {
+function AssignModal({ isOpen, setIsOpen, members, selectedMembers, setSelectedMembers, onConfirm, isPending }: any) {
     return (
         <Dialog open={isOpen} onOpenChange={setIsOpen}>
             <DialogContent className="sm:max-w-md p-0 overflow-hidden">
@@ -406,7 +412,8 @@ function AssignModal({ isOpen, setIsOpen, members, selectedMembers, setSelectedM
                             </label>
                         ))}
                     </div>
-                    <Button onClick={onConfirm} className="w-full bg-indigo-600 hover:bg-indigo-700 h-11 text-white shadow-lg shadow-indigo-100">
+                    <Button onClick={onConfirm} className="w-full bg-indigo-600 hover:bg-indigo-700 h-11 text-white shadow-lg shadow-indigo-100" disabled={isPending}>
+                        {isPending && <Spinner className="mr-2 h-4 w-4" />}
                         Update Permissions
                     </Button>
                 </div>

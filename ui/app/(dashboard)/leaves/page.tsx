@@ -7,6 +7,14 @@ import { Label } from "@/components/ui/label"
 import { Badge } from "@/components/ui/badge"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
+import {
+    Table,
+    TableBody,
+    TableCell,
+    TableHead,
+    TableHeader,
+    TableRow,
+} from "@/components/ui/table"
 import { useAuth } from "@/context/auth-context"
 import {
     Calendar,
@@ -132,77 +140,86 @@ export default function LeavesPage() {
     }
 
     return (
-        <div className="max-w-[1400px] mx-auto space-y-8 pb-12">
-
-            {/* Header */}
-            <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 border-b border-slate-200 pb-8">
-                <div>
-                    <h1 className="text-2xl font-bold tracking-tight text-slate-900">Leave Management</h1>
-                    <p className="text-slate-500 text-sm font-medium mt-1">Track time off, manage requests, and approvals.</p>
+        <div className="-m-4 lg:-m-8 bg-[#f8fafc] min-h-[calc(100vh-4rem)] pb-20">
+            <div className="max-w-[1400px] mx-auto px-6 pt-8 space-y-8">
+                {/* Header */}
+                <div className="flex flex-col lg:flex-row lg:items-end justify-between gap-6">
+                    <div className="space-y-1">
+                        <h1 className="text-2xl font-bold tracking-tight text-slate-900">Leave Management</h1>
+                        <p className="text-slate-500 text-sm max-w-2xl leading-relaxed italic">
+                            Track time off, manage requests, and approvals.
+                        </p>
+                    </div>
+                    <div className="flex items-center gap-3">
+                        <Button
+                            onClick={() => setIsRequestModalOpen(true)}
+                            className="bg-indigo-600 hover:bg-indigo-700 text-white shadow-lg shadow-indigo-200 border-none"
+                        >
+                            <Plus className="w-4 h-4 mr-2" />
+                            New Request
+                        </Button>
+                    </div>
                 </div>
-                <Button
-                    onClick={() => setIsRequestModalOpen(true)}
-                    className="bg-slate-900 text-white hover:bg-slate-800 px-6 h-10 shadow-sm font-semibold"
-                >
-                    <Plus className="w-4 h-4 mr-2" />
-                    New Request
-                </Button>
-            </div>
 
-            {/* Tabs */}
-            <div className="flex items-center gap-6 border-b border-slate-200">
-                {(user?.role === 'ADMIN' || user?.role === 'HR') && (
+                {/* Tabs */}
+                <div className="flex items-center gap-6 border-b border-slate-200">
+                    {(user?.role === 'ADMIN' || user?.role === 'HR') && (
+                        <button
+                            onClick={() => setActiveTab('TEAM_LEAVES')}
+                            className={`pb-3 text-sm font-bold uppercase tracking-wider transition-all border-b-2 ${activeTab === 'TEAM_LEAVES'
+                                ? 'border-indigo-600 text-indigo-600'
+                                : 'border-transparent text-slate-400 hover:text-slate-600'
+                                }`}
+                        >
+                            Team Requests
+                        </button>
+                    )}
                     <button
-                        onClick={() => setActiveTab('TEAM_LEAVES')}
-                        className={`pb-3 text-sm font-bold uppercase tracking-wider transition-all border-b-2 ${activeTab === 'TEAM_LEAVES'
-                            ? 'border-slate-900 text-slate-900'
+                        onClick={() => setActiveTab('MY_LEAVES')}
+                        className={`pb-3 text-sm font-bold uppercase tracking-wider transition-all border-b-2 ${activeTab === 'MY_LEAVES'
+                            ? 'border-indigo-600 text-indigo-600'
                             : 'border-transparent text-slate-400 hover:text-slate-600'
                             }`}
                     >
-                        Team Requests
+                        My History
                     </button>
-                )}
-                <button
-                    onClick={() => setActiveTab('MY_LEAVES')}
-                    className={`pb-3 text-sm font-bold uppercase tracking-wider transition-all border-b-2 ${activeTab === 'MY_LEAVES'
-                        ? 'border-slate-900 text-slate-900'
-                        : 'border-transparent text-slate-400 hover:text-slate-600'
-                        }`}
-                >
-                    My History
-                </button>
-            </div>
-
-            {/* Leaves List */}
-            <div className="space-y-4">
-                <div className="flex items-center justify-between px-1">
-                    <h2 className="text-sm font-bold uppercase tracking-widest text-slate-400 text-[10px]">Request Log</h2>
-                    <span className="text-[10px] uppercase font-bold text-slate-400">
-                        Total: {leaves.length}
-                    </span>
                 </div>
-                <Card className="border-slate-200 shadow-sm overflow-hidden bg-white">
-                    <div className="overflow-x-auto">
-                        <table className="w-full text-left text-sm">
-                            <thead className="bg-slate-50/50 border-b border-slate-100">
-                                <tr>
-                                    <th className="px-6 py-3 text-[10px] font-bold text-slate-400 uppercase tracking-wider">Employee</th>
-                                    <th className="px-6 py-3 text-[10px] font-bold text-slate-400 uppercase tracking-wider">Period</th>
-                                    <th className="px-6 py-3 text-[10px] font-bold text-slate-400 uppercase tracking-wider">Duration</th>
-                                    <th className="px-6 py-3 text-[10px] font-bold text-slate-400 uppercase tracking-wider">Reason</th>
-                                    <th className="px-6 py-3 text-[10px] font-bold text-slate-400 uppercase tracking-wider w-[120px]">Status</th>
-                                    {activeTab === 'TEAM_LEAVES' && <th className="px-6 py-3 text-[10px] font-bold text-slate-400 uppercase tracking-wider text-right">Decisions</th>}
-                                </tr>
-                            </thead>
-                            <tbody className="divide-y divide-slate-100">
+
+                {/* Leaves List */}
+                <div className="space-y-4">
+                    <div className="flex items-center justify-between">
+                        <h2 className="text-sm font-bold text-slate-500 uppercase tracking-widest flex items-center gap-2">
+                            Request Log
+                            <span className="text-[10px] font-bold text-indigo-600 bg-indigo-50 border border-indigo-100 px-2 py-0.5 rounded-full">
+                                {leaves.length} Total
+                            </span>
+                        </h2>
+                    </div>
+                    <Card className="border-none shadow-sm overflow-hidden bg-white">
+                        <Table>
+                            <TableHeader className="bg-slate-50 border-b border-slate-100">
+                                <TableRow className="hover:bg-transparent">
+                                    <TableHead className="px-6 py-3 text-[11px] font-bold text-slate-400 uppercase tracking-wider">Employee</TableHead>
+                                    <TableHead className="px-6 py-3 text-[11px] font-bold text-slate-400 uppercase tracking-wider">Period</TableHead>
+                                    <TableHead className="px-6 py-3 text-[11px] font-bold text-slate-400 uppercase tracking-wider">Duration</TableHead>
+                                    <TableHead className="px-6 py-3 text-[11px] font-bold text-slate-400 uppercase tracking-wider">Reason</TableHead>
+                                    <TableHead className="px-6 py-3 text-[11px] font-bold text-slate-400 uppercase tracking-wider w-[120px]">Status</TableHead>
+                                    {activeTab === 'TEAM_LEAVES' && <TableHead className="px-6 py-3 text-[11px] font-bold text-slate-400 uppercase tracking-wider text-right">Actions</TableHead>}
+                                </TableRow>
+                            </TableHeader>
+                            <TableBody className="divide-y divide-slate-100">
                                 {isLoading ? (
-                                    <tr><td colSpan={6} className="p-8 text-center text-slate-500">Loading requests...</td></tr>
+                                    <TableRow>
+                                        <TableCell colSpan={6} className="p-8 text-center text-slate-500">Loading requests...</TableCell>
+                                    </TableRow>
                                 ) : leaves.length === 0 ? (
-                                    <tr><td colSpan={6} className="p-12 text-center text-slate-400">No leave requests found.</td></tr>
+                                    <TableRow>
+                                        <TableCell colSpan={6} className="p-12 text-center text-slate-400">No leave requests found.</TableCell>
+                                    </TableRow>
                                 ) : (
                                     leaves.map((leave) => (
-                                        <tr key={leave.id} className="hover:bg-slate-50/50 transition-colors">
-                                            <td className="px-6 py-4">
+                                        <TableRow key={leave.id} className="hover:bg-slate-50/50 transition-colors">
+                                            <TableCell className="px-6 py-4">
                                                 <div className="flex items-center gap-3">
                                                     <Avatar className="h-8 w-8 rounded-lg border border-slate-200">
                                                         <AvatarFallback className="bg-slate-100 text-slate-600 font-bold text-[10px]">
@@ -214,28 +231,28 @@ export default function LeavesPage() {
                                                         <p className="text-xs text-slate-500">{leave.user.email}</p>
                                                     </div>
                                                 </div>
-                                            </td>
-                                            <td className="px-6 py-4 text-slate-600 font-medium whitespace-nowrap">
+                                            </TableCell>
+                                            <TableCell className="px-6 py-4 text-slate-600 font-medium whitespace-nowrap">
                                                 {new Date(leave.startDate).toLocaleDateString()} <span className="text-slate-300 mx-1">—</span> {new Date(leave.endDate).toLocaleDateString()}
-                                            </td>
-                                            <td className="px-6 py-4 text-slate-900 font-bold">
+                                            </TableCell>
+                                            <TableCell className="px-6 py-4 text-slate-900 font-bold">
                                                 {leave.totalDays} days
-                                            </td>
-                                            <td className="px-6 py-4 text-slate-500 text-xs max-w-xs truncate font-medium">
+                                            </TableCell>
+                                            <TableCell className="px-6 py-4 text-slate-500 text-xs max-w-xs truncate font-medium">
                                                 {leave.reason}
-                                            </td>
-                                            <td className="px-6 py-4">
+                                            </TableCell>
+                                            <TableCell className="px-6 py-4">
                                                 <Badge className={`
-                                                font-bold border-0 px-2 py-0.5 text-[9px] uppercase tracking-widest
-                                                ${leave.status === 'APPROVED' ? 'bg-emerald-50 text-emerald-700' :
-                                                        leave.status === 'REJECTED' ? 'bg-rose-50 text-rose-700' :
-                                                            'bg-amber-50 text-amber-700'}
+                                                font-bold border-0 px-2.5 py-0.5 text-[10px] uppercase tracking-tight rounded-full
+                                                ${leave.status === 'APPROVED' ? 'bg-emerald-50 text-emerald-700 border-emerald-100' :
+                                                        leave.status === 'REJECTED' ? 'bg-rose-50 text-rose-700 border-rose-100' :
+                                                            'bg-amber-50 text-amber-700 border-amber-100'}
                                             `}>
                                                     {leave.status}
                                                 </Badge>
-                                            </td>
+                                            </TableCell>
                                             {activeTab === 'TEAM_LEAVES' && (
-                                                <td className="px-6 py-4 text-right">
+                                                <TableCell className="px-6 py-4 text-right">
                                                     {leave.status === 'PENDING' ? (
                                                         <div className="flex justify-end gap-2">
                                                             <Button
@@ -257,15 +274,15 @@ export default function LeavesPage() {
                                                     ) : (
                                                         <span className="text-xs text-slate-400 font-medium italic">Completed</span>
                                                     )}
-                                                </td>
+                                                </TableCell>
                                             )}
-                                        </tr>
+                                        </TableRow>
                                     ))
                                 )}
-                            </tbody>
-                        </table>
-                    </div>
-                </Card>
+                            </TableBody>
+                        </Table>
+                    </Card>
+                </div>
             </div>
 
             {/* Request Modal */}
@@ -330,7 +347,7 @@ export default function LeavesPage() {
                                     <Button
                                         type="submit"
                                         disabled={isSubmitting}
-                                        className="bg-slate-900 hover:bg-slate-800 text-white rounded-xl shadow-lg font-semibold"
+                                        className="bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl shadow-lg shadow-indigo-200 font-semibold"
                                     >
                                         {isSubmitting ? 'Submitting...' : 'Submit Request'}
                                     </Button>

@@ -54,8 +54,8 @@ export default function RedesignedDashboard() {
     if (authLoading || isLoading) return <LoadingSkeleton />
 
     return (
-        <div className="min-h-screen bg-[#fcfcfd] p-6 lg:p-10">
-            <div className="max-w-[1600px] mx-auto space-y-10">
+        <div className="-m-4 lg:-m-8 bg-[#f8fafc] min-h-[calc(100vh-4rem)] pb-20">
+            <div className="max-w-[1400px] mx-auto px-6 pt-8 space-y-10">
                 {/* Global Header */}
                 <header className="flex flex-col md:flex-row md:items-center justify-between gap-6">
                     <div>
@@ -74,13 +74,13 @@ export default function RedesignedDashboard() {
                                 <Button variant="outline" className="hidden sm:flex gap-2 border-slate-200">
                                     <FileText className="w-4 h-4" /> Reports
                                 </Button>
-                                <Button className="bg-indigo-600 hover:bg-indigo-700 text-white gap-2 shadow-sm shadow-indigo-200">
+                                <Button className="bg-indigo-600 hover:bg-indigo-700 text-white gap-2 shadow-lg shadow-indigo-200 border-none">
                                     <UserPlus className="w-4 h-4" /> Add Personnel
                                 </Button>
                             </>
                         ) : (
                             <Link href="/leaves/new">
-                                <Button className="bg-indigo-600 hover:bg-indigo-700 text-white gap-2 shadow-sm shadow-indigo-200">
+                                <Button className="bg-indigo-600 hover:bg-indigo-700 text-white gap-2 shadow-lg shadow-indigo-200 border-none">
                                     <Plus className="w-4 h-4" /> Request Leave
                                 </Button>
                             </Link>
