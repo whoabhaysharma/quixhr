@@ -18,42 +18,50 @@ class AuthController {
         }
     }
 
-    async firebaseLogin(req: Request, res: Response, next: NextFunction): Promise<void> {
+    async sendVerification(req: Request, res: Response, next: NextFunction): Promise<void> {
         try {
-            const { idToken } = req.body;
-
-            if (!idToken) {
-                res.status(400).json({ success: false, error: { message: 'ID Token is required' } });
+            const { email } = req.body;
+            if (!email) {
+                res.status(400).json({ success: false, error: { message: 'Email is required' } });
                 return;
             }
-
-            const result = await authService.loginWithFirebase(idToken);
+            const result = await authService.sendVerificationOtp(email);
             res.json({ success: true, data: result });
         } catch (error: any) {
-            res.status(401).json({ success: false, error: { message: error.message || 'Invalid Firebase Token' } });
+            res.status(400).json({ success: false, error: { message: error.message || 'Failed to send verification code' } });
         }
     }
 
     async register(req: Request, res: Response, next: NextFunction): Promise<void> {
         try {
-            const { idToken, name, email, password } = req.body;
+            const { name, email, password, otp, organizationName } = req.body;
 
-            if (idToken) {
-                const result = await authService.registerWithFirebase(idToken, name);
-                res.json({ success: true, data: result });
+            if (!email || !password || !name || !otp || !organizationName) {
+                res.status(400).json({ success: false, error: { message: 'Name, email, password, organization name, and verification code are required' } });
                 return;
             }
 
-            if (email && password) {
-                const result = await authService.registerWithEmail(email, password, name);
-                res.json({ success: true, data: result });
-                return;
-            }
-
-            res.status(400).json({ success: false, error: { message: 'Either ID Token or Email/Password is required' } });
+            const result = await authService.registerWithEmail(email, password, name, otp, organizationName);
+            res.json({ success: true, data: result });
 
         } catch (error: any) {
             res.status(400).json({ success: false, error: { message: error.message || 'Registration failed' } });
+        }
+    }
+
+    async registerWithInvite(req: Request, res: Response, next: NextFunction): Promise<void> {
+        try {
+            const { token, name, password } = req.body;
+
+            if (!token || !name || !password) {
+                res.status(400).json({ success: false, error: { message: 'Token, name, and password are required' } });
+                return;
+            }
+
+            const result = await authService.registerWithInvite(token, name, password);
+            res.status(201).json({ success: true, data: result });
+        } catch (error: any) {
+            res.status(400).json({ success: false, error: { message: error.message || 'Failed to register with invite' } });
         }
     }
 
@@ -70,6 +78,22 @@ class AuthController {
             res.json({ success: true, data: result });
         } catch (error: any) {
             res.status(400).json({ success: false, error: { message: error.message || 'Failed to generate reset link' } });
+        }
+    }
+
+    async resetPassword(req: Request, res: Response, next: NextFunction): Promise<void> {
+        try {
+            const { token, newPassword } = req.body;
+
+            if (!token || !newPassword) {
+                res.status(400).json({ success: false, error: { message: 'Token and new password are required' } });
+                return;
+            }
+
+            const result = await authService.resetPassword(token, newPassword);
+            res.json({ success: true, data: result });
+        } catch (error: any) {
+            res.status(400).json({ success: false, error: { message: error.message || 'Failed to reset password' } });
         }
     }
 }

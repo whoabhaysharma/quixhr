@@ -11,9 +11,9 @@ datasource db {
 
 enum Role {
   SUPER_ADMIN // Platform Owner
-  ADMIN       // SaaS Owner (Organization Owner)
-  HR          // Organization Admin
-  EMPLOYEE    // Organization Staff
+  ADMIN // SaaS Owner (Organization Owner)
+  HR // Organization Admin
+  EMPLOYEE // Organization Staff
 }
 
 enum LeaveStatus {
@@ -23,86 +23,150 @@ enum LeaveStatus {
   CANCELLED
 }
 
+enum LeaveType {
+  ANNUAL
+  SICK
+  CASUAL
+  MATERNITY
+  PATERNITY
+  UNPAID
+}
+
+// --- MODELS ---
+
 // --- MODELS ---
 
 model Organization {
-  id            Int            @id @default(autoincrement())
-  name          String
-  
-  // Relations
-  users         User[]
-  subscriptions Subscription[]
+  id   String @id @default(uuid())
+  name String
 
-  createdAt     DateTime       @default(now())
-  updatedAt     DateTime       @updatedAt
+  // Relations
+  users            User[]
+  subscriptions    Subscription[]
+  invites          Invite[]
+  holidayCalendars HolidayCalendar[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
 
 model User {
-  id            Int          @id @default(autoincrement())
-  email         String       @unique
-  name          String?
-  avatar        String?
-  
-  // Auth Fields (Both optional to allow Google OR Email/Pass)
-  password      String?      // Always store HASHED
-  googleLoginId String?      @unique 
-  
-  role          Role         @default(EMPLOYEE)
-  
+  id     String  @id @default(uuid())
+  email  String  @unique
+  name   String?
+  avatar String?
+
+  // Auth Fields
+  password String? // Always store HASHED
+
+  role Role @default(EMPLOYEE)
+
   // Multi-tenancy
-  organizationId Int?
+  organizationId String?
   organization   Organization? @relation(fields: [organizationId], references: [id])
-  
-  leaves        Leave[]
-  
-  createdAt     DateTime     @default(now())
-  updatedAt     DateTime     @updatedAt
+
+  // Holiday Calendar
+  holidayCalendarId String?
+  holidayCalendar   HolidayCalendar? @relation(fields: [holidayCalendarId], references: [id])
+
+  leaves Leave[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
 
 model Subscription {
-  id               Int          @id @default(autoincrement())
-  organizationId   Int
-  planId           Int
-  
+  id             String @id @default(uuid())
+  organizationId String
+  planId         String
+
   // Billing Info
-  orderId          String       @unique // From Razorpay/Stripe
-  amountPaid       Int
-  status           String       @default("COMPLETED") 
-  
+  orderId    String @unique // From Razorpay/Stripe
+  amountPaid Int
+  status     String @default("COMPLETED")
+
   // Validity
-  startDate        DateTime     @default(now())
-  endDate          DateTime     // Calculated as startDate + plan.durationDays
+  startDate DateTime @default(now())
+  endDate   DateTime // Calculated as startDate + plan.durationDays
 
-  organization     Organization @relation(fields: [organizationId], references: [id])
-  plan             Plan         @relation(fields: [planId], references: [id])
+  organization Organization @relation(fields: [organizationId], references: [id])
+  plan         Plan         @relation(fields: [planId], references: [id])
 
-  createdAt        DateTime     @default(now())
+  createdAt DateTime @default(now())
 }
 
 model Plan {
-  id            Int            @id @default(autoincrement())
-  name          String   
-  price         Int      
-  durationDays  Int      
-  maxEmployees  Int      
+  id           String @id @default(uuid())
+  name         String
+  price        Int
+  durationDays Int
+  maxEmployees Int
 
   subscriptions Subscription[]
 }
 
 model Leave {
-  id          Int         @id @default(autoincrement())
-  userId      Int
-  
-  startDate   DateTime
-  endDate     DateTime
-  totalDays   Float       // Supports half-days (e.g., 0.5)
-  reason      String?
-  
-  status      LeaveStatus @default(PENDING)
-  adminNotes  String?     // HR feedback for rejection
+  id     String @id @default(uuid())
+  userId String
 
-  user        User        @relation(fields: [userId], references: [id])
+  type      LeaveType @default(ANNUAL)
+  startDate DateTime
+  endDate   DateTime
+  totalDays Float // Supports half-days (e.g., 0.5)
+  reason    String?
 
-  createdAt   DateTime    @default(now())
-  updatedAt   DateTime    @updatedAt
+  status     LeaveStatus @default(PENDING)
+  adminNotes String? // HR feedback for rejection
+
+  user User @relation(fields: [userId], references: [id])
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Invite {
+  id    String @id @default(uuid())
+  email String
+  token String @unique
+  role  Role   @default(EMPLOYEE)
+
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id])
+
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+
+  @@unique([email, organizationId])
+}
+
+model HolidayCalendar {
+  id          String  @id @default(uuid())
+  name        String // e.g., "India Holidays 2025"
+  description String?
+  year        Int // Year for this calendar
+
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  holidays Holiday[]
+  users    User[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([organizationId, name])
+}
+
+model Holiday {
+  id          String   @id @default(uuid())
+  name        String // e.g., "New Year's Day"
+  date        DateTime // The holiday date (or start date)
+  endDate     DateTime? // Optional end date for multi-day holidays
+  description String? // Optional description
+
+  calendarId String
+  calendar   HolidayCalendar @relation(fields: [calendarId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }

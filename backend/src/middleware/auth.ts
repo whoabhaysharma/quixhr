@@ -3,9 +3,9 @@ import jwt from 'jsonwebtoken';
 import { Role } from '@prisma/client';
 
 interface TokenPayload {
-    id: number;
+    id: string;
     role: Role;
-    organizationId?: number; // Optional until onboarding is complete
+    organizationId?: string; // Optional until onboarding is complete
     iat: number;
     exp: number;
 }

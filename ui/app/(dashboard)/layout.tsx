@@ -17,7 +17,8 @@ import {
     Bell,
     ChevronDown,
     User,
-    Plus
+    Plus,
+    CalendarDays
 } from "lucide-react"
 import {
     Popover,
@@ -67,6 +68,7 @@ export default function DashboardLayout({
         { name: "Overview", href: "/dashboard", icon: LayoutDashboard },
         { name: "People", href: "/members", icon: Users, roles: ['ADMIN', 'HR', 'SUPER_ADMIN'] },
         { name: "Time Off", href: "/leaves", icon: Calendar },
+        { name: "Holidays", href: "/holidays", icon: CalendarDays },
         // { name: "Settings", href: "/settings", icon: Settings },
     ]
 

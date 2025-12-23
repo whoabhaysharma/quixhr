@@ -2,12 +2,12 @@ import prisma from './prisma';
 import { Leave, LeaveStatus } from '@prisma/client';
 
 export const leaveService = {
-    async getAllLeaves(organizationId?: number): Promise<Leave[]> {
+    async getAllLeaves(organizationId?: string | number): Promise<Leave[]> {
         if (organizationId) {
             return prisma.leave.findMany({
                 where: {
                     user: {
-                        organizationId,
+                        organizationId: String(organizationId),
                     },
                 },
                 include: {
@@ -22,9 +22,9 @@ export const leaveService = {
         });
     },
 
-    async getLeavesByUserId(userId: number): Promise<Leave[]> {
+    async getLeavesByUserId(userId: string | number): Promise<Leave[]> {
         return prisma.leave.findMany({
-            where: { userId },
+            where: { userId: String(userId) },
             include: {
                 user: true,
             },
@@ -32,21 +32,23 @@ export const leaveService = {
     },
 
     async requestLeave(data: {
-        userId: number;
+        userId: string | number;
         startDate: Date;
         endDate: Date;
         totalDays: number;
         reason?: string;
     }): Promise<Leave> {
+        const { userId, ...rest } = data;
         return prisma.leave.create({
             data: {
-                ...data,
+                ...rest,
+                userId: String(userId),
                 status: LeaveStatus.PENDING,
             },
         });
     },
 
-    async updateLeaveStatus(id: number, status: LeaveStatus, adminNotes?: string): Promise<Leave> {
+    async updateLeaveStatus(id: string, status: LeaveStatus, adminNotes?: string): Promise<Leave> {
         return prisma.leave.update({
             where: { id },
             data: {

@@ -9,16 +9,16 @@ export const userService = {
         });
     },
 
-    async getAllUsers(organizationId?: number): Promise<User[]> {
+    async getAllUsers(organizationId?: string | number): Promise<User[]> {
         if (organizationId) {
             return prisma.user.findMany({
-                where: { organizationId },
+                where: { organizationId: String(organizationId) },
             });
         }
         return prisma.user.findMany();
     },
 
-    async getUserById(id: number): Promise<User | null> {
+    async getUserById(id: string): Promise<User | null> {
         return prisma.user.findUnique({
             where: { id },
             include: {
@@ -32,9 +32,8 @@ export const userService = {
         email: string;
         name?: string;
         password?: string;
-        organizationId: number;
+        organizationId?: string;
         role?: Role;
-        googleLoginId?: string;
         avatar?: string;
     }): Promise<User> {
         const { password, ...rest } = data;
@@ -52,7 +51,7 @@ export const userService = {
         });
     },
 
-    async updateUser(id: number, data: Partial<User> & { password?: string }): Promise<User> {
+    async updateUser(id: string, data: Partial<User> & { password?: string }): Promise<User> {
         const { password, ...rest } = data;
         let updateData: any = { ...rest };
 
@@ -66,7 +65,7 @@ export const userService = {
         });
     },
 
-    async deleteUser(id: number): Promise<void> {
+    async deleteUser(id: string): Promise<void> {
         await prisma.user.delete({
             where: { id },
         });

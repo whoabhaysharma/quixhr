@@ -4,9 +4,9 @@ declare global {
   namespace Express {
     interface Request {
       user?: {
-        id: number;
+        id: string;
         role: Role;
-        organizationId?: number; // Optional until onboarding is complete
+        organizationId?: string; // Optional until onboarding is complete
       };
     }
   }

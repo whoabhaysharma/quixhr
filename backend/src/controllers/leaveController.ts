@@ -11,7 +11,7 @@ class LeaveController {
             // If Super Admin, they might query specific org
             // @ts-ignore - Role might not be regenerated yet
             if (req.user?.role === 'SUPER_ADMIN' && req.query.organizationId) {
-                organizationId = Number(req.query.organizationId);
+                organizationId = req.query.organizationId as string;
             }
 
             // @ts-ignore
@@ -29,7 +29,12 @@ class LeaveController {
 
     async getLeavesByUserId(req: Request, res: Response, next: NextFunction): Promise<void> {
         try {
-            const userId = Number(req.params.userId || req.user?.id); // Default to self if not provided (though route has :userId)
+            const userId = req.params.userId || req.user?.id; // Default to self if not provided
+
+            if (!userId) {
+                res.status(400).json({ success: false, error: { message: 'User ID required' } });
+                return;
+            }
 
             // Authorization check: Employees can only view their own leaves
             if (req.user?.role === Role.EMPLOYEE && req.user.id !== userId) {
@@ -71,7 +76,7 @@ class LeaveController {
 
     async updateLeaveStatus(req: Request, res: Response, next: NextFunction): Promise<void> {
         try {
-            const id = Number(req.params.id);
+            const id = req.params.id;
             const { status, adminNotes } = req.body;
 
             if (!Object.values(LeaveStatus).includes(status)) {

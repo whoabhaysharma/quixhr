@@ -18,6 +18,10 @@ import subscriptionRoutes from './routes/subscriptions';
 import planRoutes from './routes/plans';
 import onboardingRoutes from './routes/onboarding';
 import memberRoutes from './routes/members';
+import inviteRoutes from './routes/invites';
+import dashboardRoutes from './routes/dashboard';
+import holidayCalendarRoutes from './routes/holidayCalendars';
+import holidayRoutes from './routes/holidays';
 
 const app = express();
 
@@ -56,6 +60,10 @@ app.use('/api/v1/subscriptions', subscriptionRoutes);
 app.use('/api/v1/plans', planRoutes);
 app.use('/api/v1/onboarding', onboardingRoutes);
 app.use('/api/v1/members', memberRoutes);
+app.use('/api/v1/invites', inviteRoutes);
+app.use('/api/v1/dashboard', dashboardRoutes);
+app.use('/api/v1/holiday-calendars', holidayCalendarRoutes);
+app.use('/api/v1/holidays', holidayRoutes);
 
 // 404 handler
 app.use(notFoundHandler);

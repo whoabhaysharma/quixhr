@@ -31,6 +31,8 @@ import {
 } from "lucide-react"
 import { useAdminStats, useEmployeeStats } from "@/lib/hooks/useDashboard"
 import { useLeaves } from "@/lib/hooks/useLeaves"
+import { useUpcomingHolidays } from "@/lib/hooks/useHolidays"
+import { format } from "date-fns"
 
 export default function RedesignedDashboard() {
     const { user, isLoading: authLoading } = useAuth()
@@ -209,6 +211,8 @@ function AdminView({ stats, leaves }: any) {
 /* -------------------------------------------------------------------------- */
 
 function EmployeeView({ user, stats, leaves }: any) {
+    const { data: holidays = [], isLoading: holidaysLoading } = useUpcomingHolidays(3)
+
     return (
         <div className="space-y-8">
             {/* Balance Overview */}
@@ -265,12 +269,33 @@ function EmployeeView({ user, stats, leaves }: any) {
                 <div className="space-y-6">
                     <Card className="border-slate-200/60 shadow-sm">
                         <CardHeader className="border-b border-slate-50">
-                            <CardTitle className="text-sm font-bold text-slate-800">Company Holidays</CardTitle>
+                            <CardTitle className="text-sm font-bold text-slate-800">Upcoming Holidays</CardTitle>
                         </CardHeader>
                         <CardContent className="pt-6 space-y-6">
-                            <HolidayItem date="Jan 01" name="New Year's Day" subtitle="Global Holiday" />
-                            <HolidayItem date="Jan 26" name="Republic Day" subtitle="National Holiday" />
-                            <HolidayItem date="Feb 14" name="Spring Break" subtitle="Corporate Floating" />
+                            {holidaysLoading ? (
+                                <div className="space-y-4 animate-pulse">
+                                    {[1, 2, 3].map(i => (
+                                        <div key={i} className="flex items-center gap-4">
+                                            <div className="h-12 w-12 bg-slate-100 rounded-xl"></div>
+                                            <div className="space-y-2 flex-1">
+                                                <div className="h-4 bg-slate-100 rounded w-3/4"></div>
+                                                <div className="h-3 bg-slate-100 rounded w-1/2"></div>
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                            ) : holidays.length === 0 ? (
+                                <p className="text-sm text-slate-500 text-center py-4">No upcoming holidays</p>
+                            ) : (
+                                holidays.map((holiday: any) => (
+                                    <HolidayItem
+                                        key={holiday.id}
+                                        date={format(new Date(holiday.date), 'MMM d')}
+                                        name={holiday.name}
+                                        subtitle={holiday.description || "Holiday"}
+                                    />
+                                ))
+                            )}
                         </CardContent>
                     </Card>
                 </div>

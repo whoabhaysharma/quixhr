@@ -6,7 +6,7 @@ export const planService = {
         return prisma.plan.findMany();
     },
 
-    async getPlanById(id: number): Promise<Plan | null> {
+    async getPlanById(id: string): Promise<Plan | null> {
         return prisma.plan.findUnique({
             where: { id },
         });
@@ -23,14 +23,14 @@ export const planService = {
         });
     },
 
-    async updatePlan(id: number, data: Partial<Plan>): Promise<Plan> {
+    async updatePlan(id: string, data: Partial<Plan>): Promise<Plan> {
         return prisma.plan.update({
             where: { id },
             data,
         });
     },
 
-    async deletePlan(id: number): Promise<void> {
+    async deletePlan(id: string): Promise<void> {
         await prisma.plan.delete({
             where: { id },
         });
