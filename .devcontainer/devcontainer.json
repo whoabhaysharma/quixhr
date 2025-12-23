@@ -1,20 +1,10 @@
 {
-    "name": "QuixHR Backend Dev Container",
-    "dockerComposeFile": [
-        "../docker-compose.yml"
-    ],
-    "service": "backend",
-    "workspaceFolder": "/app",
-    "customizations": {
-        "vscode": {
-            "extensions": [
-                "dbaeumer.vscode-eslint",
-                "esbenp.prettier-vscode",
-                "Prisma.prisma",
-                "ms-azuretools.vscode-docker"
-            ]
-        }
-    },
-    "postCreateCommand": "npm install && npx prisma generate",
-    "shutdownAction": "stopCompose"
+  "name": "Quixhr Backend Dev",
+  "dockerComposeFile": "../docker-compose.yml",
+  "service": "backend",
+  "workspaceFolder": "/app",
+  "runArgs": [
+    "--dns=8.8.8.8",
+    "--dns=1.1.1.1"
+  ]
 }

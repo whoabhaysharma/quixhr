@@ -1,31 +1,49 @@
-version: '3.8'
+version: "3.9"
 
 services:
-  backend:
-    build: ./backend
-    ports:
-      - "3000:3000"
-    environment:
-      - DATABASE_URL=postgresql://postgres:postgres@db:5432/quixhr?schema=public
-      - JWT_SECRET=supersecretkey
-      - PORT=3000
-    depends_on:
-      - db
-    volumes:
-      - ./backend:/app
-      - /app/node_modules
-
-  db:
-    image: postgres:15-alpine
-    restart: always
+  database:
+    image: postgres:15
+    restart: unless-stopped
     environment:
       POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgres
+      POSTGRES_PASSWORD: postgres123
       POSTGRES_DB: quixhr
     ports:
       - "5433:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U postgres -d quixhr" ]
+      interval: 3s
+      timeout: 3s
+      retries: 10
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile.dev
+
+    restart: unless-stopped
+
+    environment:
+      DATABASE_URL: postgresql://postgres:postgres123@database:5432/quixhr
+      JWT_SECRET: supersecretkey123
+      PORT: 3000
+      NODE_ENV: development
+      CHOKIDAR_USEPOLLING: "true"
+
+    ports:
+      - "3000:3000"
+
+    depends_on:
+      database:
+        condition: service_healthy
+
+    volumes:
+      - ./backend:/app
+      - /app/node_modules
+
+    command: npm run dev:watch
 
 volumes:
   postgres_data:
