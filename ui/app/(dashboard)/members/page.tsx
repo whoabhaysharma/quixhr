@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -17,6 +17,7 @@ import {
     Shield,
     MoreHorizontal
 } from "lucide-react"
+import { useMembers, useSendInvite } from "@/lib/hooks/useMembers"
 
 interface User {
     id: number
@@ -28,79 +29,34 @@ interface User {
 
 export default function MembersPage() {
     const { logout } = useAuth()
-    const [allUsers, setAllUsers] = useState<User[]>([])
-    const [isLoading, setIsLoading] = useState(true)
     const [isAddModalOpen, setIsAddModalOpen] = useState(false)
-    const [isSubmitting, setIsSubmitting] = useState(false)
     const [error, setError] = useState("")
 
     // Form State
-    // const [newName, setNewName] = useState("") // Removed for invite flow
     const [newEmail, setNewEmail] = useState("")
     const [newRole, setNewRole] = useState("EMPLOYEE")
 
-    const fetchMembers = async () => {
-        setIsLoading(true)
-        try {
-            const token = localStorage.getItem("token")
-            const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/members`, {
-                headers: {
-                    'Authorization': `Bearer ${token}`
-                }
-            })
-            const data = await response.json()
-            if (response.ok) {
-                setAllUsers(data.data.users)
-            } else {
-                console.error("Failed to fetch members", data)
-            }
-        } catch (err) {
-            console.error(err)
-        } finally {
-            setIsLoading(false)
-        }
-    }
-
-    useEffect(() => {
-        fetchMembers()
-    }, [])
+    // TanStack Query hooks
+    const { data: members = [], isLoading } = useMembers()
+    const sendInviteMutation = useSendInvite()
 
     const handleInviteMember = async (e: React.FormEvent) => {
         e.preventDefault()
-        setIsSubmitting(true)
         setError("")
 
         try {
-            const token = localStorage.getItem("token")
-            const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/invites`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${token}`
-                },
-                body: JSON.stringify({
-                    email: newEmail,
-                    role: newRole
-                })
+            await sendInviteMutation.mutateAsync({
+                email: newEmail,
+                role: newRole as 'ADMIN' | 'HR' | 'EMPLOYEE'
             })
-
-            const data = await response.json()
-
-            if (!response.ok) {
-                throw new Error(data.error || "Failed to send invitation")
-            }
 
             // Success
             setIsAddModalOpen(false)
             setNewEmail("")
             setNewRole("EMPLOYEE")
-            // Ideally assume success feedback
             alert("Invitation sent successfully!")
-
         } catch (err: any) {
-            setError(err.message)
-        } finally {
-            setIsSubmitting(false)
+            setError(err.response?.data?.error?.message || err.message)
         }
     }
 
@@ -129,7 +85,7 @@ export default function MembersPage() {
                 <div className="flex items-center justify-between px-1">
                     <h2 className="text-sm font-bold uppercase tracking-widest text-slate-400 text-[10px]">Team Directory</h2>
                     <span className="text-[10px] uppercase font-bold text-slate-400">
-                        Total: {allUsers.length}
+                        Total: {members.length}
                     </span>
                 </div>
 
@@ -150,7 +106,7 @@ export default function MembersPage() {
                                     <tr>
                                         <td colSpan={5} className="p-8 text-center text-slate-500">Loading directory...</td>
                                     </tr>
-                                ) : allUsers.length === 0 ? (
+                                ) : members.length === 0 ? (
                                     <tr>
                                         <td colSpan={5} className="p-12 text-center text-slate-400">
                                             <Users className="w-12 h-12 mx-auto mb-3 opacity-20" />
@@ -158,7 +114,7 @@ export default function MembersPage() {
                                         </td>
                                     </tr>
                                 ) : (
-                                    allUsers.map((user) => (
+                                    members.map((user: any) => (
                                         <tr key={user.id} className="hover:bg-slate-50/50 transition-colors group">
                                             <td className="px-6 py-4">
                                                 <div className="flex items-center gap-3">
@@ -258,10 +214,10 @@ export default function MembersPage() {
                             </Button>
                             <Button
                                 type="submit"
-                                disabled={isSubmitting}
+                                disabled={sendInviteMutation.isPending}
                                 className="bg-slate-900 hover:bg-slate-800 text-white rounded-xl shadow-lg font-semibold"
                             >
-                                {isSubmitting ? 'Sending...' : 'Send Invite'}
+                                {sendInviteMutation.isPending ? 'Sending...' : 'Send Invitation'}
                             </Button>
                         </div>
                     </form>

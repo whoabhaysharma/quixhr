@@ -7,38 +7,30 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import Link from "next/link"
 import { Eye, EyeOff } from "lucide-react"
+import { useLogin } from "@/lib/hooks/useAuth"
 
 export default function LoginPage() {
     const { login } = useAuth()
     const [email, setEmail] = useState("")
     const [password, setPassword] = useState("")
     const [showPassword, setShowPassword] = useState(false)
-    const [isLoading, setIsLoading] = useState(false)
     const [error, setError] = useState("")
 
-
-
+    const loginMutation = useLogin()
 
     const handleEmailLogin = async (e: React.FormEvent) => {
         e.preventDefault()
-        setIsLoading(true)
         setError("")
+
         try {
-            const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/auth/login`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ email, password })
-            })
-            const data = await response.json()
-            if (response.ok) {
-                login(data.data.token)
+            const response = await loginMutation.mutateAsync({ email, password })
+            if (response.success) {
+                login(response.data.token)
             } else {
-                setError(data.error?.message || "Invalid credentials")
+                setError(response.error?.message || "Invalid credentials")
             }
         } catch (err: any) {
-            setError(err.message)
-        } finally {
-            setIsLoading(false)
+            setError(err.response?.data?.error?.message || "Login failed")
         }
     }
 
@@ -134,10 +126,10 @@ export default function LoginPage() {
 
                             <Button
                                 type="submit"
-                                disabled={isLoading}
-                                className="w-full h-10 bg-slate-900 hover:bg-slate-800 text-white rounded-md font-medium transition-all shadow-lg shadow-slate-900/10"
+                                disabled={loginMutation.isPending}
+                                className="w-full bg-slate-900 hover:bg-slate-800 text-white font-bold py-3 rounded-xl shadow-lg transition-all"
                             >
-                                {isLoading ? "Signing in..." : "Sign In with Email"}
+                                {loginMutation.isPending ? "Signing in..." : "Sign In with Email"}
                             </Button>
                         </form>
 

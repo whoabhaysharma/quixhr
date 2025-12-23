@@ -8,6 +8,7 @@ import { Label } from "@/components/ui/label"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { Eye, EyeOff } from "lucide-react"
+import { authService } from "@/lib/services/auth"
 
 export default function RegisterPage() {
     const { login } = useAuth()
@@ -37,21 +38,14 @@ export default function RegisterPage() {
         }
 
         try {
-            const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/auth/send-verification`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ email })
-            })
-
-            const data = await response.json()
-
-            if (!response.ok) {
-                throw new Error(data.error?.message || "Failed to send verification code")
+            const response = await authService.sendVerificationCode(email)
+            if (response.success) {
+                setStep('verify')
+            } else {
+                throw new Error(response.error?.message || "Failed to send verification code")
             }
-
-            setStep('verify')
         } catch (err: any) {
-            setError(err.message)
+            setError(err.response?.data?.error?.message || err.message)
         } finally {
             setIsLoading(false)
         }
@@ -62,23 +56,25 @@ export default function RegisterPage() {
         setError("")
 
         try {
-            const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/auth/register`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ email, password, name, otp, organizationName })
+            const response = await authService.register({
+                email,
+                password,
+                name,
+                verificationCode: otp,
+                organizationName
             })
 
-            const data = await response.json()
-
-            if (!response.ok) {
-                throw new Error(data.error?.message || "Registration failed")
+            if (response.success) {
+                // Auto-login on success - need to call login endpoint
+                const loginRes = await authService.login(email, password)
+                if (loginRes.success) {
+                    login(loginRes.data.token)
+                }
+            } else {
+                throw new Error(response.error?.message || "Registration failed")
             }
-
-            // Auto-login on success
-            login(data.data.token)
-
         } catch (err: any) {
-            setError(err.message)
+            setError(err.response?.data?.error?.message || err.message)
         } finally {
             setIsLoading(false)
         }

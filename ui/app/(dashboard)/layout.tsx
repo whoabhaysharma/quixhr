@@ -63,12 +63,16 @@ export default function DashboardLayout({
 
     if (!isAuthenticated) return null
 
-    const navItems = [
+    const allNavItems = [
         { name: "Overview", href: "/dashboard", icon: LayoutDashboard },
-        { name: "People", href: "/members", icon: Users },
+        { name: "People", href: "/members", icon: Users, roles: ['ADMIN', 'HR', 'SUPER_ADMIN'] },
         { name: "Time Off", href: "/leaves", icon: Calendar },
         // { name: "Settings", href: "/settings", icon: Settings },
     ]
+
+    const navItems = allNavItems.filter(item =>
+        !item.roles || (user?.role && item.roles.includes(user.role))
+    )
 
     return (
         <div className="h-screen w-full bg-[#F8FAFC] flex font-sans text-neutral-900 overflow-hidden">

@@ -1,283 +1,369 @@
 "use client"
 
-import { useEffect, useState } from "react"
 import { useAuth } from "@/context/auth-context"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-import { Avatar, AvatarFallback } from "@/components/ui/avatar"
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Skeleton } from "@/components/ui/skeleton"
+import {
+    Table,
+    TableBody,
+    TableCell,
+    TableHead,
+    TableHeader,
+    TableRow,
+} from "@/components/ui/table"
 import {
     Calendar,
     Users,
     Clock,
     Plus,
-    ArrowRight,
-    PartyPopper,
-    TrendingUp,
-    LayoutGrid,
-    MoreHorizontal
+    ArrowUpRight,
+    CalendarDays,
+    CheckCircle2,
+    AlertCircle,
+    UserPlus,
+    FileText,
+    ChevronRight,
+    Search
 } from "lucide-react"
-import { Separator } from "@/components/ui/separator"
+import { useAdminStats, useEmployeeStats } from "@/lib/hooks/useDashboard"
+import { useLeaves } from "@/lib/hooks/useLeaves"
 
-export default function DashboardPage() {
+export default function RedesignedDashboard() {
     const { user, isLoading: authLoading } = useAuth()
-    const [activeStats, setActiveStats] = useState({ pendingLeaves: 0, myPendingLeaves: 0 })
-    const [recentLeaves, setRecentLeaves] = useState<any[]>([])
-    const [isLoading, setIsLoading] = useState(true)
 
-    useEffect(() => {
-        const fetchData = async () => {
-            if (!user) return
-            setIsLoading(true)
-            try {
-                const token = localStorage.getItem("token")
-                const headers = { 'Authorization': `Bearer ${token}` }
-                const leavesRes = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/leaves`, { headers })
-                if (leavesRes.ok) {
-                    const leavesData = await leavesRes.json()
-                    const allLeaves = leavesData.data.leaves
-                    setActiveStats({
-                        pendingLeaves: allLeaves.filter((l: any) => l.status === 'PENDING').length,
-                        myPendingLeaves: allLeaves.filter((l: any) => l.userId === user.id && l.status === 'PENDING').length
-                    })
-                    setRecentLeaves(allLeaves.slice(0, 5))
-                }
-            } catch (err) {
-                console.error("Dashboard error", err)
-            } finally {
-                setIsLoading(false)
-            }
-        }
-        if (!authLoading) fetchData()
-    }, [user, authLoading])
+    // Use TanStack Query hooks based on user role
+    const { data: adminStats, isLoading: adminStatsLoading } = useAdminStats()
+    const { data: employeeStats, isLoading: employeeStatsLoading } = useEmployeeStats()
+    const { data: leaves = [], isLoading: leavesLoading } = useLeaves(
+        user?.role === 'EMPLOYEE' ? user.id : undefined
+    )
 
-    if (authLoading || isLoading) {
-        return <LoadingSkeleton />
-    }
+    const dashboardStats = user?.role === 'EMPLOYEE' ? employeeStats : adminStats
+    const isLoading = authLoading ||
+        (user?.role === 'EMPLOYEE' ? employeeStatsLoading : adminStatsLoading) ||
+        leavesLoading
 
-    const stats = [
-        {
-            label: "Total Personnel",
-            value: "1",
-            icon: Users,
-            color: "text-slate-900",
-            bg: "bg-slate-100",
-            trend: "Current count"
-        },
-        {
-            label: "Pending Approvals",
-            value: user?.role === 'EMPLOYEE' ? activeStats.myPendingLeaves : activeStats.pendingLeaves,
-            icon: Clock,
-            color: "text-amber-600",
-            bg: "bg-amber-50",
-            trend: "Action required"
-        },
-        {
-            label: "Active Today",
-            value: "0",
-            icon: Calendar,
-            color: "text-emerald-600",
-            bg: "bg-emerald-50",
-            trend: "In office"
-        },
-        {
-            label: "Upcoming Holiday",
-            value: "Jan 01",
-            icon: PartyPopper,
-            color: "text-indigo-600",
-            bg: "bg-indigo-50",
-            trend: "New Year's Day"
-        }
-    ]
+    const recentLeaves = leaves.slice(0, 5)
+
+    if (authLoading || isLoading) return <LoadingSkeleton />
 
     return (
-        <div className="max-w-[1400px] mx-auto space-y-8 pb-12">
-
-            {/* --- TOP SECTION --- */}
-            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-slate-200 pb-8">
-                <div>
-                    <h1 className="text-2xl font-bold tracking-tight text-slate-900">
-                        {user?.name?.split(' ')[0]}'s Workspace
-                    </h1>
-                    <div className="flex items-center gap-2 mt-1">
-                        <Badge variant="outline" className="text-[10px] uppercase tracking-wider font-bold py-0 h-5">
-                            {user?.role}
-                        </Badge>
-                        <span className="text-slate-400 text-sm">•</span>
-                        <p className="text-slate-500 text-sm font-medium">
-                            {user?.organization?.name}
+        <div className="min-h-screen bg-[#fcfcfd] p-6 lg:p-10">
+            <div className="max-w-[1600px] mx-auto space-y-10">
+                {/* Global Header */}
+                <header className="flex flex-col md:flex-row md:items-center justify-between gap-6">
+                    <div>
+                        <h1 className="text-3xl font-semibold tracking-tight text-slate-900">
+                            Good morning, {user?.name?.split(' ')[0]}
+                        </h1>
+                        <p className="text-slate-500 mt-1.5 flex items-center gap-2">
+                            <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+                            System is up to date • {new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric' })}
                         </p>
                     </div>
-                </div>
-                <div className="flex items-center gap-3">
-                    <Button variant="outline" size="sm" className="hidden sm:flex gap-2 font-semibold">
-                        <LayoutGrid className="w-4 h-4" /> Manage Grid
-                    </Button>
-                    <Link href="/leaves">
-                        <Button className="bg-slate-900 hover:bg-slate-800 text-white gap-2 font-semibold shadow-sm">
-                            <Plus className="w-4 h-4" /> New Request
+
+                    <div className="flex items-center gap-3">
+                        {user?.role === 'ADMIN' ? (
+                            <>
+                                <Button variant="outline" className="hidden sm:flex gap-2 border-slate-200">
+                                    <FileText className="w-4 h-4" /> Reports
+                                </Button>
+                                <Button className="bg-indigo-600 hover:bg-indigo-700 text-white gap-2 shadow-sm shadow-indigo-200">
+                                    <UserPlus className="w-4 h-4" /> Add Personnel
+                                </Button>
+                            </>
+                        ) : (
+                            <Link href="/leaves/new">
+                                <Button className="bg-indigo-600 hover:bg-indigo-700 text-white gap-2 shadow-sm shadow-indigo-200">
+                                    <Plus className="w-4 h-4" /> Request Leave
+                                </Button>
+                            </Link>
+                        )}
+                    </div>
+                </header>
+
+                {user?.role === 'ADMIN' ?
+                    <AdminView stats={dashboardStats} leaves={recentLeaves} /> :
+                    <EmployeeView user={user} stats={dashboardStats} leaves={recentLeaves} />
+                }
+            </div>
+        </div>
+    )
+}
+
+/* -------------------------------------------------------------------------- */
+/* ADMIN VIEW                                 */
+/* -------------------------------------------------------------------------- */
+
+function AdminView({ stats, leaves }: any) {
+    return (
+        <div className="space-y-8">
+            {/* KPI Row */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+                <StatCard label="Total Employees" value={stats?.totalEmployees || 0} icon={Users} trend="Active workforce" />
+                <StatCard label="On Leave Today" value={stats?.onLeaveToday || 0} icon={CalendarDays} trend="Within limit" />
+                <StatCard
+                    label="Pending Approval"
+                    value={stats?.pendingLeaves || 0}
+                    icon={Clock}
+                    color="text-amber-600"
+                    alert={stats?.pendingLeaves > 0}
+                />
+                <StatCard label="Retention Rate" value="98%" icon={ArrowUpRight} trend="Excellent" />
+            </div>
+
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                {/* Main Pipeline */}
+                <div className="lg:col-span-2 space-y-4">
+                    <div className="flex items-center justify-between">
+                        <h3 className="font-semibold text-slate-800">Leave Approvals</h3>
+                        <Button variant="ghost" size="sm" className="text-indigo-600 hover:text-indigo-700 font-medium">
+                            View All <ChevronRight className="w-4 h-4 ml-1" />
                         </Button>
-                    </Link>
-                </div>
-            </div>
-
-            {/* --- KPI STATS --- */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                {stats.map((stat, i) => (
-                    <Card key={i} className="border-slate-200 shadow-none hover:border-slate-300 transition-colors">
-                        <CardContent className="p-5">
-                            <div className="flex items-center justify-between mb-3">
-                                <div className={`p-2 rounded-lg ${stat.bg} ${stat.color}`}>
-                                    <stat.icon className="w-5 h-5" />
-                                </div>
-                                {i === 1 && stat.value > 0 && (
-                                    <span className="flex h-2 w-2 rounded-full bg-amber-500">
-                                        <span className="animate-ping absolute inline-flex h-2 w-2 rounded-full bg-amber-400 opacity-75"></span>
-                                    </span>
-                                )}
-                            </div>
-                            <div className="space-y-1">
-                                <h3 className="text-2xl font-bold tracking-tighter text-slate-900">{stat.value}</h3>
-                                <p className="text-xs font-bold text-slate-400 uppercase tracking-widest">{stat.label}</p>
-                            </div>
-                            <Separator className="my-3 opacity-50" />
-                            <p className="text-[10px] font-bold text-slate-500 uppercase tracking-tighter flex items-center gap-1.5">
-                                <TrendingUp className="w-3 h-3 text-slate-300" />
-                                {stat.trend}
-                            </p>
-                        </CardContent>
-                    </Card>
-                ))}
-            </div>
-
-            {/* --- MAIN CONTENT AREA --- */}
-            <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
-
-                {/* RECENT ACTIVITY TABLE STYLE */}
-                <div className="lg:col-span-8 space-y-4">
-                    <div className="flex items-center justify-between px-1">
-                        <h2 className="text-sm font-bold uppercase tracking-widest text-slate-400">Application Pipeline</h2>
-                        <Link href="/leaves" className="text-xs font-bold text-indigo-600 hover:text-indigo-700 flex items-center gap-1">
-                            Full Log <ArrowRight className="w-3 h-3" />
-                        </Link>
                     </div>
 
-                    <Card className="border-slate-200 shadow-sm overflow-hidden">
-                        <div className="overflow-x-auto">
-                            <table className="w-full text-left">
-                                <thead className="bg-slate-50/50 border-b border-slate-100">
-                                    <tr>
-                                        <th className="px-6 py-3 text-[10px] font-bold text-slate-400 uppercase tracking-wider">Requester</th>
-                                        <th className="px-6 py-3 text-[10px] font-bold text-slate-400 uppercase tracking-wider">Category</th>
-                                        <th className="px-6 py-3 text-[10px] font-bold text-slate-400 uppercase tracking-wider">Status</th>
-                                        <th className="px-6 py-3 text-right"></th>
-                                    </tr>
-                                </thead>
-                                <tbody className="divide-y divide-slate-100">
-                                    {recentLeaves.length === 0 ? (
-                                        <tr>
-                                            <td colSpan={4} className="py-12 text-center text-slate-400 text-sm italic">
-                                                No active requests in current cycle.
-                                            </td>
-                                        </tr>
-                                    ) : (
-                                        recentLeaves.map((leave) => (
-                                            <tr key={leave.id} className="hover:bg-slate-50/50 transition-colors group">
-                                                <td className="px-6 py-4">
-                                                    <div className="flex items-center gap-3">
-                                                        <Avatar className="h-8 w-8 rounded-lg border border-slate-200">
-                                                            <AvatarFallback className="bg-slate-100 text-slate-600 text-[10px] font-bold">
-                                                                {leave.user?.name?.charAt(0)}
-                                                            </AvatarFallback>
-                                                        </Avatar>
-                                                        <div>
-                                                            <p className="text-sm font-bold text-slate-800 leading-none">{leave.user?.name}</p>
-                                                            <p className="text-[10px] text-slate-400 mt-1 uppercase font-medium">Applied {new Date(leave.createdAt).toLocaleDateString()}</p>
-                                                        </div>
-                                                    </div>
-                                                </td>
-                                                <td className="px-6 py-4">
-                                                    <p className="text-sm text-slate-600 font-medium">{leave.type || 'Annual Leave'}</p>
-                                                    <p className="text-[10px] text-slate-400">Start: {new Date(leave.startDate).toLocaleDateString()}</p>
-                                                </td>
-                                                <td className="px-6 py-4">
-                                                    <Badge className={`
-                                                        px-2 py-0 h-5 border-none font-bold text-[9px] uppercase tracking-widest
-                                                        ${leave.status === 'APPROVED' ? 'bg-emerald-50 text-emerald-700' :
-                                                            leave.status === 'PENDING' ? 'bg-amber-50 text-amber-700' :
-                                                                'bg-rose-50 text-rose-700'}
-                                                    `}>
-                                                        {leave.status}
-                                                    </Badge>
-                                                </td>
-                                                <td className="px-6 py-4 text-right">
-                                                    <Button variant="ghost" size="icon" className="h-8 w-8 rounded-md opacity-0 group-hover:opacity-100 transition-opacity">
-                                                        <MoreHorizontal className="w-4 h-4" />
-                                                    </Button>
-                                                </td>
-                                            </tr>
-                                        ))
-                                    )}
-                                </tbody>
-                            </table>
-                        </div>
+                    <Card className="border-slate-200/60 shadow-sm overflow-hidden">
+                        <Table>
+                            <TableHeader className="bg-slate-50 border-b border-slate-100">
+                                <TableRow className="hover:bg-transparent">
+                                    <TableHead className="py-3 px-5 text-[11px] font-bold text-slate-400 uppercase tracking-wider">Employee</TableHead>
+                                    <TableHead className="py-3 px-5 text-[11px] font-bold text-slate-400 uppercase tracking-wider">Type / Duration</TableHead>
+                                    <TableHead className="py-3 px-5 text-[11px] font-bold text-slate-400 uppercase tracking-wider">Status</TableHead>
+                                    <TableHead className="py-3 px-5 text-right"></TableHead>
+                                </TableRow>
+                            </TableHeader>
+                            <TableBody className="divide-y divide-slate-50">
+                                {leaves.map((leave: any) => (
+                                    <TableRow key={leave.id} className="hover:bg-slate-50/50 transition-colors group">
+                                        <TableCell className="py-3 px-5">
+                                            <div className="flex items-center gap-3">
+                                                <Avatar className="h-8 w-8 border border-slate-100 shadow-sm">
+                                                    <AvatarFallback className="bg-indigo-50 text-indigo-700 text-xs font-bold">
+                                                        {leave.user?.name?.charAt(0)}
+                                                    </AvatarFallback>
+                                                </Avatar>
+                                                <div>
+                                                    <p className="text-sm font-semibold text-slate-700 leading-none">{leave.user?.name}</p>
+                                                    <p className="text-[10px] text-slate-400 mt-1">Product Designer</p>
+                                                </div>
+                                            </div>
+                                        </TableCell>
+                                        <TableCell className="py-3 px-5">
+                                            <p className="text-sm font-medium text-slate-600 leading-none">{leave.type}</p>
+                                            <p className="text-[10px] text-slate-400 mt-1">
+                                                {new Date(leave.startDate).toLocaleDateString()} - {new Date(leave.endDate).toLocaleDateString()}
+                                            </p>
+                                        </TableCell>
+                                        <TableCell className="py-3 px-5">
+                                            <StatusBadge status={leave.status} />
+                                        </TableCell>
+                                        <TableCell className="py-3 px-5 text-right">
+                                            <Button variant="ghost" size="sm" className="h-8 w-8 p-0 opacity-0 group-hover:opacity-100 text-slate-400 hover:text-indigo-600">
+                                                <ChevronRight className="w-4 h-4" />
+                                            </Button>
+                                        </TableCell>
+                                    </TableRow>
+                                ))}
+                            </TableBody>
+                        </Table>
                     </Card>
                 </div>
 
-                {/* SIDEBAR WIDGETS */}
-                <div className="lg:col-span-4 space-y-6">
-
-                    {/* UPCOMING WIDGET */}
-                    <Card className="border-slate-200 shadow-sm bg-white">
-                        <CardHeader className="pb-3">
-                            <CardTitle className="text-sm font-bold uppercase tracking-widest text-slate-400 flex items-center gap-2">
-                                <Calendar className="w-4 h-4" /> Calendar Events
-                            </CardTitle>
+                {/* Right Column: Insights */}
+                <div className="space-y-6">
+                    <Card className="border-slate-200/60 shadow-sm">
+                        <CardHeader className="pb-4">
+                            <CardTitle className="text-sm font-bold text-slate-800">Team Availability</CardTitle>
                         </CardHeader>
                         <CardContent className="space-y-4">
-                            <div className="flex items-center gap-4 p-3 bg-slate-50/50 border border-slate-100 rounded-xl">
-                                <div className="text-center bg-white border border-slate-200 rounded-lg p-2 min-w-[50px] shadow-sm">
-                                    <span className="block text-[9px] text-rose-500 font-black uppercase">Jan</span>
-                                    <span className="block text-xl font-black text-slate-800 leading-tight">01</span>
-                                </div>
-                                <div>
-                                    <p className="text-sm font-bold text-slate-800">New Year's Day</p>
-                                    <p className="text-xs text-slate-400 font-medium italic">Full Office Closure</p>
-                                </div>
-                            </div>
-                            <div className="flex items-center gap-4 p-3 hover:bg-slate-50 transition-colors rounded-xl border border-transparent">
-                                <div className="text-center bg-slate-100 rounded-lg p-2 min-w-[50px]">
-                                    <span className="block text-[9px] text-slate-400 font-black uppercase">Jan</span>
-                                    <span className="block text-xl font-black text-slate-400 leading-tight">26</span>
-                                </div>
-                                <div>
-                                    <p className="text-sm font-bold text-slate-500">Republic Day</p>
-                                    <p className="text-xs text-slate-400 font-medium italic">Gazetted Holiday</p>
-                                </div>
-                            </div>
+                            <AvailabilityRow name="Design Team" availability={90} />
+                            <AvailabilityRow name="Engineering" availability={75} />
+                            <AvailabilityRow name="Marketing" availability={100} />
                         </CardContent>
                     </Card>
 
-                    {/* PREMIUM CTA */}
-                    <Card className="bg-slate-900 text-white border-none shadow-xl rounded-2xl overflow-hidden relative group">
-                        <div className="absolute inset-0 bg-gradient-to-tr from-slate-900 via-slate-800 to-indigo-900 opacity-90 group-hover:scale-110 transition-transform duration-700"></div>
-                        <CardContent className="p-6 relative z-10">
-                            <div className="w-10 h-10 bg-white/10 rounded-lg flex items-center justify-center mb-4">
-                                <TrendingUp className="w-5 h-5 text-indigo-400" />
-                            </div>
-                            <h3 className="text-lg font-bold mb-1 tracking-tight">Enterprise Analytics</h3>
-                            <p className="text-slate-400 text-xs mb-6 leading-relaxed font-medium">
-                                Visualize turnover rates, payroll forecasts, and team performance trends.
+                    <div className="bg-slate-900 rounded-3xl p-6 text-white relative overflow-hidden group shadow-xl">
+                        <div className="relative z-10">
+                            <h4 className="font-bold text-lg mb-2">Annual Policy Update</h4>
+                            <p className="text-slate-400 text-sm leading-relaxed mb-6">
+                                Ensure all personnel have signed the updated Q1 compliance documents by Friday.
                             </p>
-                            <Button className="w-full bg-white text-slate-900 hover:bg-slate-100 font-bold h-9 text-xs">
-                                Upgrade Workspace
+                            <Button className="w-full bg-white text-slate-900 hover:bg-slate-100 font-bold rounded-xl">
+                                Send Reminder
                             </Button>
+                        </div>
+                        <div className="absolute -bottom-10 -right-10 w-40 h-40 bg-indigo-500/10 rounded-full blur-3xl group-hover:bg-indigo-500/20 transition-colors" />
+                    </div>
+                </div>
+            </div>
+        </div>
+    )
+}
+
+/* -------------------------------------------------------------------------- */
+/* EMPLOYEE VIEW                               */
+/* -------------------------------------------------------------------------- */
+
+function EmployeeView({ user, stats, leaves }: any) {
+    return (
+        <div className="space-y-8">
+            {/* Balance Overview */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <BalanceCard label="Annual Leave" current={stats?.used || 0} total={stats?.allowance || 20} color="bg-indigo-600" />
+                <BalanceCard label="Pending Requests" current={stats?.pendingRequests || 0} total={5} color="bg-amber-500" />
+                {/* Mocking other balances for now as we only have totalDays */}
+                <BalanceCard label="Personal Time" current={1} total={2} color="bg-emerald-500" />
+            </div>
+
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                <div className="lg:col-span-2 space-y-4">
+                    <div className="flex items-center justify-between">
+                        <h3 className="font-semibold text-slate-800">My Leave History</h3>
+                    </div>
+                    <Card className="border-slate-200/60 shadow-sm overflow-hidden">
+                        <Table>
+                            <TableHeader className="bg-slate-50 border-b border-slate-100">
+                                <TableRow className="hover:bg-transparent">
+                                    <TableHead className="py-3 px-5 text-[11px] font-bold text-slate-400 uppercase tracking-wider w-12"></TableHead>
+                                    <TableHead className="py-3 px-5 text-[11px] font-bold text-slate-400 uppercase tracking-wider">Type</TableHead>
+                                    <TableHead className="py-3 px-5 text-[11px] font-bold text-slate-400 uppercase tracking-wider">Dates</TableHead>
+                                    <TableHead className="py-3 px-5 text-[11px] font-bold text-slate-400 uppercase tracking-wider">Status</TableHead>
+                                </TableRow>
+                            </TableHeader>
+                            <TableBody className="divide-y divide-slate-50">
+                                {leaves.map((leave: any) => (
+                                    <TableRow key={leave.id} className="hover:bg-slate-50/50 transition-colors group">
+                                        <TableCell className="py-3 px-5">
+                                            <div className="h-8 w-8 rounded-lg bg-slate-50 flex items-center justify-center border border-slate-100">
+                                                <Calendar className="w-4 h-4 text-slate-400" />
+                                            </div>
+                                        </TableCell>
+                                        <TableCell className="py-3 px-5">
+                                            <p className="text-sm font-semibold text-slate-800 leading-none">{leave.type || 'Annual Leave'}</p>
+                                            <p className="text-[10px] text-slate-500 mt-1">Requested on {new Date(leave.createdAt).toLocaleDateString()}</p>
+                                        </TableCell>
+                                        <TableCell className="py-3 px-5">
+                                            <p className="text-sm font-medium text-slate-600 leading-none">
+                                                {new Date(leave.startDate).toLocaleDateString()} - {new Date(leave.endDate).toLocaleDateString()}
+                                            </p>
+                                            <p className="text-[10px] text-slate-400 uppercase font-bold tracking-tight mt-1">{leave.totalDays} Days</p>
+                                        </TableCell>
+                                        <TableCell className="py-3 px-5">
+                                            <StatusBadge status={leave.status} />
+                                        </TableCell>
+                                    </TableRow>
+                                ))}
+                            </TableBody>
+                        </Table>
+                    </Card>
+                </div>
+
+                <div className="space-y-6">
+                    <Card className="border-slate-200/60 shadow-sm">
+                        <CardHeader className="border-b border-slate-50">
+                            <CardTitle className="text-sm font-bold text-slate-800">Company Holidays</CardTitle>
+                        </CardHeader>
+                        <CardContent className="pt-6 space-y-6">
+                            <HolidayItem date="Jan 01" name="New Year's Day" subtitle="Global Holiday" />
+                            <HolidayItem date="Jan 26" name="Republic Day" subtitle="National Holiday" />
+                            <HolidayItem date="Feb 14" name="Spring Break" subtitle="Corporate Floating" />
                         </CardContent>
                     </Card>
-
                 </div>
+            </div>
+        </div>
+    )
+}
+
+/* -------------------------------------------------------------------------- */
+/* HELPER COMPONENTS                             */
+/* -------------------------------------------------------------------------- */
+
+function StatCard({ label, value, icon: Icon, trend, color = "text-slate-900", alert = false }: any) {
+    return (
+        <Card className="border-slate-200/60 shadow-sm hover:border-indigo-200 transition-all group">
+            <CardContent className="p-4">
+                <div className="flex items-center justify-between mb-3">
+                    <div className="p-2 rounded-lg bg-slate-50 text-slate-400 group-hover:bg-indigo-50 group-hover:text-indigo-600 transition-colors">
+                        <Icon className="w-4 h-4" />
+                    </div>
+                    {alert && <span className="h-1.5 w-1.5 rounded-full bg-amber-500 animate-pulse" />}
+                </div>
+                <div className="space-y-0.5">
+                    <h3 className={`text-xl font-bold tracking-tight ${color}`}>{value}</h3>
+                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">{label}</p>
+                </div>
+                {trend && (
+                    <p className="mt-3 text-[10px] font-bold text-slate-500 flex items-center gap-1.5 border-t border-slate-50 pt-2.5">
+                        <span className="text-emerald-500">↑</span> {trend}
+                    </p>
+                )}
+            </CardContent>
+        </Card>
+    )
+}
+
+function BalanceCard({ label, current, total, color }: any) {
+    const percentage = (current / total) * 100
+    return (
+        <Card className="border-slate-200/60 shadow-sm">
+            <CardContent className="p-4">
+                <div className="flex justify-between items-end mb-3">
+                    <div>
+                        <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">{label}</p>
+                        <h3 className="text-xl font-bold text-slate-900">{current} <span className="text-slate-300 text-sm font-medium">/ {total}</span></h3>
+                    </div>
+                    <p className="text-[9px] font-bold text-slate-400 uppercase tracking-tighter">Days Used</p>
+                </div>
+                <div className="h-1.5 w-full bg-slate-100 rounded-full overflow-hidden">
+                    <div className={`h-full ${color} rounded-full`} style={{ width: `${percentage}%` }} />
+                </div>
+            </CardContent>
+        </Card>
+    )
+}
+
+function StatusBadge({ status }: { status: string }) {
+    const styles: any = {
+        'APPROVED': 'bg-emerald-50 text-emerald-700 border-emerald-100',
+        'PENDING': 'bg-amber-50 text-amber-700 border-amber-100',
+        'REJECTED': 'bg-rose-50 text-rose-700 border-rose-100'
+    }
+    return (
+        <Badge variant="outline" className={`${styles[status] || styles['PENDING']} border px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-tight`}>
+            {status}
+        </Badge>
+    )
+}
+
+function AvailabilityRow({ name, availability }: any) {
+    return (
+        <div className="space-y-1.5">
+            <div className="flex justify-between text-xs font-semibold">
+                <span className="text-slate-600">{name}</span>
+                <span className="text-slate-400">{availability}%</span>
+            </div>
+            <div className="h-1.5 w-full bg-slate-100 rounded-full">
+                <div className={`h-full bg-slate-900 rounded-full`} style={{ width: `${availability}%` }} />
+            </div>
+        </div>
+    )
+}
+
+function HolidayItem({ date, name, subtitle }: any) {
+    return (
+        <div className="flex items-center gap-4">
+            <div className="bg-slate-50 border border-slate-100 rounded-xl p-2 min-w-[54px] text-center">
+                <p className="text-[10px] font-bold text-slate-400 uppercase leading-none mb-1">{date.split(' ')[0]}</p>
+                <p className="text-lg font-bold text-slate-800 leading-none">{date.split(' ')[1]}</p>
+            </div>
+            <div>
+                <p className="text-sm font-semibold text-slate-800">{name}</p>
+                <p className="text-xs text-slate-400 font-medium">{subtitle}</p>
             </div>
         </div>
     )
@@ -285,25 +371,17 @@ export default function DashboardPage() {
 
 function LoadingSkeleton() {
     return (
-        <div className="space-y-10 animate-pulse max-w-[1400px] mx-auto">
-            <div className="flex justify-between items-end border-b border-slate-200 pb-8">
-                <div className="space-y-3">
-                    <Skeleton className="h-8 w-64 bg-slate-100" />
-                    <Skeleton className="h-4 w-40 bg-slate-100" />
-                </div>
-                <Skeleton className="h-12 w-40 bg-slate-100 rounded-xl" />
+        <div className="p-10 space-y-10 max-w-[1600px] mx-auto animate-pulse">
+            <div className="flex justify-between items-center">
+                <Skeleton className="h-12 w-64 rounded-xl" />
+                <Skeleton className="h-12 w-48 rounded-xl" />
             </div>
-            <div className="grid grid-cols-4 gap-4">
-                {[1, 2, 3, 4].map(i => (
-                    <Skeleton key={i} className="h-32 bg-slate-100 rounded-xl" />
-                ))}
+            <div className="grid grid-cols-4 gap-6">
+                {[1, 2, 3, 4].map(i => <Skeleton key={i} className="h-32 rounded-3xl" />)}
             </div>
-            <div className="grid grid-cols-12 gap-8">
-                <Skeleton className="col-span-8 h-[400px] bg-slate-100 rounded-2xl" />
-                <div className="col-span-4 space-y-6">
-                    <Skeleton className="h-[200px] bg-slate-100 rounded-2xl" />
-                    <Skeleton className="h-[180px] bg-slate-100 rounded-2xl" />
-                </div>
+            <div className="grid grid-cols-3 gap-8">
+                <Skeleton className="col-span-2 h-[500px] rounded-3xl" />
+                <Skeleton className="h-[500px] rounded-3xl" />
             </div>
         </div>
     )
