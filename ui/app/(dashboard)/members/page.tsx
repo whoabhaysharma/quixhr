@@ -7,6 +7,7 @@ import { Label } from "@/components/ui/label"
 import { Badge } from "@/components/ui/badge"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
 import { useAuth } from "@/context/auth-context"
 import {
     Users,
@@ -34,7 +35,7 @@ export default function MembersPage() {
     const [error, setError] = useState("")
 
     // Form State
-    const [newName, setNewName] = useState("")
+    // const [newName, setNewName] = useState("") // Removed for invite flow
     const [newEmail, setNewEmail] = useState("")
     const [newRole, setNewRole] = useState("EMPLOYEE")
 
@@ -64,21 +65,20 @@ export default function MembersPage() {
         fetchMembers()
     }, [])
 
-    const handleAddMember = async (e: React.FormEvent) => {
+    const handleInviteMember = async (e: React.FormEvent) => {
         e.preventDefault()
         setIsSubmitting(true)
         setError("")
 
         try {
             const token = localStorage.getItem("token")
-            const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/members`, {
+            const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/invites`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
                     'Authorization': `Bearer ${token}`
                 },
                 body: JSON.stringify({
-                    name: newName,
                     email: newEmail,
                     role: newRole
                 })
@@ -87,15 +87,15 @@ export default function MembersPage() {
             const data = await response.json()
 
             if (!response.ok) {
-                throw new Error(data.error?.message || "Failed to add member")
+                throw new Error(data.error || "Failed to send invitation")
             }
 
             // Success
             setIsAddModalOpen(false)
-            setNewName("")
             setNewEmail("")
             setNewRole("EMPLOYEE")
-            fetchMembers()
+            // Ideally assume success feedback
+            alert("Invitation sent successfully!")
 
         } catch (err: any) {
             setError(err.message)
@@ -117,8 +117,10 @@ export default function MembersPage() {
                     onClick={() => setIsAddModalOpen(true)}
                     className="bg-slate-900 text-white hover:bg-slate-800 px-6 h-10 shadow-sm font-semibold"
                 >
-                    <UserPlus className="w-4 h-4 mr-2" />
-                    Add Member
+                    <div className="flex items-center gap-2 text-white/90">
+                        <Mail className="w-4 h-4 text-white" />
+                        Invite Member
+                    </div>
                 </Button>
             </div>
 
@@ -200,93 +202,71 @@ export default function MembersPage() {
                 </Card>
             </div>
 
-            {/* Add Member Modal */}
-            {isAddModalOpen && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-sm">
-                    <Card className="w-full max-w-md bg-white border-0 shadow-2xl rounded-2xl animate-in fade-in zoom-in-95 duration-200">
-                        <CardHeader className="border-b border-slate-100 pb-4">
-                            <div className="flex justify-between items-center">
-                                <CardTitle className="text-lg font-bold text-slate-900">Add New Member</CardTitle>
-                                <Button
-                                    variant="ghost"
-                                    size="icon"
-                                    className="h-8 w-8 text-slate-400 hover:text-slate-900 rounded-full"
-                                    onClick={() => setIsAddModalOpen(false)}
-                                >
-                                    <MoreVertical className="w-4 h-4 rotate-90" />
-                                </Button>
+
+
+            {/* Invite Member Dialog */}
+            < Dialog open={isAddModalOpen} onOpenChange={setIsAddModalOpen} >
+                <DialogContent className="sm:max-w-md bg-white">
+                    <DialogHeader>
+                        <DialogTitle className="text-lg font-bold text-slate-900">Invite New Member</DialogTitle>
+                    </DialogHeader>
+                    <form onSubmit={handleInviteMember} className="space-y-4 pt-2">
+                        {/* Name field removed */}
+                        <div>
+                            <Label htmlFor="email" className="text-xs font-bold uppercase tracking-wider text-slate-500">Email</Label>
+                            <div className="relative mt-1.5">
+                                <Mail className="absolute left-3 top-2.5 w-4 h-4 text-slate-400" />
+                                <Input
+                                    id="email"
+                                    type="email"
+                                    value={newEmail}
+                                    onChange={e => setNewEmail(e.target.value)}
+                                    placeholder="email@company.com"
+                                    className="pl-9 rounded-lg border-slate-200 focus:ring-slate-900"
+                                    required
+                                />
                             </div>
-                        </CardHeader>
-                        <CardContent className="pt-6">
-                            <form onSubmit={handleAddMember} className="space-y-4">
-                                <div>
-                                    <Label htmlFor="name" className="text-xs font-bold uppercase tracking-wider text-slate-500">Name</Label>
-                                    <Input
-                                        id="name"
-                                        value={newName}
-                                        onChange={e => setNewName(e.target.value)}
-                                        placeholder="Full Name"
-                                        className="mt-1.5 rounded-lg border-slate-200 focus:ring-slate-900"
-                                        required
-                                    />
-                                </div>
-                                <div>
-                                    <Label htmlFor="email" className="text-xs font-bold uppercase tracking-wider text-slate-500">Email</Label>
-                                    <div className="relative mt-1.5">
-                                        <Mail className="absolute left-3 top-2.5 w-4 h-4 text-slate-400" />
-                                        <Input
-                                            id="email"
-                                            type="email"
-                                            value={newEmail}
-                                            onChange={e => setNewEmail(e.target.value)}
-                                            placeholder="email@company.com"
-                                            className="pl-9 rounded-lg border-slate-200 focus:ring-slate-900"
-                                            required
-                                        />
-                                    </div>
-                                </div>
-                                <div>
-                                    <Label htmlFor="role" className="text-xs font-bold uppercase tracking-wider text-slate-500">Role</Label>
-                                    <select
-                                        id="role"
-                                        value={newRole}
-                                        onChange={e => setNewRole(e.target.value)}
-                                        className="w-full h-10 px-3 py-2 mt-1.5 bg-white border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-slate-900 outline-none"
-                                    >
-                                        <option value="EMPLOYEE">Employee</option>
-                                        <option value="HR">HR Manager</option>
-                                        <option value="ADMIN">Administrator</option>
-                                    </select>
-                                </div>
+                        </div>
+                        <div>
+                            <Label htmlFor="role" className="text-xs font-bold uppercase tracking-wider text-slate-500">Role</Label>
+                            <select
+                                id="role"
+                                value={newRole}
+                                onChange={e => setNewRole(e.target.value)}
+                                className="w-full h-10 px-3 py-2 mt-1.5 bg-white border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-slate-900 outline-none"
+                            >
+                                <option value="EMPLOYEE">Employee</option>
+                                <option value="HR">HR Manager</option>
+                                <option value="ADMIN">Administrator</option>
+                            </select>
+                        </div>
 
-                                {error && (
-                                    <div className="p-3 rounded-lg bg-rose-50 text-rose-600 text-sm border border-rose-100 font-medium">
-                                        {error}
-                                    </div>
-                                )}
+                        {error && (
+                            <div className="p-3 rounded-lg bg-rose-50 text-rose-600 text-sm border border-rose-100 font-medium">
+                                {error}
+                            </div>
+                        )}
 
-                                <div className="pt-4 flex justify-end gap-3">
-                                    <Button
-                                        type="button"
-                                        onClick={() => setIsAddModalOpen(false)}
-                                        variant="outline"
-                                        className="rounded-xl border-slate-200 font-semibold"
-                                    >
-                                        Cancel
-                                    </Button>
-                                    <Button
-                                        type="submit"
-                                        disabled={isSubmitting}
-                                        className="bg-slate-900 hover:bg-slate-800 text-white rounded-xl shadow-lg font-semibold"
-                                    >
-                                        {isSubmitting ? 'Adding...' : 'Add Member'}
-                                    </Button>
-                                </div>
-                            </form>
-                        </CardContent>
-                    </Card>
-                </div>
-            )}
-        </div>
+                        <div className="pt-4 flex justify-end gap-3">
+                            <Button
+                                type="button"
+                                onClick={() => setIsAddModalOpen(false)}
+                                variant="outline"
+                                className="rounded-xl border-slate-200 font-semibold"
+                            >
+                                Cancel
+                            </Button>
+                            <Button
+                                type="submit"
+                                disabled={isSubmitting}
+                                className="bg-slate-900 hover:bg-slate-800 text-white rounded-xl shadow-lg font-semibold"
+                            >
+                                {isSubmitting ? 'Sending...' : 'Send Invite'}
+                            </Button>
+                        </div>
+                    </form>
+                </DialogContent>
+            </Dialog >
+        </div >
     )
 }

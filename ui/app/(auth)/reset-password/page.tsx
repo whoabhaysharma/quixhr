@@ -7,41 +7,18 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
-import { confirmPasswordReset, verifyPasswordResetCode } from "firebase/auth"
-import { auth } from "@/lib/firebase"
 
 export default function ResetPasswordPage() {
     const router = useRouter()
     const searchParams = useSearchParams()
-    const oobCode = searchParams.get("oobCode")
+    const token = searchParams.get("token")
 
     const [isLoading, setIsLoading] = useState(false)
-    const [verifying, setVerifying] = useState(true)
     const [email, setEmail] = useState("")
     const [password, setPassword] = useState("")
     const [confirmPassword, setConfirmPassword] = useState("")
     const [error, setError] = useState("")
     const [success, setSuccess] = useState(false)
-
-    useEffect(() => {
-        const verifyCode = async () => {
-            if (!oobCode) {
-                setError("Invalid or missing reset code.")
-                setVerifying(false)
-                return
-            }
-            try {
-                const userEmail = await verifyPasswordResetCode(auth, oobCode)
-                setEmail(userEmail)
-            } catch (err: any) {
-                console.error(err)
-                setError("Invalid or expired reset code. Please request a new one.")
-            } finally {
-                setVerifying(false)
-            }
-        }
-        verifyCode()
-    }, [oobCode])
 
     const handleReset = async (e: React.FormEvent) => {
         e.preventDefault()
@@ -58,8 +35,20 @@ export default function ResetPasswordPage() {
         setError("")
 
         try {
-            if (!oobCode) throw new Error("Missing reset code")
-            await confirmPasswordReset(auth, oobCode, password)
+            if (!token) throw new Error("Missing reset token")
+
+            const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/auth/reset-password`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ token, newPassword: password })
+            })
+
+            const data = await response.json()
+
+            if (!response.ok) {
+                throw new Error(data.error?.message || "Failed to reset password")
+            }
+
             setSuccess(true)
         } catch (err: any) {
             console.error(err)
@@ -67,15 +56,6 @@ export default function ResetPasswordPage() {
         } finally {
             setIsLoading(false)
         }
-    }
-
-    if (verifying) {
-        return (
-            <div className="min-h-screen w-full flex items-center justify-center bg-[#fbfbfb] text-black relative font-sans">
-                <div className="absolute inset-0 bg-[radial-gradient(#000000_1px,transparent_1px)] [background-size:24px_24px] opacity-10"></div>
-                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-black"></div>
-            </div>
-        )
     }
 
     if (success) {
@@ -113,15 +93,15 @@ export default function ResetPasswordPage() {
                     </div>
                     <CardTitle className="text-3xl font-black tracking-tighter uppercase">Reset Password</CardTitle>
                     <CardDescription className="text-black font-medium text-base">
-                        {email ? `Resetting password for ${email}` : "Enter your new password."}
+                        Enter your new password.
                     </CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-6 pt-4">
                     {error && <p className="text-red-500 font-bold text-center border-2 border-red-500 p-2 bg-red-50">{error}</p>}
 
-                    {!oobCode && !error ? (
+                    {!token ? (
                         <div className="text-center">
-                            <p className="font-bold">Missing Reset Code</p>
+                            <p className="font-bold">Missing Reset Token</p>
                             <Link href="/forgot-password" className="underline">Request a new link</Link>
                         </div>
                     ) : (
