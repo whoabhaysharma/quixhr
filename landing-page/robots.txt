@@ -1,0 +1,3 @@
+User-agent: *
+Allow: /
+Sitemap: https://quixhr.com/sitemap.xml
