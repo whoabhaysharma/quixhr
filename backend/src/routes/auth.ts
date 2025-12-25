@@ -1,8 +1,11 @@
 import { Router } from 'express';
 import { authController } from '../controllers/authController';
 
+import { authenticate } from '../middleware/auth';
+
 const router = Router();
 
+router.get('/me', authenticate, authController.getCurrentUser.bind(authController));
 router.post('/login', authController.login.bind(authController));
 router.post('/register', authController.register.bind(authController));
 router.post('/register-invite', authController.registerWithInvite.bind(authController));

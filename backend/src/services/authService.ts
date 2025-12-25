@@ -23,6 +23,7 @@ export const authService = {
         const token = jwt.sign(
             {
                 id: user.id,
+                name: user.name,
                 role: user.role,
                 organizationId: user.organizationId,
             },
@@ -113,6 +114,7 @@ export const authService = {
             const token = jwt.sign(
                 {
                     id: newUser.id,
+                    name: newUser.name,
                     role: newUser.role,
                     organizationId: newUser.organizationId,
                 },
@@ -121,7 +123,11 @@ export const authService = {
             );
 
             // 5. Send Welcome Email
-            await emailService.sendWelcomeEmail(email, name);
+            try {
+                await emailService.sendWelcomeEmail(email, name);
+            } catch (emailError) {
+                console.error('Failed to send welcome email (registration):', emailError);
+            }
 
             const { password: _, ...userWithoutPassword } = newUser;
 
@@ -152,16 +158,42 @@ export const authService = {
 
             const invite = await inviteService.validateInvite(token);
 
-            // 2. Check if user exists (should have been checked at createInvite, but valid double check)
+            // 2. Check if invite is already accepted (Idempotency for race conditions)
+            if (invite.acceptedAt) {
+                const existingUser = await userService.findByEmail(invite.email);
+                if (existingUser) {
+                    // Generate login token for the existing user (auto-login after duplicate join)
+                    const token = jwt.sign(
+                        {
+                            id: existingUser.id,
+                            name: existingUser.name,
+                            role: existingUser.role,
+                            organizationId: existingUser.organizationId,
+                        },
+                        config.jwt.secret,
+                        { expiresIn: '1d' }
+                    );
+                    const { password: _, ...userWithoutPassword } = existingUser;
+                    return { token, user: userWithoutPassword };
+                }
+                // If invite accepted but user not found -> weird state, let it proceed to double-check email?
+                // No, if accepted, we assume done.
+                throw new Error("Invitation already used.");
+            }
+
+            // 3. Check if user exists (should have been checked at createInvite, but valid double check)
             const existingUser = await userService.findByEmail(invite.email);
             if (existingUser) {
+                // If user exists but invite NOT accepted?
+                // Might be invited to join existing account?
+                // For now, assume register flow requires new user or we'd redirect to login.
                 throw new Error('User already exists. Please login to accept the invitation.');
             }
 
-            // 3. Hash Password
+            // 4. Hash Password
             const hashedPassword = await bcrypt.hash(password, 10);
 
-            // 4. Create User and Delete Invite Transactionally
+            // 5. Create User and Mark Invite Accepted Transactionally
             const newUser = await prisma.$transaction(async (tx) => {
                 const user = await tx.user.create({
                     data: {
@@ -173,17 +205,19 @@ export const authService = {
                     }
                 });
 
-                await tx.invite.delete({
-                    where: { id: invite.id }
+                await tx.invite.update({
+                    where: { id: invite.id },
+                    data: { acceptedAt: new Date() }
                 });
 
                 return user;
             });
 
-            // 5. Generate JWT
+            // 6. Generate JWT
             const jwtToken = jwt.sign(
                 {
                     id: newUser.id,
+                    name: newUser.name,
                     role: newUser.role,
                     organizationId: newUser.organizationId,
                 },
@@ -191,8 +225,13 @@ export const authService = {
                 { expiresIn: '1d' }
             );
 
-            // 6. Send Welcome Email
-            await emailService.sendWelcomeEmail(newUser.email, newUser.name || 'User');
+            // 7. Send Welcome Email
+            try {
+                await emailService.sendWelcomeEmail(newUser.email, newUser.name || 'User');
+            } catch (emailError) {
+                console.error('Failed to send welcome email:', emailError);
+                // Don't fail the request if email fails
+            }
 
             const { password: _, ...userWithoutPassword } = newUser;
 

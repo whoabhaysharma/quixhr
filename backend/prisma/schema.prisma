@@ -136,6 +136,7 @@ model Invite {
   organization   Organization @relation(fields: [organizationId], references: [id])
 
   expiresAt DateTime
+  acceptedAt DateTime?
   createdAt DateTime @default(now())
 
   @@unique([email, organizationId])

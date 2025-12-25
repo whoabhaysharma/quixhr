@@ -50,7 +50,8 @@ export const inviteService = {
                 }
             });
 
-            await emailService.sendInviteEmail(email, token, role);
+            emailService.sendInviteEmail(email, token, role)
+                .catch(err => console.error('Failed to send invite email:', err));
             return updatedInvite;
         }
 
@@ -68,7 +69,8 @@ export const inviteService = {
             }
         });
 
-        await emailService.sendInviteEmail(email, token, role);
+        emailService.sendInviteEmail(email, token, role)
+            .catch(err => console.error('Failed to send invite email:', err));
         return newInvite;
     },
 
@@ -82,7 +84,12 @@ export const inviteService = {
             throw new Error('Invalid invitation link');
         }
 
-        if (invite.expiresAt < new Date()) {
+        // If strict expiry check is needed, do it here.
+        // But if accepted, we might want to return it even if expired? 
+        // No, typically if accepted, the flow is done. 
+        // But for race condition check, if acceptedAt is set, we return it.
+
+        if (!invite.acceptedAt && invite.expiresAt < new Date()) {
             throw new Error('Invitation expired');
         }
 
@@ -91,6 +98,10 @@ export const inviteService = {
 
     async acceptInvite(token: string, userId: string | number) {
         const invite = await this.validateInvite(token);
+
+        if (invite.acceptedAt) {
+            throw new Error("Invitation already accepted");
+        }
 
         // Update user
         await prisma.user.update({
@@ -101,9 +112,10 @@ export const inviteService = {
             }
         });
 
-        // Delete invite
-        await prisma.invite.delete({
-            where: { id: invite.id }
+        // Mark invite as accepted instead of delete
+        await prisma.invite.update({
+            where: { id: invite.id },
+            data: { acceptedAt: new Date() }
         });
 
         return invite.organization;

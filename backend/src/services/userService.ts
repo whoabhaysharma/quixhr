@@ -24,6 +24,7 @@ export const userService = {
             include: {
                 organization: true,
                 leaves: true,
+                holidayCalendar: true,
             },
         });
     },

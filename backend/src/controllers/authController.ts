@@ -1,5 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
 import { authService } from '../services/authService';
+import { userService } from '../services/userService';
 
 class AuthController {
     async login(req: Request, res: Response, next: NextFunction): Promise<void> {
@@ -94,6 +95,27 @@ class AuthController {
             res.json({ success: true, data: result });
         } catch (error: any) {
             res.status(400).json({ success: false, error: { message: error.message || 'Failed to reset password' } });
+        }
+    }
+
+    async getCurrentUser(req: Request, res: Response, next: NextFunction): Promise<void> {
+        try {
+            const userId = req.user?.id;
+            if (!userId) {
+                res.status(401).json({ success: false, error: { message: 'Not authenticated' } });
+                return;
+            }
+
+            const user = await userService.getUserById(userId);
+            if (!user) {
+                res.status(404).json({ success: false, error: { message: 'User not found' } });
+                return;
+            }
+
+            const { password: _, ...userWithoutPassword } = user;
+            res.json({ success: true, data: userWithoutPassword });
+        } catch (error: any) {
+            res.status(500).json({ success: false, error: { message: error.message || 'Failed to fetch user' } });
         }
     }
 }
