@@ -8,16 +8,15 @@ import { Label } from "@/components/ui/label"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Eye, EyeOff, Loader2, CheckCircle2, AlertCircle } from "lucide-react"
+import { useAcceptInvite, useValidateInvite } from "@/lib/hooks/useAuth"
 
 function JoinPageContent() {
     const searchParams = useSearchParams()
     const router = useRouter()
     const token = searchParams.get("token")
 
-    const [isLoading, setIsLoading] = useState(true)
-    const [isSubmitting, setIsSubmitting] = useState(false)
-    const [error, setError] = useState("")
     const [inviteDetails, setInviteDetails] = useState<any>(null)
+    const [pageError, setPageError] = useState("")
 
     // Registration Form State
     const [name, setName] = useState("")
@@ -25,78 +24,56 @@ function JoinPageContent() {
     const [confirmPassword, setConfirmPassword] = useState("")
     const [showPassword, setShowPassword] = useState(false)
     const [showConfirmPassword, setShowConfirmPassword] = useState(false)
+    const [formError, setFormError] = useState("")
+
+    const validateInviteMutation = useValidateInvite()
+    const acceptInviteMutation = useAcceptInvite()
 
     useEffect(() => {
         if (!token) {
-            setError("Invalid invitation link. Token is missing.")
-            setIsLoading(false)
+            setPageError("Invalid invitation link. Token is missing.")
             return
         }
 
-        const validateToken = async () => {
-            try {
-                const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/invites/${token}`)
-                const data = await response.json()
-
-                if (!response.ok) {
-                    throw new Error(data.error || "Invalid invitation")
-                }
-
+        validateInviteMutation.mutate(token, {
+            onSuccess: (data: any) => {
                 setInviteDetails(data.data)
-            } catch (err: any) {
-                setError(err.message)
-            } finally {
-                setIsLoading(false)
+            },
+            onError: (error: any) => {
+                setPageError(error.response?.data?.message || "Invalid or expired invitation")
             }
-        }
-
-        validateToken()
+        })
     }, [token])
 
-    const handleJoin = async (e: React.FormEvent) => {
+    const handleJoin = (e: React.FormEvent) => {
         e.preventDefault()
         if (password !== confirmPassword) {
-            setError("Passwords do not match")
+            setFormError("Passwords do not match")
             return
         }
 
-        setIsSubmitting(true)
-        setError("")
+        setFormError("")
+        if (!token) return
 
-        try {
-            // Register using the token
-            const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/auth/register-invite`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({
-                    token,
-                    name,
-                    password
-                })
-            })
-
-            const data = await response.json()
-
-            if (!response.ok) {
-                throw new Error(data.error?.message || "Failed to join")
+        acceptInviteMutation.mutate({
+            token,
+            name,
+            password
+        }, {
+            onSuccess: (data: any) => {
+                // Success - Store token and redirect
+                // The mutation hook usually handles toast, but we need to handle redirect and storage
+                localStorage.setItem("token", data.data.token)
+                localStorage.setItem("user", JSON.stringify(data.data.user))
+                router.push("/dashboard")
+            },
+            onError: (error: any) => {
+                setFormError(error.response?.data?.message || "Failed to join")
             }
-
-            // Success - Store token and redirect
-            localStorage.setItem("token", data.data.token)
-            localStorage.setItem("user", JSON.stringify(data.data.user))
-
-            router.push("/dashboard")
-
-        } catch (err: any) {
-            setError(err.message)
-        } finally {
-            setIsSubmitting(false)
-        }
+        })
     }
 
-    if (isLoading) {
+    if (validateInviteMutation.isPending) {
         return (
             <div className="flex min-h-screen items-center justify-center bg-slate-50">
                 <Loader2 className="h-8 w-8 animate-spin text-slate-400" />
@@ -104,7 +81,7 @@ function JoinPageContent() {
         )
     }
 
-    if (error && !inviteDetails) {
+    if (pageError && !inviteDetails) {
         return (
             <div className="flex min-h-screen items-center justify-center bg-slate-50 p-4">
                 <Card className="max-w-md w-full border-slate-200 shadow-xl">
@@ -113,7 +90,7 @@ function JoinPageContent() {
                             <AlertCircle className="w-6 h-6" />
                             <h2 className="text-lg font-bold">Invitation Error</h2>
                         </div>
-                        <p className="text-slate-500">{error}</p>
+                        <p className="text-slate-500">{pageError}</p>
                     </CardHeader>
                     <CardContent>
                         <Button onClick={() => router.push("/login")} className="w-full bg-slate-900">
@@ -199,18 +176,18 @@ function JoinPageContent() {
                             </div>
                         </div>
 
-                        {error && (
+                        {formError && (
                             <Alert variant="destructive" className="bg-rose-50 border-rose-100 text-rose-600 rounded-lg">
-                                <AlertDescription className="text-xs font-bold">{error}</AlertDescription>
+                                <AlertDescription className="text-xs font-bold">{formError}</AlertDescription>
                             </Alert>
                         )}
 
                         <Button
                             type="submit"
                             className="w-full bg-slate-900 hover:bg-slate-800 text-white font-bold h-11 rounded-xl shadow-lg mt-2"
-                            disabled={isSubmitting}
+                            disabled={acceptInviteMutation.isPending}
                         >
-                            {isSubmitting ? (
+                            {acceptInviteMutation.isPending ? (
                                 <>
                                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                                     Creating Account...

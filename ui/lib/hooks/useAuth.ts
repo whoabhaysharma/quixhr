@@ -33,7 +33,7 @@ export function useRegister() {
             name: string
             email: string
             password: string
-            verificationCode: string
+            otp: string
             organizationName: string
         }) => authService.register(data),
         onSuccess: () => {
@@ -49,7 +49,8 @@ export function useValidateInvite() {
     return useMutation({
         mutationFn: (token: string) => authService.validateInvite(token),
         onError: (error: any) => {
-            toast.error(error.response?.data?.message || 'Invalid or expired invite token');
+            // Toast removed to avoid double error showing (handled in UI) or keep if desired
+            // toast.error(error.response?.data?.message || 'Invalid or expired invite token');
         },
     })
 }
@@ -59,10 +60,35 @@ export function useAcceptInvite() {
         mutationFn: (data: { token: string; name: string; password: string }) =>
             authService.acceptInvite(data),
         onSuccess: () => {
-            toast.success('Invite accepted successfully');
+            toast.success('Account created and joined successfully');
         },
         onError: (error: any) => {
-            toast.error(error.response?.data?.message || 'Failed to accept invite');
+            toast.error(error.response?.data?.message || 'Failed to join organization');
+        },
+    })
+}
+
+export function useForgotPassword() {
+    return useMutation({
+        mutationFn: (email: string) => authService.forgotPassword(email),
+        onSuccess: () => {
+            toast.success('Password reset link sent to your email');
+        },
+        onError: (error: any) => {
+            toast.error(error.response?.data?.message || 'Failed to send reset link');
+        },
+    })
+}
+
+export function useResetPassword() {
+    return useMutation({
+        mutationFn: ({ token, password }: { token: string; password: string }) =>
+            authService.resetPassword(token, password),
+        onSuccess: () => {
+            toast.success('Password reset successfully');
+        },
+        onError: (error: any) => {
+            toast.error(error.response?.data?.message || 'Failed to reset password');
         },
     })
 }

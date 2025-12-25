@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
@@ -16,79 +16,34 @@ import {
     TableHeader,
     TableRow,
 } from "@/components/ui/table"
-import { useAuth } from "@/context/auth-context"
-
-interface Leave {
-    id: number
-    startDate: string
-    endDate: string
-    totalDays: number
-    reason: string
-    status: 'PENDING' | 'APPROVED' | 'REJECTED' | 'CANCELLED'
-    user: {
-        name: string
-        email: string
-    }
-}
+import { useLeaves, useUpdateLeaveStatus } from "@/lib/hooks/useLeaves"
+import { Leave } from "@/lib/services/leaves"
 
 export default function LeaveManagerView() {
-    const { user } = useAuth()
-    const [leaves, setLeaves] = useState<Leave[]>([])
-    const [isLoading, setIsLoading] = useState(true)
-    const [processingLeaveId, setProcessingLeaveId] = useState<number | null>(null)
     const [searchQuery, setSearchQuery] = useState("")
 
-    const fetchLeaves = async () => {
-        setIsLoading(true)
-        try {
-            const token = localStorage.getItem("token")
-            const url = `${process.env.NEXT_PUBLIC_BACKEND_URL}/leaves`
+    // Use the custom hook for fetching leaves
+    const { data: leaves = [], isLoading } = useLeaves()
 
-            const response = await fetch(url, {
-                headers: { 'Authorization': `Bearer ${token}` }
-            })
-            const data = await response.json()
-            if (response.ok) {
-                setLeaves(data.data.leaves)
-            }
-        } catch (err) {
-            console.error(err)
-        } finally {
-            setIsLoading(false)
-        }
+    // Use the custom hook for updating leave status
+    const updateLeaveStatusMutation = useUpdateLeaveStatus()
+
+    const handleStatusUpdate = (id: string, status: 'APPROVED' | 'REJECTED') => {
+        updateLeaveStatusMutation.mutate({
+            leaveId: id,
+            status
+        })
     }
 
-    useEffect(() => {
-        if (user) {
-            fetchLeaves()
-        }
-    }, [user])
+    const filteredLeaves = leaves.filter((leave: Leave) => {
+        const userName = leave.user?.name || ''
+        const userEmail = leave.user?.email || ''
+        const reason = leave.reason || ''
 
-    const handleStatusUpdate = async (id: number, status: string) => {
-        setProcessingLeaveId(id)
-        try {
-            const token = localStorage.getItem("token")
-            await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/leaves/${id}/status`, {
-                method: 'PATCH',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${token}`
-                },
-                body: JSON.stringify({ status })
-            })
-            fetchLeaves()
-        } catch (err) {
-            console.error(err)
-        } finally {
-            setProcessingLeaveId(null)
-        }
-    }
-
-    const filteredLeaves = leaves.filter(leave =>
-        leave.user.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        leave.user.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        leave.reason.toLowerCase().includes(searchQuery.toLowerCase())
-    )
+        return userName.toLowerCase().includes(searchQuery.toLowerCase()) ||
+            userEmail.toLowerCase().includes(searchQuery.toLowerCase()) ||
+            reason.toLowerCase().includes(searchQuery.toLowerCase())
+    })
 
     return (
         <div className="space-y-6">
@@ -158,18 +113,18 @@ export default function LeaveManagerView() {
                                     </TableCell>
                                 </TableRow>
                             ) : (
-                                filteredLeaves.map((leave) => (
+                                filteredLeaves.map((leave: Leave) => (
                                     <TableRow key={leave.id} className="hover:bg-slate-50 transition-colors border-slate-100">
                                         <TableCell className="px-6 py-4">
                                             <div className="flex items-center gap-3">
                                                 <Avatar className="h-8 w-8 rounded-lg border border-slate-200">
                                                     <AvatarFallback className="bg-slate-100 text-slate-600 font-bold text-[10px]">
-                                                        {leave.user.name.charAt(0)}
+                                                        {leave.user?.name?.charAt(0) || 'U'}
                                                     </AvatarFallback>
                                                 </Avatar>
                                                 <div>
-                                                    <p className="font-semibold text-slate-900 text-sm">{leave.user.name}</p>
-                                                    <p className="text-xs text-slate-500">{leave.user.email}</p>
+                                                    <p className="font-semibold text-slate-900 text-sm">{leave.user?.name || 'Unknown'}</p>
+                                                    <p className="text-xs text-slate-500">{leave.user?.email}</p>
                                                 </div>
                                             </div>
                                         </TableCell>
@@ -198,10 +153,10 @@ export default function LeaveManagerView() {
                                                     <Button
                                                         onClick={() => handleStatusUpdate(leave.id, 'APPROVED')}
                                                         size="sm"
-                                                        disabled={processingLeaveId === leave.id}
+                                                        disabled={updateLeaveStatusMutation.isPending && updateLeaveStatusMutation.variables?.leaveId === leave.id}
                                                         className="h-7 px-3 bg-emerald-600 hover:bg-emerald-700 text-white rounded-md text-xs font-bold shadow-sm"
                                                     >
-                                                        {processingLeaveId === leave.id ? (
+                                                        {updateLeaveStatusMutation.isPending && updateLeaveStatusMutation.variables?.leaveId === leave.id && updateLeaveStatusMutation.variables?.status === 'APPROVED' ? (
                                                             <Spinner className="h-3 w-3 animate-spin" />
                                                         ) : 'Approve'}
                                                     </Button>
@@ -209,10 +164,10 @@ export default function LeaveManagerView() {
                                                         onClick={() => handleStatusUpdate(leave.id, 'REJECTED')}
                                                         size="sm"
                                                         variant="outline"
-                                                        disabled={processingLeaveId === leave.id}
+                                                        disabled={updateLeaveStatusMutation.isPending && updateLeaveStatusMutation.variables?.leaveId === leave.id}
                                                         className="h-7 px-3 text-rose-600 hover:text-rose-700 hover:bg-rose-50 border-rose-200 rounded-md text-xs font-bold shadow-sm"
                                                     >
-                                                        {processingLeaveId === leave.id ? (
+                                                        {updateLeaveStatusMutation.isPending && updateLeaveStatusMutation.variables?.leaveId === leave.id && updateLeaveStatusMutation.variables?.status === 'REJECTED' ? (
                                                             <Spinner className="h-3 w-3 animate-spin" />
                                                         ) : 'Reject'}
                                                     </Button>

@@ -42,29 +42,40 @@ export const authService = {
         return response.data;
     },
 
-    // Validate invite token
+    // Validate invite token (Get details)
     validateInvite: async (token: string): Promise<ApiResponse<{
         email: string;
         role: string;
-        organizationId: string;
+        organization: { name: string };
     }>> => {
-        const response = await api.post('/invites/validate', { token });
+        const response = await api.get(`/invites/${token}`);
         return response.data;
     },
 
-    // Accept invite and register
+    // Accept invite and register new user
     acceptInvite: async (data: {
         token: string;
         name: string;
         password: string;
     }): Promise<ApiResponse<LoginResponse>> => {
-        const response = await api.post('/invites/accept', data);
+        const response = await api.post('/auth/register-invite', data);
         return response.data;
     },
 
     // Get current user
     getCurrentUser: async (): Promise<ApiResponse<User>> => {
         const response = await api.get('/auth/me');
+        return response.data;
+    },
+    // Forgot password
+    forgotPassword: async (email: string): Promise<ApiResponse<{ message: string }>> => {
+        const response = await api.post('/auth/forgot-password', { email });
+        return response.data;
+    },
+
+    // Reset password
+    resetPassword: async (token: string, password: string): Promise<ApiResponse<{ message: string }>> => {
+        const response = await api.post('/auth/reset-password', { token, password });
         return response.data;
     },
 };

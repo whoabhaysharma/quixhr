@@ -6,67 +6,43 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
+import { useForgotPassword } from "@/lib/hooks/useAuth"
 
 export default function ForgotPasswordPage() {
-    const [isLoading, setIsLoading] = useState(false)
     const [email, setEmail] = useState("")
     const [message, setMessage] = useState("")
-    const [error, setError] = useState("")
 
-    const handleSubmit = async (e: React.FormEvent) => {
+    const forgotPasswordMutation = useForgotPassword()
+
+    const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault()
-        if (!email) {
-            setError("Email is required")
-            return
-        }
+        if (!email) return
 
-        setIsLoading(true)
-        setError("")
         setMessage("")
 
-        try {
-            const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/auth/forgot-password`, {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ email }),
-            })
+        forgotPasswordMutation.mutate(email, {
+            onSuccess: (data) => {
+                // The backend might return a link for dev/testing purposes
+                const link = (data as any)?.data?.link
 
-            const data = await response.json()
-
-            if (!response.ok) {
-                throw new Error(data.error?.message || "Failed to send reset link")
-            }
-
-            // In a real app with email service, we'd say "Check your email".
-            // Since the backend returns the link directly (temporary), we display it or log it.
-            // For better UX, let's just show a success message assuming it was "sent".
-            // If the user *needs* the link (dev mode), we might display it.
-            // The prompt said: "this link is returned directly in the API response for now."
-
-            setMessage("We have generated a password reset link for you.")
-            if (data.data?.link) {
-                // Extract oobCode for easier local testing
-                try {
-                    const url = new URL(data.data.link);
-                    const oobCode = url.searchParams.get("oobCode");
-                    if (oobCode) {
-                        const localLink = `${window.location.origin}/reset-password?oobCode=${oobCode}`;
-                        setMessage(`Password reset link generated. Click below to test locally: ${localLink}`);
-                    } else {
-                        setMessage(`Password reset link generated: ${data.data.link}`);
+                if (link) {
+                    try {
+                        const url = new URL(link);
+                        const oobCode = url.searchParams.get("oobCode");
+                        if (oobCode) {
+                            const localLink = `${window.location.origin}/reset-password?oobCode=${oobCode}`;
+                            setMessage(`Password reset link generated. Click below to test locally: ${localLink}`);
+                        } else {
+                            setMessage(`Password reset link generated: ${link}`);
+                        }
+                    } catch (e) {
+                        setMessage(`Password reset link generated: ${link}`);
                     }
-                } catch (e) {
-                    setMessage(`Password reset link generated: ${data.data.link}`);
+                } else {
+                    setMessage("We have generated a password reset link for you.")
                 }
-            } else {
-                setMessage("Password reset email sent (simulated).")
             }
-
-        } catch (err: any) {
-            setError(err.message || "An error occurred")
-        } finally {
-            setIsLoading(false)
-        }
+        })
     }
 
     return (
@@ -85,7 +61,6 @@ export default function ForgotPasswordPage() {
                     </CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-6 pt-4">
-                    {error && <p className="text-red-500 font-bold text-center border-2 border-red-500 p-2 bg-red-50">{error}</p>}
                     {message && (
                         <div className="text-green-600 font-bold text-center border-2 border-green-600 p-2 bg-green-50 break-words">
                             {message.startsWith("Password reset link generated. Click below") ? (
@@ -115,8 +90,8 @@ export default function ForgotPasswordPage() {
                                 required
                             />
                         </div>
-                        <Button type="submit" disabled={isLoading} className="w-full bg-[#ffd300] text-black border-2 border-black rounded-none shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] hover:translate-x-[2px] hover:translate-y-[2px] transition-all font-black text-lg h-12 uppercase">
-                            {isLoading ? "Sending..." : "Send Reset Link"}
+                        <Button type="submit" disabled={forgotPasswordMutation.isPending} className="w-full bg-[#ffd300] text-black border-2 border-black rounded-none shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] hover:translate-x-[2px] hover:translate-y-[2px] transition-all font-black text-lg h-12 uppercase">
+                            {forgotPasswordMutation.isPending ? "Sending..." : "Send Reset Link"}
                         </Button>
                     </form>
                 </CardContent>

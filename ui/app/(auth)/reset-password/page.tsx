@@ -1,61 +1,47 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState } from "react"
 import Link from "next/link"
 import { useRouter, useSearchParams } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
+import { useResetPassword } from "@/lib/hooks/useAuth"
+import { toast } from "sonner"
 
 export default function ResetPasswordPage() {
-    const router = useRouter()
     const searchParams = useSearchParams()
-    const token = searchParams.get("token")
 
-    const [isLoading, setIsLoading] = useState(false)
-    const [email, setEmail] = useState("")
+    // Support both 'token' (standard) and 'oobCode' (Firebase style/local test)
+    const token = searchParams.get("token") || searchParams.get("oobCode")
+
     const [password, setPassword] = useState("")
     const [confirmPassword, setConfirmPassword] = useState("")
-    const [error, setError] = useState("")
     const [success, setSuccess] = useState(false)
 
-    const handleReset = async (e: React.FormEvent) => {
+    const resetPasswordMutation = useResetPassword()
+
+    const handleReset = (e: React.FormEvent) => {
         e.preventDefault()
         if (password !== confirmPassword) {
-            setError("Passwords do not match")
+            toast.error("Passwords do not match")
             return
         }
         if (password.length < 6) {
-            setError("Password must be at least 6 characters")
+            toast.error("Password must be at least 6 characters")
+            return
+        }
+        if (!token) {
+            toast.error("Missing reset token")
             return
         }
 
-        setIsLoading(true)
-        setError("")
-
-        try {
-            if (!token) throw new Error("Missing reset token")
-
-            const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/auth/reset-password`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ token, newPassword: password })
-            })
-
-            const data = await response.json()
-
-            if (!response.ok) {
-                throw new Error(data.error?.message || "Failed to reset password")
+        resetPasswordMutation.mutate({ token, password }, {
+            onSuccess: () => {
+                setSuccess(true)
             }
-
-            setSuccess(true)
-        } catch (err: any) {
-            console.error(err)
-            setError(err.message || "Failed to reset password")
-        } finally {
-            setIsLoading(false)
-        }
+        })
     }
 
     if (success) {
@@ -97,8 +83,6 @@ export default function ResetPasswordPage() {
                     </CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-6 pt-4">
-                    {error && <p className="text-red-500 font-bold text-center border-2 border-red-500 p-2 bg-red-50">{error}</p>}
-
                     {!token ? (
                         <div className="text-center">
                             <p className="font-bold">Missing Reset Token</p>
@@ -128,8 +112,8 @@ export default function ResetPasswordPage() {
                                     required
                                 />
                             </div>
-                            <Button type="submit" disabled={isLoading || !!error} className="w-full bg-[#00e378] text-black border-2 border-black rounded-none shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] hover:translate-x-[2px] hover:translate-y-[2px] transition-all font-black text-lg h-12 uppercase">
-                                {isLoading ? "Resetting..." : "Reset Password"}
+                            <Button type="submit" disabled={resetPasswordMutation.isPending} className="w-full bg-[#00e378] text-black border-2 border-black rounded-none shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] hover:translate-x-[2px] hover:translate-y-[2px] transition-all font-black text-lg h-12 uppercase">
+                                {resetPasswordMutation.isPending ? "Resetting..." : "Reset Password"}
                             </Button>
                         </form>
                     )}

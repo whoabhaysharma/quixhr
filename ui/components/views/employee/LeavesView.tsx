@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -22,96 +22,40 @@ import {
     Plus,
     XCircle,
 } from "lucide-react"
-
-interface Leave {
-    id: number
-    startDate: string
-    endDate: string
-    totalDays: number
-    reason: string
-    status: 'PENDING' | 'APPROVED' | 'REJECTED' | 'CANCELLED'
-    user: {
-        name: string
-        email: string
-    }
-}
+import { useLeaves, useCreateLeave } from "@/lib/hooks/useLeaves"
+import { Leave } from "@/lib/services/leaves"
 
 export default function LeavesView() {
     const { user } = useAuth()
-    const [leaves, setLeaves] = useState<Leave[]>([])
-    const [isLoading, setIsLoading] = useState(true)
     const [isRequestModalOpen, setIsRequestModalOpen] = useState(false)
 
     // Request Form
     const [startDate, setStartDate] = useState("")
     const [endDate, setEndDate] = useState("")
     const [reason, setReason] = useState("")
-    const [isSubmitting, setIsSubmitting] = useState(false)
+    const [leaveType, setLeaveType] = useState("Vacation") // Default type
 
-    const fetchLeaves = async () => {
-        setIsLoading(true)
-        try {
-            const token = localStorage.getItem("token")
-            // Always fetch MY leaves for this view
-            const url = `${process.env.NEXT_PUBLIC_BACKEND_URL}/leaves/user/${user.id}`
+    // Use hooks
+    // Pass user.id to get only this user's leaves
+    const { data: leaves = [], isLoading } = useLeaves(user?.id)
+    const createLeaveMutation = useCreateLeave()
 
-            const response = await fetch(url, {
-                headers: { 'Authorization': `Bearer ${token}` }
-            })
-            const data = await response.json()
-            if (response.ok) {
-                setLeaves(data.data.leaves)
-            }
-        } catch (err) {
-            console.error(err)
-        } finally {
-            setIsLoading(false)
-        }
-    }
-
-    useEffect(() => {
-        if (user) {
-            fetchLeaves()
-        }
-    }, [user])
-
-    const handleRequestLeave = async (e: React.FormEvent) => {
+    const handleRequestLeave = (e: React.FormEvent) => {
         e.preventDefault()
-        setIsSubmitting(true)
-        try {
-            const token = localStorage.getItem("token")
-            const start = new Date(startDate)
-            const end = new Date(endDate)
-            const diffTime = Math.abs(end.getTime() - start.getTime());
-            const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1;
 
-            const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/leaves`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${token}`
-                },
-                body: JSON.stringify({
-                    userId: user.id,
-                    startDate,
-                    endDate,
-                    totalDays: diffDays,
-                    reason
-                })
-            })
-
-            if (response.ok) {
+        createLeaveMutation.mutate({
+            type: leaveType,
+            startDate,
+            endDate,
+            reason
+        }, {
+            onSuccess: () => {
                 setIsRequestModalOpen(false)
                 setStartDate("")
                 setEndDate("")
                 setReason("")
-                fetchLeaves()
             }
-        } catch (err) {
-            console.error(err)
-        } finally {
-            setIsSubmitting(false)
-        }
+        })
     }
 
     return (
@@ -180,18 +124,18 @@ export default function LeavesView() {
                                     <TableCell colSpan={5} className="p-12 text-center text-slate-400">No leave requests found.</TableCell>
                                 </TableRow>
                             ) : (
-                                leaves.map((leave) => (
+                                leaves.map((leave: Leave) => (
                                     <TableRow key={leave.id} className="hover:bg-slate-50/50 transition-colors">
                                         <TableCell className="px-6 py-4">
                                             <div className="flex items-center gap-3">
                                                 <Avatar className="h-8 w-8 rounded-lg border border-slate-200">
                                                     <AvatarFallback className="bg-slate-100 text-slate-600 font-bold text-[10px]">
-                                                        {leave.user.name.charAt(0)}
+                                                        {leave.user?.name?.charAt(0) || 'U'}
                                                     </AvatarFallback>
                                                 </Avatar>
                                                 <div>
-                                                    <p className="font-bold text-slate-800 text-sm">{leave.user.name}</p>
-                                                    <p className="text-xs text-slate-500">{leave.user.email}</p>
+                                                    <p className="font-bold text-slate-800 text-sm">{leave.user?.name || 'Unknown'}</p>
+                                                    <p className="text-xs text-slate-500">{leave.user?.email}</p>
                                                 </div>
                                             </div>
                                         </TableCell>
@@ -241,6 +185,18 @@ export default function LeavesView() {
                         </CardHeader>
                         <CardContent className="pt-6">
                             <form onSubmit={handleRequestLeave} className="space-y-4">
+                                <div className="space-y-2">
+                                    <Label className="text-xs font-bold uppercase tracking-wider text-slate-500">Type</Label>
+                                    <select
+                                        className="w-full h-10 px-3 rounded-lg border border-slate-200 focus:outline-none focus:ring-2 focus:ring-slate-900"
+                                        value={leaveType}
+                                        onChange={(e) => setLeaveType(e.target.value)}
+                                    >
+                                        <option value="Vacation">Vacation</option>
+                                        <option value="Sick">Sick Leave</option>
+                                        <option value="Personal">Personal</option>
+                                    </select>
+                                </div>
                                 <div className="grid grid-cols-2 gap-4">
                                     <div className="space-y-2">
                                         <Label className="text-xs font-bold uppercase tracking-wider text-slate-500">From</Label>
@@ -283,10 +239,10 @@ export default function LeavesView() {
                                     </Button>
                                     <Button
                                         type="submit"
-                                        disabled={isSubmitting}
+                                        disabled={createLeaveMutation.isPending}
                                         className="bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl shadow-lg shadow-indigo-200 font-semibold"
                                     >
-                                        {isSubmitting ? (
+                                        {createLeaveMutation.isPending ? (
                                             <>
                                                 <Spinner className="mr-2 h-4 w-4 animate-spin" />
                                                 Submitting...
