@@ -26,7 +26,7 @@ export const authService = {
 
     // Send verification code for registration
     sendVerificationCode: async (email: string): Promise<ApiResponse<{ message: string }>> => {
-        const response = await api.post('/auth/send-verification-code', { email });
+        const response = await api.post('/auth/send-verification', { email });
         return response.data;
     },
 
@@ -35,7 +35,7 @@ export const authService = {
         name: string;
         email: string;
         password: string;
-        verificationCode: string;
+        otp: string;
         organizationName: string;
     }): Promise<ApiResponse<RegisterResponse>> => {
         const response = await api.post('/auth/register', data);

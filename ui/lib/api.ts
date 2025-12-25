@@ -31,6 +31,11 @@ api.interceptors.response.use(
     (error: AxiosError) => {
         // Handle 401 Unauthorized - redirect to login
         if (error.response?.status === 401) {
+            // Don't redirect if it's a login attempt (allow UI to show error)
+            if (error.config?.url?.includes('/auth/login')) {
+                return Promise.reject(error);
+            }
+
             localStorage.removeItem('token');
             localStorage.removeItem('user');
             window.location.href = '/login';

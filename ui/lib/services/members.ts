@@ -35,7 +35,7 @@ export const membersService = {
         email: string;
         role: 'ADMIN' | 'HR' | 'EMPLOYEE';
     }): Promise<ApiResponse<{ message: string; invite: Invite }>> => {
-        const response = await api.post('/invites/send', data);
+        const response = await api.post('/invites', data);
         return response.data;
     },
 

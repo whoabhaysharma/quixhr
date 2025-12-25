@@ -60,7 +60,7 @@ export default function RegisterPage() {
                 email,
                 password,
                 name,
-                verificationCode: otp,
+                otp,
                 organizationName
             })
 

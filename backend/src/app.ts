@@ -22,6 +22,7 @@ import inviteRoutes from './routes/invites';
 import dashboardRoutes from './routes/dashboard';
 import holidayCalendarRoutes from './routes/holidayCalendars';
 import holidayRoutes from './routes/holidays';
+import attendanceRoutes from './routes/attendance.routes';
 
 const app = express();
 
@@ -64,6 +65,7 @@ app.use('/api/v1/invites', inviteRoutes);
 app.use('/api/v1/dashboard', dashboardRoutes);
 app.use('/api/v1/holiday-calendars', holidayCalendarRoutes);
 app.use('/api/v1/holidays', holidayRoutes);
+app.use('/api/v1/attendance', attendanceRoutes);
 
 // 404 handler
 app.use(notFoundHandler);

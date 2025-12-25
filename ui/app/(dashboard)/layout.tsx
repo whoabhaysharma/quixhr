@@ -18,7 +18,9 @@ import {
     ChevronDown,
     User,
     Plus,
-    CalendarDays
+    CalendarDays,
+    Clock,
+    Timer
 } from "lucide-react"
 import {
     Popover,
@@ -64,17 +66,20 @@ export default function DashboardLayout({
 
     if (!isAuthenticated) return null
 
-    const allNavItems = [
-        { name: "Overview", href: "/dashboard", icon: LayoutDashboard },
-        { name: "People", href: "/members", icon: Users, roles: ['ADMIN', 'HR', 'SUPER_ADMIN'] },
-        { name: "Time Off", href: "/leaves", icon: Calendar },
-        { name: "Holidays", href: "/holidays", icon: CalendarDays },
-        // { name: "Settings", href: "/settings", icon: Settings },
-    ]
+    const isManagementRole = ['HR', 'ADMIN', 'SUPER_ADMIN'].includes(user?.role || '')
 
-    const navItems = allNavItems.filter(item =>
-        !item.roles || (user?.role && item.roles.includes(user.role))
-    )
+    const personalNavItems = [
+        { name: "Overview", href: "/dashboard", icon: LayoutDashboard },
+        { name: "Attendance", href: "/attendance", icon: Timer, roles: ['EMPLOYEE'] },
+        { name: "Time Off", href: "/leaves", icon: Calendar, roles: ['EMPLOYEE'] },
+        { name: "Holidays", href: "/holidays", icon: CalendarDays },
+    ].filter(item => !item.roles || (user?.role && item.roles.includes(user.role)))
+
+    const managementNavItems = [
+        { name: "People", href: "/manage/members", icon: Users },
+        { name: "Attendance", href: "/manage/attendance", icon: Clock },
+        { name: "Leave Requests", href: "/manage/leaves", icon: Calendar },
+    ]
 
     return (
         <div className="h-screen w-full bg-[#F8FAFC] flex font-sans text-neutral-900 overflow-hidden">
@@ -110,10 +115,10 @@ export default function DashboardLayout({
                 <nav className="flex-1 p-4 space-y-6 overflow-y-auto">
                     <div>
                         <p className="px-4 text-xs font-bold text-neutral-500 uppercase tracking-wider mb-2">
-                            Platform
+                            My Workspace
                         </p>
                         <div className="space-y-1">
-                            {navItems.map((item) => {
+                            {personalNavItems.map((item) => {
                                 const isActive = pathname === item.href
                                 const Icon = item.icon
                                 return (
@@ -136,6 +141,37 @@ export default function DashboardLayout({
                             })}
                         </div>
                     </div>
+
+                    {isManagementRole && (
+                        <div>
+                            <p className="px-4 text-xs font-bold text-neutral-500 uppercase tracking-wider mb-2">
+                                Management
+                            </p>
+                            <div className="space-y-1">
+                                {managementNavItems.map((item) => {
+                                    const isActive = pathname === item.href
+                                    const Icon = item.icon
+                                    return (
+                                        <Link
+                                            key={item.href}
+                                            href={item.href}
+                                            onClick={() => setSidebarOpen(false)}
+                                            className={`
+                                            flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all duration-200 group
+                                            ${isActive
+                                                    ? "bg-blue-600 text-white shadow-lg shadow-blue-900/20"
+                                                    : "text-neutral-400 hover:bg-white/5 hover:text-white"
+                                                }
+                                        `}
+                                        >
+                                            <Icon className={`w-5 h-5 transition-colors ${isActive ? "text-white" : "text-neutral-500 group-hover:text-white"}`} />
+                                            {item.name}
+                                        </Link>
+                                    )
+                                })}
+                            </div>
+                        </div>
+                    )}
 
                     <div>
                         <p className="px-4 text-xs font-bold text-neutral-500 uppercase tracking-wider mb-2">

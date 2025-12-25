@@ -20,7 +20,16 @@ class DashboardController {
             endOfToday.setHours(23, 59, 59, 999);
 
             // Parallel DB queries for efficiency
-            const [totalEmployees, pendingLeaves, onLeaveToday] = await Promise.all([
+            const [
+                totalEmployees,
+                pendingLeaves,
+                onLeaveToday,
+                presentToday,
+                absentToday,
+                upcomingHolidays,
+                recentJoiners,
+                leaveDistribution
+            ] = await Promise.all([
                 // 1. Total Employees
                 prisma.user.count({
                     where: { organizationId: String(organizationId) }
@@ -44,6 +53,66 @@ class DashboardController {
                             { endDate: { gte: today } }
                         ]
                     }
+                }),
+
+                // 4. Present Today
+                prisma.attendance.count({
+                    where: {
+                        user: { organizationId: String(organizationId) },
+                        date: today,
+                        status: { in: ['PRESENT', 'HALF_DAY'] }
+                    }
+                }),
+
+                // 5. Absent Today
+                prisma.attendance.count({
+                    where: {
+                        user: { organizationId: String(organizationId) },
+                        date: today,
+                        status: 'ABSENT'
+                    }
+                }),
+
+                // 6. Upcoming Holidays
+                prisma.holiday.findMany({
+                    where: {
+                        calendar: { organizationId: String(organizationId) },
+                        date: { gte: today }
+                    },
+                    orderBy: { date: 'asc' },
+                    take: 3
+                }),
+
+                // 7. Recent Joiners
+                prisma.user.findMany({
+                    where: {
+                        organizationId: String(organizationId)
+                    },
+                    orderBy: {
+                        createdAt: 'desc'
+                    },
+                    take: 5,
+                    select: {
+                        id: true,
+                        name: true,
+                        email: true,
+                        avatar: true,
+                        role: true,
+                        createdAt: true
+                    }
+                }),
+
+                // 8. Leave Distribution (by Type, for all time or this year?)
+                // Let's do Current Year Distribution
+                prisma.leave.groupBy({
+                    by: ['type'],
+                    where: {
+                        user: { organizationId: String(organizationId) },
+                        status: LeaveStatus.APPROVED,
+                    },
+                    _count: {
+                        id: true
+                    }
                 })
             ]);
 
@@ -52,7 +121,12 @@ class DashboardController {
                 data: {
                     totalEmployees,
                     pendingLeaves,
-                    onLeaveToday
+                    onLeaveToday,
+                    presentToday,
+                    absentToday,
+                    upcomingHolidays,
+                    recentJoiners,
+                    leaveDistribution
                 }
             });
 
