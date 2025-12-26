@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect, Suspense } from "react"
+import { useState, useEffect, Suspense, useRef } from "react"
 import { useSearchParams, useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -25,6 +25,8 @@ function JoinPageContent() {
     const [showPassword, setShowPassword] = useState(false)
     const [showConfirmPassword, setShowConfirmPassword] = useState(false)
     const [formError, setFormError] = useState("")
+    const [isSubmitting, setIsSubmitting] = useState(false)
+    const isSubmittingRef = useRef(false)
 
     const validateInviteMutation = useValidateInvite()
     const acceptInviteMutation = useAcceptInvite()
@@ -47,6 +49,8 @@ function JoinPageContent() {
 
     const handleJoin = (e: React.FormEvent) => {
         e.preventDefault()
+        if (isSubmittingRef.current) return
+
         if (password !== confirmPassword) {
             setFormError("Passwords do not match")
             return
@@ -55,6 +59,9 @@ function JoinPageContent() {
         setFormError("")
         if (!token) return
 
+        isSubmittingRef.current = true
+        setIsSubmitting(true)
+
         acceptInviteMutation.mutate({
             token,
             name,
@@ -62,13 +69,14 @@ function JoinPageContent() {
         }, {
             onSuccess: (data: any) => {
                 // Success - Store token and redirect
-                // The mutation hook usually handles toast, but we need to handle redirect and storage
                 localStorage.setItem("token", data.data.token)
                 localStorage.setItem("user", JSON.stringify(data.data.user))
                 router.push("/dashboard")
             },
             onError: (error: any) => {
                 setFormError(error.response?.data?.message || "Failed to join")
+                isSubmittingRef.current = false
+                setIsSubmitting(false)
             }
         })
     }
@@ -185,9 +193,9 @@ function JoinPageContent() {
                         <Button
                             type="submit"
                             className="w-full bg-slate-900 hover:bg-slate-800 text-white font-bold h-11 rounded-xl shadow-lg mt-2"
-                            disabled={acceptInviteMutation.isPending}
+                            disabled={isSubmitting || acceptInviteMutation.isPending}
                         >
-                            {acceptInviteMutation.isPending ? (
+                            {isSubmitting || acceptInviteMutation.isPending ? (
                                 <>
                                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                                     Creating Account...

@@ -1,8 +1,10 @@
 "use client"
 
 import React, { createContext, useContext, useEffect, useState } from "react"
+
 import { useRouter, usePathname } from "next/navigation"
 import { jwtDecode } from "jwt-decode"
+import { useCurrentUser } from "@/lib/hooks/useAuth"
 
 interface AuthContextType {
     isAuthenticated: boolean
@@ -21,7 +23,26 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const router = useRouter()
     const pathname = usePathname()
 
-    const checkAuth = (token: string | null) => {
+    // Use query for user data
+    // Use query for user data
+    const { data: userData, isSuccess, error } = useCurrentUser({
+        enabled: typeof window !== 'undefined' && !!localStorage.getItem("token")
+    })
+
+    useEffect(() => {
+        if (isSuccess && userData?.success && userData.data) {
+            setUser(userData.data)
+        }
+    }, [userData, isSuccess])
+
+    useEffect(() => {
+        if (error) {
+            console.error("Session expired or invalid", error)
+            logout()
+        }
+    }, [error])
+
+    const checkAuth = async (token: string | null) => {
         if (token) {
             try {
                 const decoded: any = jwtDecode(token)
@@ -32,17 +53,20 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
                     return
                 }
 
+                // Initial set from token (fast)
                 setUser(decoded)
                 setIsAuthenticated(true)
 
-                // Check Onboarding - Redirect if no org and not super admin (assuming super admin doesn't need org for now)
-                // Also ensure we don't redirect if already ON the onboarding page
+
+
+
+
+                // Check Onboarding
                 if (!decoded.organizationId && decoded.role !== 'SUPER_ADMIN') {
                     if (pathname !== '/onboarding') {
                         router.push('/onboarding')
                     }
                 } else if (pathname === '/onboarding' && (decoded.organizationId || decoded.role === 'SUPER_ADMIN')) {
-                    // If on onboarding but technically done, go to dashboard
                     router.push('/dashboard')
                 }
 
@@ -65,17 +89,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const login = (token: string) => {
         localStorage.setItem("token", token)
         checkAuth(token)
-        // Router push is handled inside checkAuth logic or by component calling login if needed, 
-        // but usually login() implies we want to go dashboard or onboarding.
-        // Let's explicitly push based on state in checkAuth? 
-        // checkAuth sets state, but router.push might be async.
-        // Let's do a manual check here for immediate feedback to the caller (LoginPage)
-        const decoded: any = jwtDecode(token)
-        if (!decoded.organizationId && decoded.role !== 'SUPER_ADMIN') {
-            router.push("/onboarding")
-        } else {
-            router.push("/dashboard")
-        }
     }
 
     const logout = () => {

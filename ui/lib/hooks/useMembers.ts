@@ -2,7 +2,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { membersService } from '../services/members'
 import { toast } from 'sonner'
 
-export function useMembers() {
+export function useMembers(options?: { enabled?: boolean }) {
     return useQuery({
         queryKey: ['members'],
         queryFn: async () => {
@@ -14,6 +14,7 @@ export function useMembers() {
                 throw error
             }
         },
+        enabled: options?.enabled,
     })
 }
 

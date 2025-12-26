@@ -35,16 +35,16 @@ import {
     AlertDialogHeader,
     AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
-import { Spinner } from "@/components/ui/spinner"
 
 export default function CalendarDetailPage() {
     const { calendarId } = useParams()
     const router = useRouter()
     const { user } = useAuth()
+    const isAdmin = user?.role === 'ADMIN' || user?.role === 'HR'
 
     const { data: calendar, isLoading: isCalendarLoading } = useHolidayCalendar(calendarId as string)
     const { data: holidays = [], isLoading: isHolidaysLoading } = useHolidays(calendarId as string)
-    const { data: members = [] } = useMembers()
+    const { data: members = [] } = useMembers({ enabled: isAdmin })
 
     const createHolidayMutation = useCreateHoliday()
     const deleteHolidayMutation = useDeleteHoliday()
@@ -59,7 +59,6 @@ export default function CalendarDetailPage() {
     const [selectedMembers, setSelectedMembers] = useState<string[]>([])
     const [holidayToDelete, setHolidayToDelete] = useState<any>(null)
 
-    const isAdmin = user?.role === 'ADMIN' || user?.role === 'HR'
     const isLoading = isCalendarLoading || isHolidaysLoading
 
     if (isLoading) return <LoadingSkeleton />;
@@ -150,7 +149,7 @@ export default function CalendarDetailPage() {
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <StatCard icon={<CalendarDays className="w-5 h-5 text-indigo-600" />} label="Total Holiday Days" value={totalHolidayDays} />
                 <StatCard icon={<Clock className="w-5 h-5 text-emerald-600" />} label="Upcoming Events" value={holidays.filter((h: any) => isAfter(new Date(h.date), new Date())).length} />
-                <StatCard icon={<Users className="w-5 h-5 text-amber-600" />} label="Assigned Members" value={members.length} />
+                <StatCard icon={<Users className="w-5 h-5 text-amber-600" />} label="Assigned Members" value={calendar.users?.length || 0} />
             </div>
 
             {/* Main Content */}
@@ -188,6 +187,27 @@ export default function CalendarDetailPage() {
                                 />
                             ))}
                         </div>
+                    </div>
+                )}
+            </div>
+
+            {/* Assigned Members List */}
+            <div className="space-y-4">
+                <h2 className="text-sm font-bold text-slate-900 uppercase tracking-wide">
+                    Assigned Team Members
+                </h2>
+                {calendar.users && calendar.users.length > 0 ? (
+                    <div className="flex flex-wrap gap-2">
+                        {calendar.users.map((u: any) => (
+                            <div key={u.id} className="bg-slate-100 text-slate-700 px-3 py-1.5 rounded-full text-sm font-medium border border-slate-200">
+                                {u.name}
+                            </div>
+                        ))}
+                    </div>
+                ) : (
+                    <div className="bg-slate-50 rounded-xl border border-dashed border-slate-300 p-8 text-center">
+                        <Users className="w-8 h-8 text-slate-300 mx-auto mb-2" />
+                        <p className="text-sm text-slate-500">No members assigned to this calendar yet.</p>
                     </div>
                 )}
             </div>

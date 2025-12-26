@@ -30,7 +30,7 @@ export default function RedesignedDashboard() {
         <div className="bg-[#f8fafc] min-h-[calc(100vh-4rem)] pb-20">
             <div className="max-w-[1600px] mx-auto px-6 pt-8 space-y-10">
                 {['ADMIN', 'HR', 'SUPER_ADMIN'].includes(user?.role) ? (
-                    <AdminDashboardView stats={dashboardStats} leaves={recentLeaves} />
+                    <AdminDashboardView user={user} stats={dashboardStats} leaves={recentLeaves} />
                 ) : user?.role === 'EMPLOYEE' ? (
                     <EmployeeDashboardView user={user} stats={dashboardStats} leaves={recentLeaves} />
                 ) : null}

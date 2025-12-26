@@ -18,7 +18,7 @@ import {
     PendingActionsWidget
 } from "@/components/dashboard/DashboardWidgets"
 
-export default function AdminDashboardView({ stats, leaves }: any) {
+export default function AdminDashboardView({ user, stats, leaves }: any) {
     const presentCount = stats?.presentToday || 0
     const absentCount = stats?.absentToday || 0
     const onLeaveCount = stats?.onLeaveToday || 0
@@ -30,7 +30,7 @@ export default function AdminDashboardView({ stats, leaves }: any) {
     return (
         <div className="space-y-8 max-w-[1600px] mx-auto">
             {/* Hero Section */}
-            <WelcomeBanner name="Administrator" role="Admin" />
+            <WelcomeBanner name={user?.name || 'Administrator'} role="Admin" />
 
             {/* KPI Row */}
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">

@@ -1,6 +1,16 @@
-import { useMutation } from '@tanstack/react-query'
+import { useMutation, useQuery } from '@tanstack/react-query'
 import { authService } from '../services/auth'
 import { toast } from 'sonner'
+
+export function useCurrentUser(options?: { enabled?: boolean }) {
+    return useQuery({
+        queryKey: ['currentUser'],
+        queryFn: () => authService.getCurrentUser(),
+        retry: false,
+        staleTime: 1000 * 60 * 5, // 5 minutes
+        enabled: options?.enabled,
+    })
+}
 
 export function useLogin() {
     return useMutation({

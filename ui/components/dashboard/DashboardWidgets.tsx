@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button"
 import { Spinner } from "@/components/ui/spinner"
 import { Skeleton } from "@/components/ui/skeleton"
 import { Timer, Calendar, UserPlus, FileText, Sparkles, ChevronRight, Zap, Clock, CheckCircle } from "lucide-react"
-import { format, differenceInHours, differenceInMinutes, parseISO } from "date-fns"
+import { format, differenceInHours, differenceInMinutes, parseISO, isValid } from "date-fns"
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import * as attendanceService from "@/lib/services/attendance"
 import { useState, useEffect } from "react"
@@ -334,6 +334,10 @@ export function AvailabilityRow({ name, availability }: any) {
 
 export function HolidayItem({ date, name, subtitle }: any) {
     const dateObj = typeof date === 'string' ? parseISO(date) : date
+    const isDateValid = isValid(dateObj)
+
+    if (!isDateValid) return null
+
     return (
         <div className="flex items-center gap-4">
             <div className="bg-slate-50 border border-slate-100 rounded-xl p-2 min-w-[54px] text-center">

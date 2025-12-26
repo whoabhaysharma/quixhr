@@ -158,55 +158,65 @@ export default function HolidaysPage() {
                 </div>
             ) : (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                    {calendars.map((calendar) => (
-                        <Link key={calendar.id} href={`/holidays/${calendar.id}`} className="block h-full">
-                            <div className="h-full bg-white rounded-xl border border-slate-200 shadow-sm hover:border-indigo-300 hover:shadow-md transition-all p-5 flex flex-col justify-between group">
-                                <div>
-                                    <div className="flex justify-between items-start mb-3">
-                                        <Badge variant="secondary" className="bg-slate-100 text-slate-600 hover:bg-slate-100 font-medium border-0">
-                                            {calendar.year}
-                                        </Badge>
-                                        {isAdmin && (
-                                            <Button
-                                                variant="ghost"
-                                                size="sm"
-                                                className="h-8 w-8 p-0 text-slate-400 hover:text-red-600 hover:bg-red-50 opacity-0 group-hover:opacity-100 transition-opacity"
-                                                onClick={(e) => handleDeleteCalendar(calendar.id, e)}
-                                                disabled={deleteCalendarMutation.isPending && deleteCalendarMutation.variables === calendar.id}
-                                            >
-                                                {deleteCalendarMutation.isPending && deleteCalendarMutation.variables === calendar.id ? (
-                                                    <Spinner className="w-3 h-3" />
-                                                ) : (
-                                                    <Trash2 className="w-4 h-4" />
+                    {calendars.map((calendar: any) => {
+                        const isAssigned = user?.holidayCalendarId === calendar.id
+                        return (
+                            <Link key={calendar.id} href={`/holidays/${calendar.id}`} className="block h-full">
+                                <div className={`h-full bg-white rounded-xl border shadow-sm transition-all p-5 flex flex-col justify-between group ${isAssigned ? 'border-indigo-600 ring-1 ring-indigo-600/20' : 'border-slate-200 hover:border-indigo-300 hover:shadow-md'}`}>
+                                    <div>
+                                        <div className="flex justify-between items-start mb-3">
+                                            <div className="flex gap-2">
+                                                <Badge variant="secondary" className="bg-slate-100 text-slate-600 hover:bg-slate-100 font-medium border-0">
+                                                    {calendar.year}
+                                                </Badge>
+                                                {user?.holidayCalendarId === calendar.id && (
+                                                    <Badge className="bg-indigo-100 text-indigo-700 hover:bg-indigo-100 font-bold border-0">
+                                                        My Calendar
+                                                    </Badge>
                                                 )}
-                                            </Button>
-                                        )}
-                                    </div>
-                                    <h3 className="text-lg font-bold text-slate-900 mb-2 truncate">
-                                        {calendar.name}
-                                    </h3>
-                                    <p className="text-sm text-slate-500 line-clamp-2 mb-6 h-10">
-                                        {calendar.description || "No description provided."}
-                                    </p>
-                                </div>
-                                <div className="flex items-center justify-between pt-4 border-t border-slate-50">
-                                    <div className="flex gap-4 text-xs font-medium text-slate-500">
-                                        <div className="flex items-center gap-1.5">
-                                            <Calendar className="w-3.5 h-3.5" />
-                                            <span>{calendar._count?.holidays || 0}</span>
+                                            </div>
+                                            {isAdmin && (
+                                                <Button
+                                                    variant="ghost"
+                                                    size="sm"
+                                                    className="h-8 w-8 p-0 text-slate-400 hover:text-red-600 hover:bg-red-50 opacity-0 group-hover:opacity-100 transition-opacity"
+                                                    onClick={(e) => handleDeleteCalendar(calendar.id, e)}
+                                                    disabled={deleteCalendarMutation.isPending && deleteCalendarMutation.variables === calendar.id}
+                                                >
+                                                    {deleteCalendarMutation.isPending && deleteCalendarMutation.variables === calendar.id ? (
+                                                        <Spinner className="w-3 h-3" />
+                                                    ) : (
+                                                        <Trash2 className="w-4 h-4" />
+                                                    )}
+                                                </Button>
+                                            )}
                                         </div>
-                                        <div className="flex items-center gap-1.5">
-                                            <Users className="w-3.5 h-3.5" />
-                                            <span>{calendar._count?.users || 0}</span>
-                                        </div>
+                                        <h3 className="text-lg font-bold text-slate-900 mb-2 truncate">
+                                            {calendar.name}
+                                        </h3>
+                                        <p className="text-sm text-slate-500 line-clamp-2 mb-6 h-10">
+                                            {calendar.description || "No description provided."}
+                                        </p>
                                     </div>
-                                    <span className="text-indigo-600 text-xs font-bold flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                                        View <ChevronRight className="w-3 h-3" />
-                                    </span>
+                                    <div className="flex items-center justify-between pt-4 border-t border-slate-50">
+                                        <div className="flex gap-4 text-xs font-medium text-slate-500">
+                                            <div className="flex items-center gap-1.5">
+                                                <Calendar className="w-3.5 h-3.5" />
+                                                <span>{calendar._count?.holidays || 0}</span>
+                                            </div>
+                                            <div className="flex items-center gap-1.5">
+                                                <Users className="w-3.5 h-3.5" />
+                                                <span>{calendar._count?.users || 0}</span>
+                                            </div>
+                                        </div>
+                                        <span className="text-indigo-600 text-xs font-bold flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                                            View <ChevronRight className="w-3 h-3" />
+                                        </span>
+                                    </div>
                                 </div>
-                            </div>
-                        </Link>
-                    ))}
+                            </Link>
+                        )
+                    })}
                 </div>
             )}
         </div>

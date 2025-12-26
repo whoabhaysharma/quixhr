@@ -6,6 +6,7 @@ export interface User {
     email: string;
     role: 'ADMIN' | 'HR' | 'EMPLOYEE';
     organizationId: string;
+    holidayCalendarId?: string;
 }
 
 export interface LoginResponse {
