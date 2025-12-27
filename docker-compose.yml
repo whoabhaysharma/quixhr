@@ -27,6 +27,7 @@ services:
 
     environment:
       DATABASE_URL: postgresql://postgres:postgres123@database:5432/quixhr
+      REDIS_URL: redis://redis:6379
       JWT_SECRET: supersecretkey123
       PORT: 3000
       NODE_ENV: development
@@ -45,5 +46,32 @@ services:
 
     command: npm run dev:watch
 
+  redis:
+    image: redis:alpine
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+
+  frontend:
+    build:
+      context: ./ui
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    ports:
+      - "3001:3000"
+    environment:
+      - NODE_ENV=production
+    depends_on:
+      - backend
+
+  adminer:
+    image: adminer
+    restart: always
+    ports:
+      - 8080:8080
+
 volumes:
   postgres_data:
+  redis_data:

@@ -28,6 +28,7 @@ export function useCreateLeave() {
             startDate: string
             endDate: string
             reason?: string
+            customDates?: string[]
         }) => leavesService.createLeave(data),
         onSuccess: () => {
             // Invalidate and refetch leaves queries

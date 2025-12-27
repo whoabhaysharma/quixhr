@@ -84,6 +84,7 @@ model Subscription {
 
   // Billing Info
   orderId    String @unique // From Razorpay/Stripe
+  paymentId  String? // Razorpay Payment ID
   amountPaid Int
   status     String @default("COMPLETED")
 

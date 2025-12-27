@@ -1,6 +1,6 @@
 import 'dotenv/config';
 import app from './app';
-import { config } from './config';
+import { config } from './shared/config';
 
 console.log('🔄 Starting QuixHR Backend... (via app.ts)');
 

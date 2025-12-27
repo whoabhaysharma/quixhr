@@ -41,6 +41,7 @@ export const leavesService = {
         startDate: string;
         endDate: string;
         reason?: string;
+        customDates?: string[];
     }): Promise<ApiResponse<Leave>> => {
         const response = await api.post('/leaves', leaveData);
         return response.data;
@@ -51,7 +52,7 @@ export const leavesService = {
         leaveId: string,
         status: 'APPROVED' | 'REJECTED'
     ): Promise<ApiResponse<Leave>> => {
-        const response = await api.patch(`/leaves/${leaveId}`, { status });
+        const response = await api.patch(`/leaves/${leaveId}/status`, { status });
         return response.data;
     },
 

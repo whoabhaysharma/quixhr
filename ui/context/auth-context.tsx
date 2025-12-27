@@ -57,28 +57,27 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
                 setUser(decoded)
                 setIsAuthenticated(true)
 
-
-
-
-
-                // Check Onboarding
-                if (!decoded.organizationId && decoded.role !== 'SUPER_ADMIN') {
-                    if (pathname !== '/onboarding') {
-                        router.push('/onboarding')
-                    }
-                } else if (pathname === '/onboarding' && (decoded.organizationId || decoded.role === 'SUPER_ADMIN')) {
-                    router.push('/dashboard')
+                // Redirect to dashboard if on auth pages
+                if (pathname.startsWith('/login') || pathname.startsWith('/register') || pathname.startsWith('/join')) {
+                    router.push('/dashboard');
                 }
 
-            } catch (e) {
-                console.error("Invalid token", e)
-                logout()
+            } catch (error) {
+                console.error('Token verification failed:', error);
+                localStorage.removeItem('token');
+                setUser(null);
+                setIsAuthenticated(false);
+                if (!pathname.startsWith('/login') && !pathname.startsWith('/register') && !pathname.startsWith('/join')) {
+                    router.push('/login');
+                }
+            } finally {
+                setIsLoading(false);
             }
         } else {
             setIsAuthenticated(false)
             setUser(null)
+            setIsLoading(false)
         }
-        setIsLoading(false)
     }
 
     useEffect(() => {
