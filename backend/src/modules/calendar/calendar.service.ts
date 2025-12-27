@@ -1,4 +1,4 @@
-import { PrismaClient, WeeklyRuleType } from '@prisma/client';
+import { PrismaClient } from '@prisma/client';
 import { CreateCalendarDto, UpdateCalendarDto, CalendarResponseDto } from './calendar.types';
 import * as rulesService from './rules/rules.service';
 import * as holidaysService from './holidays/holidays.service';

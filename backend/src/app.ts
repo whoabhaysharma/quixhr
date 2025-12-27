@@ -9,6 +9,7 @@ import authRoutes from './modules/auth/auth.routes';
 import companyRoutes from './modules/company/company.routes';
 import employeeRoutes from './modules/employee/employee.routes';
 import calendarRoutes from './modules/calendar/calendar.routes';
+import attendanceRoutes from './modules/attendance/attendance.routes';
 
 const app = express();
 
@@ -31,6 +32,7 @@ app.use('/api/auth', authRoutes);
 app.use('/api/companies', companyRoutes);
 app.use('/api/employees', employeeRoutes);
 app.use('/api/calendars', calendarRoutes);
+app.use('/api/attendance', attendanceRoutes);
 
 // Health check
 app.get('/health', (req, res) => {

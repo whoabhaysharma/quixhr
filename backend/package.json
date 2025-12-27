@@ -6,11 +6,11 @@
   "scripts": {
     "dev": "concurrently \"npm run dev:server\" \"npm run dev:worker\"",
     "dev:server": "ts-node-dev --respawn --transpile-only src/index.ts",
-    "dev:worker": "ts-node-dev --respawn --transpile-only src/workers/email.worker.bootstrap.ts",
+    "dev:worker": "ts-node-dev --respawn --transpile-only src/workers/index.ts",
     "dev:watch": "ts-node-dev --respawn --transpile-only src/index.ts",
     "build": "tsc",
     "start": "node dist/index.js",
-    "worker": "node dist/workers/email.worker.bootstrap.js"
+    "worker": "node dist/workers/index.js"
   },
   "keywords": [
     "express",

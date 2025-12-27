@@ -165,3 +165,22 @@ export async function assignCalendarToEmployee(employeeId: string, calendarId: s
         }
     });
 }
+export async function getEmployeeByUserId(userId: string): Promise<EmployeeResponseDto | null> {
+    const employee = await prisma.employee.findFirst({
+        where: { userId },
+        include: { user: true }
+    });
+
+    if (!employee) return null;
+
+    return {
+        id: employee.id,
+        userId: employee.userId,
+        companyId: employee.companyId,
+        name: employee.name,
+        status: employee.status,
+        email: employee.user.email,
+        role: employee.user.role,
+        createdAt: employee.createdAt
+    };
+}

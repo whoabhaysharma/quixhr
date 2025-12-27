@@ -2,6 +2,7 @@ import { Response } from 'express';
 import { z } from 'zod';
 import { AuthRequest } from '../../shared/middleware/auth.middleware';
 import * as employeeService from './employee.service';
+import { logAction } from '../audit/audit.service';
 import { Role } from '@prisma/client';
 
 const createEmployeeSchema = z.object({
@@ -38,6 +39,20 @@ export async function create(req: AuthRequest, res: Response): Promise<void> {
         }
 
         const employee = await employeeService.createEmployee(dto);
+
+        // Audit Log
+        if (req.user?.id) {
+            await logAction({
+                userId: req.user.id,
+                action: 'EMPLOYEE_CREATE',
+                resource: 'Employee',
+                resourceId: employee.id,
+                ipAddress: req.ip || req.socket.remoteAddress || 'Unknown',
+                userAgent: req.headers['user-agent'],
+                details: { name: employee.name, email: dto.email, companyId: dto.companyId }
+            });
+        }
+
         res.status(201).json({ success: true, data: employee });
     } catch (error: any) {
         res.status(400).json({ success: false, error: error.message || 'Failed to create employee' });
@@ -131,6 +146,20 @@ export async function update(req: AuthRequest, res: Response): Promise<void> {
         }
 
         const employee = await employeeService.updateEmployee(id, dto);
+
+        // Audit Log
+        if (req.user?.id) {
+            await logAction({
+                userId: req.user.id,
+                action: 'EMPLOYEE_UPDATE',
+                resource: 'Employee',
+                resourceId: id,
+                ipAddress: req.ip || req.socket.remoteAddress || 'Unknown',
+                userAgent: req.headers['user-agent'],
+                details: { updates: dto }
+            });
+        }
+
         res.json({ success: true, data: employee });
     } catch (error: any) {
         res.status(400).json({ success: false, error: error.message || 'Failed to update employee' });
@@ -160,6 +189,20 @@ export async function deleteOne(req: AuthRequest, res: Response): Promise<void> 
         }
 
         await employeeService.deleteEmployee(id);
+
+        // Audit Log
+        if (req.user?.id) {
+            await logAction({
+                userId: req.user.id,
+                action: 'EMPLOYEE_DELETE',
+                resource: 'Employee',
+                resourceId: id,
+                ipAddress: req.ip || req.socket.remoteAddress || 'Unknown',
+                userAgent: req.headers['user-agent'],
+                details: { deletedEmployeeId: id }
+            });
+        }
+
         res.json({ success: true, message: 'Employee deleted successfully' });
     } catch (error: any) {
         res.status(400).json({ success: false, error: error.message || 'Failed to delete employee' });

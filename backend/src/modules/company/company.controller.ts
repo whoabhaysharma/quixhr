@@ -1,6 +1,7 @@
 import { Request, Response } from 'express';
 import { z } from 'zod';
 import * as companyService from './company.service';
+import { logAction } from '../audit/audit.service';
 import { AuthRequest } from '../../shared/middleware/auth.middleware';
 import { Role } from '@prisma/client';
 // Actually AuthRequest isn't exported from controller usuall. Let's define it or import from auth.types if available.
@@ -91,6 +92,20 @@ export async function update(req: AuthRequest, res: Response): Promise<void> {
         }
 
         const company = await companyService.updateCompany(req.params.id, dto);
+
+        // Audit Log
+        if (req.user?.id) {
+            await logAction({
+                userId: req.user.id,
+                action: 'COMPANY_UPDATE',
+                resource: 'Company',
+                resourceId: req.params.id,
+                ipAddress: req.ip || req.socket.remoteAddress || 'Unknown',
+                userAgent: req.headers['user-agent'],
+                details: { updates: dto }
+            });
+        }
+
         res.json({ success: true, data: company });
     } catch (error: any) {
         res.status(400).json({ success: false, error: error.message || 'Failed to update company' });

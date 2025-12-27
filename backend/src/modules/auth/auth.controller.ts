@@ -1,5 +1,6 @@
 import { Request, Response } from 'express';
 import { authService } from './auth.service';
+import { logAction } from '../audit/audit.service';
 import {
     loginSchema,
     registerSchema,
@@ -21,6 +22,20 @@ export async function login(req: Request, res: Response): Promise<void> {
 
         // Login
         const result = await authService.login(dto, ipAddress);
+
+        // Audit Log
+        const userId = result.user?.id || 'unknown'; // Ensure we have an ID
+        if (result.user?.id) {
+            await logAction({
+                userId: result.user.id,
+                action: 'USER_LOGIN',
+                resource: 'Usage',
+                resourceId: result.user.id, // Logging against the user themselves
+                ipAddress,
+                userAgent: req.headers['user-agent'],
+                details: { email: dto.email }
+            });
+        }
 
         res.json({
             success: true,
@@ -44,6 +59,19 @@ export async function register(req: Request, res: Response): Promise<void> {
 
         // Register
         const result = await authService.register(dto);
+
+        // Audit Log
+        if (result.userId) {
+            await logAction({
+                userId: result.userId,
+                action: 'USER_REGISTER',
+                resource: 'User',
+                resourceId: result.userId,
+                ipAddress: req.ip || req.socket.remoteAddress || 'Unknown',
+                userAgent: req.headers['user-agent'],
+                details: { email: dto.email }
+            });
+        }
 
         res.status(201).json({
             success: true,

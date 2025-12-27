@@ -202,11 +202,12 @@ model LeaveRequest {
 
 model AuditLog {
   id         String   @id @default(uuid())
-  actorId   String
+  userId     String
   action     String
-  entity     String
-  entityId   String
-  before     Json?
-  after      Json?
+  resource   String
+  resourceId String
+  details    Json?
+  ipAddress  String?
+  userAgent  String?
   createdAt  DateTime @default(now())
 }
