@@ -4,6 +4,7 @@ import * as attendanceService from './attendance.service';
 import { checkInSchema, checkOutSchema } from './attendance.types';
 import * as employeeService from '../employee/employee.service';
 import { logAction } from '../audit/audit.service';
+import { redis } from '../../infra/redis/redis.connection';
 
 /**
  * Check In
@@ -15,6 +16,18 @@ export async function checkIn(req: AuthRequest, res: Response): Promise<void> {
             res.status(401).json({ success: false, error: 'Unauthorized' });
             return;
         }
+
+        // Prevent double hits: Check for lock
+        const lockKey = `attendance_lock:${userId}`;
+        const isLocked = await redis.get(lockKey);
+
+        if (isLocked) {
+            res.status(429).json({ success: false, error: 'Request in progress, please wait' });
+            return;
+        }
+
+        // Set lock for 5 seconds
+        await redis.set(lockKey, '1', 'EX', 5);
 
         const employee = await employeeService.getEmployeeByUserId(userId);
         if (!employee) {
