@@ -1,4 +1,4 @@
-import { PrismaClient } from '@prisma/client';
+import { PrismaClient, Role } from '@prisma/client';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import {
@@ -116,21 +116,21 @@ export async function register(dto: RegisterDto): Promise<{ message: string; use
 
     // Create user, company, and employee in transaction
     const result = await prisma.$transaction(async (tx) => {
-        // Create company
-        const company = await tx.company.create({
-            data: {
-                name: dto.companyName,
-                timezone: 'UTC',
-            },
-        });
-
-        // Create user with emailVerified = false
+        // Create user first (to be the owner)
         const user = await tx.user.create({
             data: {
                 email: dto.email,
                 password: hashedPassword,
-                role: 'HR_ADMIN', // First user is HR admin
+                role: Role.HR_ADMIN, // First user is HR admin (owner)
                 emailVerified: false,
+            },
+        });
+
+        // Create company with ownerId
+        const company = await tx.company.create({
+            data: {
+                name: dto.companyName,
+                timezone: 'UTC',
             },
         });
 

@@ -6,6 +6,9 @@ import { apiRateLimit } from './shared/middleware';
 
 // Import routes
 import authRoutes from './modules/auth/auth.routes';
+import companyRoutes from './modules/company/company.routes';
+import employeeRoutes from './modules/employee/employee.routes';
+import calendarRoutes from './modules/calendar/calendar.routes';
 
 const app = express();
 
@@ -25,6 +28,9 @@ app.use('/api', apiRateLimit);
 
 // Routes
 app.use('/api/auth', authRoutes);
+app.use('/api/companies', companyRoutes);
+app.use('/api/employees', employeeRoutes);
+app.use('/api/calendars', calendarRoutes);
 
 // Health check
 app.get('/health', (req, res) => {

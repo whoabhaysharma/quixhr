@@ -72,7 +72,6 @@ model Company {
   id        String   @id @default(uuid())
   name      String
   timezone  String
-
   employees Employee[]
   calendars Calendar[]
 }
