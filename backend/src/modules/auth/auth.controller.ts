@@ -1,123 +1,160 @@
-import { Request, Response, NextFunction } from 'express';
+import { Request, Response } from 'express';
 import { authService } from './auth.service';
-import { userService } from '../users/users.service';
+import {
+    loginSchema,
+    registerSchema,
+    forgotPasswordSchema,
+    resetPasswordSchema,
+} from './auth.types';
+import { AuthRequest } from '../../shared/middleware';
 
-class AuthController {
-    async login(req: Request, res: Response, next: NextFunction): Promise<void> {
-        try {
-            const { email, password } = req.body;
+/**
+ * POST /auth/login
+ */
+export async function login(req: Request, res: Response): Promise<void> {
+    try {
+        // Validate request body
+        const dto = loginSchema.parse(req.body);
 
-            if (!email || !password) {
-                res.status(400).json({ success: false, error: { message: 'Email and password are required' } });
-                return;
-            }
+        // Get IP address
+        const ipAddress = req.ip || req.socket.remoteAddress || 'Unknown';
 
-            const result = await authService.login(email, password);
-            res.json({ success: true, data: result });
-        } catch (error) {
-            res.status(401).json({ success: false, error: { message: 'Invalid credentials' } });
-        }
-    }
+        // Login
+        const result = await authService.login(dto, ipAddress);
 
-    async sendVerification(req: Request, res: Response, next: NextFunction): Promise<void> {
-        try {
-            const { email } = req.body;
-            if (!email) {
-                res.status(400).json({ success: false, error: { message: 'Email is required' } });
-                return;
-            }
-            const result = await authService.sendVerificationOtp(email);
-            res.json({ success: true, data: result });
-        } catch (error: any) {
-            res.status(400).json({ success: false, error: { message: error.message || 'Failed to send verification code' } });
-        }
-    }
-
-    async register(req: Request, res: Response, next: NextFunction): Promise<void> {
-        try {
-            const { name, email, password, otp, organizationName } = req.body;
-
-            if (!email || !password || !name || !otp || !organizationName) {
-                res.status(400).json({ success: false, error: { message: 'Name, email, password, organization name, and verification code are required' } });
-                return;
-            }
-
-            const result = await authService.registerWithEmail(email, password, name, otp, organizationName);
-            res.json({ success: true, data: result });
-
-        } catch (error: any) {
-            res.status(400).json({ success: false, error: { message: error.message || 'Registration failed' } });
-        }
-    }
-
-    async registerWithInvite(req: Request, res: Response, next: NextFunction): Promise<void> {
-        try {
-            const { token, name, password } = req.body;
-
-            if (!token || !name || !password) {
-                res.status(400).json({ success: false, error: { message: 'Token, name, and password are required' } });
-                return;
-            }
-
-            const result = await authService.registerWithInvite(token, name, password);
-            res.status(201).json({ success: true, data: result });
-        } catch (error: any) {
-            res.status(400).json({ success: false, error: { message: error.message || 'Failed to register with invite' } });
-        }
-    }
-
-    async forgotPassword(req: Request, res: Response, next: NextFunction): Promise<void> {
-        try {
-            const { email } = req.body;
-
-            if (!email) {
-                res.status(400).json({ success: false, error: { message: 'Email is required' } });
-                return;
-            }
-
-            const result = await authService.forgotPassword(email);
-            res.json({ success: true, data: result });
-        } catch (error: any) {
-            res.status(400).json({ success: false, error: { message: error.message || 'Failed to generate reset link' } });
-        }
-    }
-
-    async resetPassword(req: Request, res: Response, next: NextFunction): Promise<void> {
-        try {
-            const { token, newPassword } = req.body;
-
-            if (!token || !newPassword) {
-                res.status(400).json({ success: false, error: { message: 'Token and new password are required' } });
-                return;
-            }
-
-            const result = await authService.resetPassword(token, newPassword);
-            res.json({ success: true, data: result });
-        } catch (error: any) {
-            res.status(400).json({ success: false, error: { message: error.message || 'Failed to reset password' } });
-        }
-    }
-
-    async getCurrentUser(req: Request, res: Response, next: NextFunction): Promise<void> {
-        try {
-            const userId = req.user?.id;
-            if (!userId) {
-                res.status(401).json({ success: false, error: { message: 'Not authenticated' } });
-                return;
-            }
-
-            const user = await userService.getUserById(userId);
-            if (!user) {
-                res.status(404).json({ success: false, error: { message: 'User not found' } });
-                return;
-            }
-
-            const { password: _, ...userWithoutPassword } = user;
-            res.json({ success: true, data: userWithoutPassword });
-        } catch (error: any) {
-            res.status(500).json({ success: false, error: { message: error.message || 'Failed to fetch user' } });
-        }
+        res.json({
+            success: true,
+            data: result,
+        });
+    } catch (error: any) {
+        res.status(400).json({
+            success: false,
+            error: error.message || 'Login failed',
+        });
     }
 }
 
-export const authController = new AuthController();
+/**
+ * POST /auth/register
+ */
+export async function register(req: Request, res: Response): Promise<void> {
+    try {
+        // Validate request body
+        const dto = registerSchema.parse(req.body);
+
+        // Register
+        const result = await authService.register(dto);
+
+        res.status(201).json({
+            success: true,
+            data: result,
+        });
+    } catch (error: any) {
+        res.status(400).json({
+            success: false,
+            error: error.message || 'Registration failed',
+        });
+    }
+}
+
+/**
+ * POST /auth/forgot-password
+ */
+export async function forgotPassword(req: Request, res: Response): Promise<void> {
+    try {
+        // Validate request body
+        const dto = forgotPasswordSchema.parse(req.body);
+
+        // Generate reset token
+        const result = await authService.forgotPassword(dto);
+
+        res.json({
+            success: true,
+            data: result,
+        });
+    } catch (error: any) {
+        res.status(400).json({
+            success: false,
+            error: error.message || 'Failed to process request',
+        });
+    }
+}
+
+/**
+ * POST /auth/reset-password
+ */
+export async function resetPassword(req: Request, res: Response): Promise<void> {
+    try {
+        // Validate request body
+        const dto = resetPasswordSchema.parse(req.body);
+
+        // Reset password
+        const result = await authService.resetPassword(dto);
+
+        res.json({
+            success: true,
+            data: result,
+        });
+    } catch (error: any) {
+        res.status(400).json({
+            success: false,
+            error: error.message || 'Password reset failed',
+        });
+    }
+}
+
+/**
+ * GET /auth/me
+ */
+export async function getCurrentUser(req: AuthRequest, res: Response): Promise<void> {
+    try {
+        if (!req.user) {
+            res.status(401).json({
+                success: false,
+                error: 'Not authenticated',
+            });
+            return;
+        }
+
+        const user = await authService.getCurrentUser(req.user.id);
+
+        res.json({
+            success: true,
+            data: user,
+        });
+    } catch (error: any) {
+        res.status(400).json({
+            success: false,
+            error: error.message || 'Failed to fetch user',
+        });
+    }
+}
+
+/**
+ * GET /auth/verify-email/:token
+ */
+export async function verifyEmailController(req: Request, res: Response): Promise<void> {
+    try {
+        const { token } = req.params;
+
+        if (!token) {
+            res.status(400).json({
+                success: false,
+                error: 'Verification token is required',
+            });
+            return;
+        }
+
+        const result = await authService.verifyEmail(token);
+
+        res.json({
+            success: true,
+            data: result,
+        });
+    } catch (error: any) {
+        res.status(400).json({
+            success: false,
+            error: error.message || 'Email verification failed',
+        });
+    }
+}

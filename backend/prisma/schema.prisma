@@ -7,194 +7,207 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-// --- ENUMS ---
+///////////////////////
+// ENUMS
+///////////////////////
 
 enum Role {
-  SUPER_ADMIN // Platform Owner
-  ADMIN // SaaS Owner (Organization Owner)
-  HR // Organization Admin
-  EMPLOYEE // Organization Staff
+  SUPER_ADMIN
+  HR_ADMIN
+  MANAGER
+  EMPLOYEE
+}
+
+enum WeeklyRuleType {
+  WORKING
+  OFF
+  ALTERNATE
+}
+
+enum DayType {
+  WORKING
+  WEEKLY_OFF
+  HOLIDAY
+}
+
+enum AttendanceType {
+  FULL
+  HALF_AM
+  HALF_PM
+  ABSENT
+}
+
+enum LeaveDuration {
+  FULL
+  HALF_AM
+  HALF_PM
 }
 
 enum LeaveStatus {
   PENDING
   APPROVED
   REJECTED
-  CANCELLED
 }
 
-enum LeaveType {
-  ANNUAL
-  SICK
-  CASUAL
-  MATERNITY
-  PATERNITY
-  UNPAID
-}
-
-// --- MODELS ---
-
-// --- MODELS ---
-
-model Organization {
-  id   String @id @default(uuid())
-  name String
-
-  // Relations
-  users            User[]
-  subscriptions    Subscription[]
-  invites          Invite[]
-  holidayCalendars HolidayCalendar[]
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-}
+///////////////////////
+// AUTH
+///////////////////////
 
 model User {
-  id     String  @id @default(uuid())
-  email  String  @unique
-  name   String?
-  avatar String?
+  id            String   @id @default(uuid())
+  email         String   @unique
+  password      String
+  role          Role
+  emailVerified Boolean  @default(false)
+  createdAt     DateTime @default(now())
 
-  // Auth Fields
-  password String? // Always store HASHED
+  employee  Employee?
+}
 
-  role Role @default(EMPLOYEE)
+///////////////////////
+// COMPANY & EMPLOYEE
+///////////////////////
 
-  // Multi-tenancy
-  organizationId String?
-  organization   Organization? @relation(fields: [organizationId], references: [id])
+model Company {
+  id        String   @id @default(uuid())
+  name      String
+  timezone  String
 
-  // Holiday Calendar
-  holidayCalendarId String?
-  holidayCalendar   HolidayCalendar? @relation(fields: [holidayCalendarId], references: [id])
+  employees Employee[]
+  calendars Calendar[]
+}
 
-  leaves     Leave[]
+model Employee {
+  id        String   @id @default(uuid())
+  userId    String   @unique
+  companyId String
+  name      String
+  status    String
+  createdAt DateTime @default(now())
+
+  user      User     @relation(fields: [userId], references: [id])
+  company   Company  @relation(fields: [companyId], references: [id])
+
+  calendar  EmployeeCalendar?
   attendance Attendance[]
-
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  leaves     LeaveRequest[]
 }
 
-model Subscription {
-  id             String @id @default(uuid())
-  organizationId String
-  planId         String
+///////////////////////
+// CALENDAR (POLICY)
+///////////////////////
 
-  // Billing Info
-  orderId    String @unique // From Razorpay/Stripe
-  paymentId  String? // Razorpay Payment ID
-  amountPaid Int
-  status     String @default("COMPLETED")
+model Calendar {
+  id              String   @id @default(uuid())
+  companyId       String
+  name            String
+  year            Int
 
-  // Validity
-  startDate DateTime @default(now())
-  endDate   DateTime // Calculated as startDate + plan.durationDays
+  dayStartTime    String   // "09:00"
+  midDayCutoff    String   // "13:00"
+  dayEndTime      String   // "18:00"
 
-  organization Organization @relation(fields: [organizationId], references: [id])
-  plan         Plan         @relation(fields: [planId], references: [id])
+  createdAt       DateTime @default(now())
 
-  createdAt DateTime @default(now())
+  company         Company  @relation(fields: [companyId], references: [id])
+
+  weeklyRules     CalendarWeeklyRule[]
+  holidays        CalendarHoliday[]
+  employees       EmployeeCalendar[]
 }
 
-model Plan {
-  id           String @id @default(uuid())
-  name         String
-  price        Int
-  durationDays Int
-  maxEmployees Int
-
-  subscriptions Subscription[]
-}
-
-model Leave {
-  id     String @id @default(uuid())
-  userId String
-
-  type      LeaveType @default(ANNUAL)
-  startDate DateTime
-  endDate   DateTime
-  totalDays Float // Supports half-days (e.g., 0.5)
-  reason    String?
-
-  status     LeaveStatus @default(PENDING)
-  adminNotes String? // HR feedback for rejection
-
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-}
-
-model Invite {
-  id    String @id @default(uuid())
-  email String
-  token String @unique
-  role  Role   @default(EMPLOYEE)
-
-  organizationId String
-  organization   Organization @relation(fields: [organizationId], references: [id])
-
-  expiresAt DateTime
-  acceptedAt DateTime?
-  createdAt DateTime @default(now())
-
-  @@unique([email, organizationId])
-}
-
-model HolidayCalendar {
-  id          String  @id @default(uuid())
-  name        String // e.g., "India Holidays 2025"
-  description String?
-  year        Int // Year for this calendar
-
-  organizationId String
-  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
-
-  holidays Holiday[]
-  users    User[]
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  @@unique([organizationId, name])
-}
-
-model Holiday {
+model EmployeeCalendar {
   id          String   @id @default(uuid())
-  name        String // e.g., "New Year's Day"
-  date        DateTime // The holiday date (or start date)
-  endDate     DateTime? // Optional end date for multi-day holidays
-  description String? // Optional description
+  employeeId  String   @unique
+  calendarId  String
 
-  calendarId String
-  calendar   HolidayCalendar @relation(fields: [calendarId], references: [id], onDelete: Cascade)
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  employee    Employee @relation(fields: [employeeId], references: [id])
+  calendar    Calendar @relation(fields: [calendarId], references: [id])
 }
 
-enum AttendanceStatus {
-  PRESENT
-  ABSENT
-  HALF_DAY
-  OFF
-  LEAVE
+///////////////////////
+// WEEKLY RULES
+///////////////////////
+
+model CalendarWeeklyRule {
+  id          String         @id @default(uuid())
+  calendarId  String
+  dayOfWeek   Int            // 0 = Sunday ... 6 = Saturday
+  rule        WeeklyRuleType
+
+  calendar    Calendar       @relation(fields: [calendarId], references: [id])
+
+  @@unique([calendarId, dayOfWeek])
 }
+
+///////////////////////
+// HOLIDAYS (RANGE-BASED)
+///////////////////////
+
+model CalendarHoliday {
+  id          String   @id @default(uuid())
+  calendarId  String
+  startDate   DateTime
+  endDate     DateTime
+  name        String
+
+  calendar    Calendar @relation(fields: [calendarId], references: [id])
+
+  @@index([calendarId, startDate, endDate])
+}
+
+///////////////////////
+// ATTENDANCE
+///////////////////////
 
 model Attendance {
-  id      String   @id @default(uuid())
-  userId  String
-  date    DateTime // Store as midnight UTC or just YYYY-MM-DDT00:00:00.000Z
-  clockIn DateTime?
-  clockOut DateTime?
-  status  AttendanceStatus @default(PRESENT)
+  id             String          @id @default(uuid())
+  employeeId     String
+  date           DateTime
+  checkIn        DateTime
+  checkOut       DateTime?
+  attendanceType AttendanceType
+  dayType        DayType
 
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt      DateTime @default(now())
 
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  employee       Employee @relation(fields: [employeeId], references: [id])
 
-  @@unique([userId, date])
+  @@unique([employeeId, date])
+}
+
+///////////////////////
+// LEAVES (RANGE-BASED)
+///////////////////////
+
+model LeaveRequest {
+  id            String        @id @default(uuid())
+  employeeId    String
+  startDate     DateTime
+  endDate       DateTime
+  duration      LeaveDuration
+  status        LeaveStatus
+  reason        String?
+  batchId       String?       // for UI grouping only
+
+  createdAt     DateTime @default(now())
+
+  employee      Employee @relation(fields: [employeeId], references: [id])
+
+  @@index([employeeId, startDate, endDate])
+}
+
+///////////////////////
+// AUDIT LOG
+///////////////////////
+
+model AuditLog {
+  id         String   @id @default(uuid())
+  actorId   String
+  action     String
+  entity     String
+  entityId   String
+  before     Json?
+  after      Json?
+  createdAt  DateTime @default(now())
 }

@@ -1,16 +1,17 @@
 import { Router } from 'express';
-import { authController } from './auth.controller';
-
-import { authenticate } from '../../shared/middleware/auth';
+import { login, register, forgotPassword, resetPassword, getCurrentUser, verifyEmailController } from './auth.controller';
+import { authMiddleware, authRateLimit } from '../../shared/middleware';
 
 const router = Router();
 
-router.get('/me', authenticate, authController.getCurrentUser.bind(authController));
-router.post('/login', authController.login.bind(authController));
-router.post('/register', authController.register.bind(authController));
-router.post('/register-invite', authController.registerWithInvite.bind(authController));
-router.post('/send-verification', authController.sendVerification.bind(authController));
-router.post('/forgot-password', authController.forgotPassword.bind(authController));
-router.post('/reset-password', authController.resetPassword.bind(authController));
+// Public routes - with strict rate limiting for auth endpoints
+router.post('/login', authRateLimit, login);
+router.post('/register', authRateLimit, register);
+router.post('/forgot-password', authRateLimit, forgotPassword);
+router.post('/reset-password', authRateLimit, resetPassword);
+router.get('/verify-email/:token', verifyEmailController);
+
+// Protected routes
+router.get('/me', authMiddleware, getCurrentUser);
 
 export default router;
