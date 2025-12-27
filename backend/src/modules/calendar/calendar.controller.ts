@@ -4,13 +4,38 @@ import { AuthRequest } from '../../shared/middleware/auth.middleware';
 import * as calendarService from './calendar.service';
 import { CreateCalendarDto, UpdateCalendarDto, createCalendarSchema, updateCalendarSchema, weeklyRuleSchema } from './calendar.types';
 import * as rulesService from './rules/rules.service';
+import * as holidaysService from './holidays/holidays.service';
+import { addHolidaySchema } from './holidays/holidays.types';
 import { Role, WeeklyRuleType } from '@prisma/client';
 
-
-
 /**
- * Create a new calendar
+ * Update weekly rule
  */
+export async function updateWeeklyRule(req: AuthRequest, res: Response): Promise<void> {
+    try {
+        const { id } = req.params;
+        const dto = weeklyRuleSchema.parse(req.body);
+
+        const existing = await calendarService.getCalendarById(id);
+        if (!existing) {
+            res.status(404).json({ success: false, error: 'Calendar not found' });
+            return;
+        }
+
+        // Security
+        if (req.user?.role !== Role.SUPER_ADMIN) {
+            if (req.user?.role !== Role.HR_ADMIN || req.user?.companyId !== existing.companyId) {
+                res.status(403).json({ success: false, error: 'Insufficient permissions' });
+                return;
+            }
+        }
+
+        await rulesService.updateWeeklyRule(id, dto.dayOfWeek, dto.rule);
+        res.json({ success: true, message: 'Weekly rule updated successfully' });
+    } catch (error: any) {
+        res.status(400).json({ success: false, error: error.message || 'Failed to update weekly rule' });
+    }
+}
 export async function create(req: AuthRequest, res: Response): Promise<void> {
     try {
         const dto = createCalendarSchema.parse(req.body);
@@ -141,12 +166,12 @@ export async function deleteOne(req: AuthRequest, res: Response): Promise<void> 
 }
 
 /**
- * Update weekly rule
+ * Add holiday
  */
-export async function updateWeeklyRule(req: AuthRequest, res: Response): Promise<void> {
+export async function addHoliday(req: AuthRequest, res: Response): Promise<void> {
     try {
         const { id } = req.params;
-        const dto = weeklyRuleSchema.parse(req.body);
+        const dto = addHolidaySchema.parse(req.body);
 
         const existing = await calendarService.getCalendarById(id);
         if (!existing) {
@@ -162,9 +187,66 @@ export async function updateWeeklyRule(req: AuthRequest, res: Response): Promise
             }
         }
 
-        await rulesService.updateWeeklyRule(id, dto.dayOfWeek, dto.rule);
-        res.json({ success: true, message: 'Weekly rule updated successfully' });
+        const holiday = await holidaysService.addHoliday(id, dto);
+        res.status(201).json({ success: true, data: holiday });
     } catch (error: any) {
-        res.status(400).json({ success: false, error: error.message || 'Failed to update weekly rule' });
+        res.status(400).json({ success: false, error: error.message || 'Failed to add holiday' });
+    }
+}
+
+/**
+ * Get holidays
+ */
+export async function getHolidays(req: AuthRequest, res: Response): Promise<void> {
+    try {
+        const { id } = req.params;
+        const existing = await calendarService.getCalendarById(id);
+
+        if (!existing) {
+            res.status(404).json({ success: false, error: 'Calendar not found' });
+            return;
+        }
+
+        // Security - Allow employees to see holidays of their company calendars?
+        // For now, restrict to same company logic as getOne
+        if (req.user?.role !== Role.SUPER_ADMIN) {
+            if (existing.companyId !== req.user?.companyId) {
+                res.status(403).json({ success: false, error: 'Access denied' });
+                return;
+            }
+        }
+
+        const holidays = await holidaysService.getHolidays(id);
+        res.json({ success: true, data: holidays });
+    } catch (error: any) {
+        res.status(500).json({ success: false, error: 'Failed to fetch holidays' });
+    }
+}
+
+/**
+ * Delete holiday
+ */
+export async function deleteHoliday(req: AuthRequest, res: Response): Promise<void> {
+    try {
+        const { id, holidayId } = req.params;
+
+        const existing = await calendarService.getCalendarById(id);
+        if (!existing) {
+            res.status(404).json({ success: false, error: 'Calendar not found' });
+            return;
+        }
+
+        // Security
+        if (req.user?.role !== Role.SUPER_ADMIN) {
+            if (req.user?.role !== Role.HR_ADMIN || req.user?.companyId !== existing.companyId) {
+                res.status(403).json({ success: false, error: 'Insufficient permissions' });
+                return;
+            }
+        }
+
+        await holidaysService.deleteHoliday(id, holidayId);
+        res.json({ success: true, message: 'Holiday deleted successfully' });
+    } catch (error: any) {
+        res.status(400).json({ success: false, error: error.message || 'Failed to delete holiday' });
     }
 }

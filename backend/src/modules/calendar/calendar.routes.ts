@@ -24,6 +24,15 @@ router.patch('/:id', requireRole(Role.SUPER_ADMIN, Role.HR_ADMIN), calendarContr
 // Update single weekly rule (HR Only)
 router.put('/:id/rules', requireRole(Role.SUPER_ADMIN, Role.HR_ADMIN), calendarController.updateWeeklyRule);
 
+// Add holiday (HR Only)
+router.post('/:id/holidays', requireRole(Role.SUPER_ADMIN, Role.HR_ADMIN), calendarController.addHoliday);
+
+// Get holidays (Authenticated)
+router.get('/:id/holidays', calendarController.getHolidays);
+
+// Delete holiday (HR Only)
+router.delete('/:id/holidays/:holidayId', requireRole(Role.SUPER_ADMIN, Role.HR_ADMIN), calendarController.deleteHoliday);
+
 // Delete calendar (HR Only)
 router.delete('/:id', requireRole(Role.SUPER_ADMIN, Role.HR_ADMIN), calendarController.deleteOne);
 

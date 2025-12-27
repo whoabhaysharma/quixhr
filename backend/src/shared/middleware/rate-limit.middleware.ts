@@ -17,9 +17,14 @@ export interface RateLimitMiddlewareOptions extends Partial<RateLimiterOptions> 
  * Create rate limiting middleware
  */
 export const createRateLimiter = (options: RateLimitMiddlewareOptions = {}) => {
+    // Relax limits in development
+    const isDev = config.nodeEnv === 'development' || config.nodeEnv === 'test';
+    // Use 10000 as "unlimited" for dev, otherwise use option or default
+    const maxRequests = isDev ? 10000 : (options.maxRequests || config.rateLimit.maxRequests);
+
     const limiter = new RateLimiter({
         windowMs: options.windowMs || config.rateLimit.windowMs,
-        maxRequests: options.maxRequests || config.rateLimit.maxRequests,
+        maxRequests: maxRequests,
         keyPrefix: 'ratelimit',
     });
 
