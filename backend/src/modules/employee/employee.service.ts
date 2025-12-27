@@ -34,9 +34,18 @@ export async function createEmployee(dto: CreateEmployeeDto): Promise<EmployeeRe
             status: dto.status || 'ACTIVE',
         },
         include: {
-            user: true
+            user: true,
+            company: {
+                select: {
+                    name: true,
+                },
+            },
         }
     });
+
+    // Create notification for new employee
+    const { notifyEmployee } = await import('../notification/notification.helper');
+    await notifyEmployee.added(user.id, dto.name, employee.company.name);
 
     return {
         id: employee.id,
@@ -107,6 +116,16 @@ export async function getEmployeeById(id: string): Promise<EmployeeResponseDto |
 }
 
 export async function updateEmployee(id: string, dto: UpdateEmployeeDto): Promise<EmployeeResponseDto> {
+    // Get current employee data to compare changes
+    const currentEmployee = await prisma.employee.findUnique({
+        where: { id },
+        include: { user: true },
+    });
+
+    if (!currentEmployee) {
+        throw new Error('Employee not found');
+    }
+
     const employee = await prisma.employee.update({
         where: { id },
         data: {
@@ -116,6 +135,13 @@ export async function updateEmployee(id: string, dto: UpdateEmployeeDto): Promis
         include: { user: true }
     });
 
+    const { notifyEmployee } = await import('../notification/notification.helper');
+
+    // Notify if status changed
+    if (dto.status && dto.status !== currentEmployee.status) {
+        await notifyEmployee.statusChanged(employee.userId, dto.status);
+    }
+
     // Update role if provided
     if (dto.role) {
         await prisma.user.update({
@@ -123,6 +149,16 @@ export async function updateEmployee(id: string, dto: UpdateEmployeeDto): Promis
             data: { role: dto.role as Role }
         });
         employee.user.role = dto.role as Role;
+
+        // Notify if role changed
+        if (dto.role !== currentEmployee.user.role) {
+            await notifyEmployee.roleChanged(employee.userId, dto.role);
+        }
+    }
+
+    // Notify profile update if name changed
+    if (dto.name && dto.name !== currentEmployee.name) {
+        await notifyEmployee.profileUpdated(employee.userId);
     }
 
     return {

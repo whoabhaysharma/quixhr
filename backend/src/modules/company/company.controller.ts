@@ -91,7 +91,11 @@ export async function update(req: AuthRequest, res: Response): Promise<void> {
             }
         }
 
-        const company = await companyService.updateCompany(req.params.id, dto);
+        const company = await companyService.updateCompany(
+            req.params.id,
+            dto,
+            req.user?.email || 'Admin'
+        );
 
         // Audit Log
         if (req.user?.id) {

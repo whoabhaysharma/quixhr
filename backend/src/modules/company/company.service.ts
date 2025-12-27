@@ -54,13 +54,34 @@ export async function getCompanyById(id: string): Promise<CompanyResponseDto | n
 /**
  * Update company
  */
-export async function updateCompany(id: string, dto: UpdateCompanyDto): Promise<CompanyResponseDto> {
+export async function updateCompany(id: string, dto: UpdateCompanyDto, updatedByName?: string): Promise<CompanyResponseDto> {
     const company = await prisma.company.update({
         where: { id },
         data: {
             ...dto,
         },
+        include: {
+            employees: {
+                where: {
+                    user: {
+                        role: {
+                            in: ['HR_ADMIN', 'SUPER_ADMIN'],
+                        },
+                    },
+                },
+                select: {
+                    userId: true,
+                },
+            },
+        },
     });
+
+    // Notify all HR admins about company settings update
+    const adminUserIds = company.employees.map(emp => emp.userId);
+    if (adminUserIds.length > 0) {
+        const { notifyCompany } = await import('../notification/notification.helper');
+        await notifyCompany.settingsUpdated(adminUserIds, updatedByName || 'Admin');
+    }
 
     return company;
 }

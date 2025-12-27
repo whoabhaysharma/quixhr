@@ -72,4 +72,10 @@ export const authService = {
         const response = await api.post('/auth/reset-password', { token, newPassword: password });
         return response.data;
     },
+
+    // Verify email
+    verifyEmail: async (token: string): Promise<ApiResponse<{ message: string }>> => {
+        const response = await api.get(`/auth/verify-email/${token}`);
+        return response.data;
+    },
 };

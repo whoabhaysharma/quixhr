@@ -29,7 +29,7 @@ export const holidaySchema = z.object({
 });
 
 export const createCalendarSchema = z.object({
-    companyId: z.string().uuid(),
+    companyId: z.string().uuid(), // Required - injected by controller from auth user
     name: z.string().min(1),
     year: z.number().int().min(2020),
     dayStartTime: z.string().regex(/^\d{2}:\d{2}$/, 'Invalid time format HH:MM'),

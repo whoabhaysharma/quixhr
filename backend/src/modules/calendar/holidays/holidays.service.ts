@@ -11,14 +11,38 @@ const prisma = new PrismaClient();
  * Add a holiday to a calendar
  */
 export async function addHoliday(calendarId: string, dto: HolidayDto) {
-    return prisma.calendarHoliday.create({
+    const holiday = await prisma.calendarHoliday.create({
         data: {
             calendarId,
             name: dto.name,
             startDate: new Date(dto.startDate),
             endDate: new Date(dto.endDate),
-        }
+        },
+        include: {
+            calendar: {
+                include: {
+                    company: {
+                        include: {
+                            employees: {
+                                select: {
+                                    userId: true,
+                                },
+                            },
+                        },
+                    },
+                },
+            },
+        },
     });
+
+    // Notify all employees in the company about the new holiday
+    const userIds = holiday.calendar.company.employees.map(emp => emp.userId);
+    if (userIds.length > 0) {
+        const { notifyCalendar } = await import('../../notification/notification.helper');
+        await notifyCalendar.holidayAdded(userIds, dto.name, new Date(dto.startDate));
+    }
+
+    return holiday;
 }
 
 /**
@@ -35,16 +59,43 @@ export async function getHolidays(calendarId: string) {
  * Delete a holiday
  */
 export async function deleteHoliday(calendarId: string, holidayId: string) {
-    // Verify it belongs to the calendar
-    const count = await prisma.calendarHoliday.deleteMany({
+    // Get holiday details before deletion for notification
+    const holiday = await prisma.calendarHoliday.findFirst({
         where: {
             id: holidayId,
-            calendarId
-        }
+            calendarId,
+        },
+        include: {
+            calendar: {
+                include: {
+                    company: {
+                        include: {
+                            employees: {
+                                select: {
+                                    userId: true,
+                                },
+                            },
+                        },
+                    },
+                },
+            },
+        },
     });
 
-    if (count.count === 0) {
+    if (!holiday) {
         throw new Error('Holiday not found or does not belong to this calendar');
+    }
+
+    // Delete the holiday
+    await prisma.calendarHoliday.delete({
+        where: { id: holidayId },
+    });
+
+    // Notify all employees in the company about the deleted holiday
+    const userIds = holiday.calendar.company.employees.map(emp => emp.userId);
+    if (userIds.length > 0) {
+        const { notifyCalendar } = await import('../../notification/notification.helper');
+        await notifyCalendar.holidayDeleted(userIds, holiday.name);
     }
 }
 

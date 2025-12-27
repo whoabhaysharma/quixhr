@@ -75,7 +75,7 @@ export async function login(dto: LoginDto, ipAddress?: string): Promise<AuthResp
         companyId: user.employee?.companyId,
     });
 
-    // Queue login alert email
+    // Queue login alert email and create notification
     if (user.employee) {
         await queueLoginAlert(
             user.email,
@@ -85,6 +85,10 @@ export async function login(dto: LoginDto, ipAddress?: string): Promise<AuthResp
             console.error('Failed to queue login alert:', err);
             // Don't fail login if email fails
         });
+
+        // Create in-app notification for login alert
+        const { notifyAuth } = await import('../notification/notification.helper');
+        await notifyAuth.loginAlert(user.id, ipAddress || 'Unknown');
     }
 
     return {
@@ -149,12 +153,17 @@ export async function register(dto: RegisterDto): Promise<{ message: string; use
 
     // Generate verification token and store in Redis
     const verificationToken = generateVerificationToken();
+    console.log(`[Registration] Generated verification token for user ${result.user.id}`);
+    console.log(`[Registration] Token (first 10 chars): ${verificationToken.substring(0, 10)}...`);
+
     await storeVerificationToken(verificationToken, result.user.id);
+    console.log(`[Registration] Token stored in Redis`);
 
     // Queue verification email
     await queueVerificationEmail(result.user.email, dto.name, verificationToken).catch(err => {
         console.error('Failed to queue verification email:', err);
     });
+    console.log(`[Registration] Verification email queued for ${result.user.email}`);
 
     return {
         message: 'Registration successful! Please check your email to verify your account.',
@@ -230,6 +239,10 @@ export async function resetPassword(dto: ResetPasswordDto): Promise<{ message: s
             data: { password: hashedPassword },
         });
 
+        // Create in-app notification for password reset
+        const { notifyAuth } = await import('../notification/notification.helper');
+        await notifyAuth.passwordReset(decoded.id);
+
         return { message: 'Password reset successful' };
     } catch (error: any) {
         // Pass through specific errors, otherwise generic invalid token
@@ -293,6 +306,10 @@ export async function verifyEmail(token: string): Promise<{ message: string }> {
         await queueWelcomeEmail(user.email, user.employee.name).catch(err => {
             console.error('Failed to queue welcome email:', err);
         });
+
+        // Create in-app notification for email verification
+        const { notifyAuth } = await import('../notification/notification.helper');
+        await notifyAuth.emailVerified(userId, user.employee.name);
     }
 
     return {

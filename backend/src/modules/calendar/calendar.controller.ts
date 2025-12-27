@@ -38,7 +38,22 @@ export async function updateWeeklyRule(req: AuthRequest, res: Response): Promise
 }
 export async function create(req: AuthRequest, res: Response): Promise<void> {
     try {
-        const dto = createCalendarSchema.parse(req.body);
+        // Parse the request body without companyId
+        const bodyDto = req.body;
+
+        // Get companyId from authenticated user
+        const companyId = req.user?.companyId;
+
+        if (!companyId) {
+            res.status(400).json({ success: false, error: 'User does not belong to a company' });
+            return;
+        }
+
+        // Merge companyId with the request body
+        const dto = createCalendarSchema.parse({
+            ...bodyDto,
+            companyId
+        });
 
         // Security: SUPER_ADMIN or HR_ADMIN of the same company
         if (req.user?.role !== Role.SUPER_ADMIN) {
@@ -48,7 +63,10 @@ export async function create(req: AuthRequest, res: Response): Promise<void> {
             }
         }
 
-        const calendar = await calendarService.createCalendar(dto as CreateCalendarDto);
+        const calendar = await calendarService.createCalendar({
+            ...dto,
+            companyId: companyId // Explicitly set companyId as string
+        } as CreateCalendarDto);
         res.status(201).json({ success: true, data: calendar });
     } catch (error: any) {
         res.status(400).json({ success: false, error: error.message || 'Failed to create calendar' });

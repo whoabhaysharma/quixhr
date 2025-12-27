@@ -36,7 +36,13 @@ export async function storeVerificationToken(
     const tokenHash = hashToken(token);
     const key = `${VERIFY_PREFIX}${tokenHash}`;
 
+    console.log(`[Email Verification] Storing token for user ${userId}`);
+    console.log(`[Email Verification] Token hash: ${tokenHash.substring(0, 10)}...`);
+    console.log(`[Email Verification] Redis key: ${key}`);
+
     await redis.setex(key, VERIFY_TTL, userId);
+
+    console.log(`[Email Verification] Token stored successfully with TTL ${VERIFY_TTL}s`);
 }
 
 /**
@@ -46,11 +52,18 @@ export async function verifyToken(token: string): Promise<string | null> {
     const tokenHash = hashToken(token);
     const key = `${VERIFY_PREFIX}${tokenHash}`;
 
+    console.log(`[Email Verification] Verifying token`);
+    console.log(`[Email Verification] Token hash: ${tokenHash.substring(0, 10)}...`);
+    console.log(`[Email Verification] Redis key: ${key}`);
+
     const userId = await redis.get(key);
+
+    console.log(`[Email Verification] User ID from Redis: ${userId || 'NOT FOUND'}`);
 
     if (userId) {
         // Delete token after use (one-time use)
         await redis.del(key);
+        console.log(`[Email Verification] Token deleted after successful verification`);
     }
 
     return userId;

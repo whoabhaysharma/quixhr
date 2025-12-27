@@ -13,7 +13,7 @@ const templateCache = new Map<string, HandlebarsTemplateDelegate>();
  * Render email template with data
  */
 const renderTemplate = async (
-    template: EmailTemplate,
+    template: EmailTemplate | string,
     data: Record<string, any>
 ): Promise<string> => {
     // Check cache

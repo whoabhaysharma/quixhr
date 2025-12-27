@@ -10,6 +10,8 @@ import companyRoutes from './modules/company/company.routes';
 import employeeRoutes from './modules/employee/employee.routes';
 import calendarRoutes from './modules/calendar/calendar.routes';
 import attendanceRoutes from './modules/attendance/attendance.routes';
+import notificationRoutes from './modules/notification/notification.controller';
+import dashboardRoutes from './modules/dashboard/dashboard.controller';
 
 const app = express();
 
@@ -33,6 +35,8 @@ app.use('/api/v1/companies', companyRoutes);
 app.use('/api/v1/employees', employeeRoutes);
 app.use('/api/v1/calendars', calendarRoutes);
 app.use('/api/v1/attendance', attendanceRoutes);
+app.use('/api/v1/notifications', notificationRoutes);
+app.use('/api/v1/dashboard', dashboardRoutes);
 
 // Health check
 app.get('/health', (req, res) => {

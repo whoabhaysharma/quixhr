@@ -27,15 +27,10 @@ import {
     PopoverContent,
     PopoverTrigger,
 } from "@/components/ui/popover"
-import {
-    DropdownMenu,
-    DropdownMenuContent,
-    DropdownMenuItem,
-    DropdownMenuLabel,
-    DropdownMenuSeparator,
-    DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
+import { formatRole } from "@/lib/utils/formatters"
+import { useNotifications, useUnreadCount, useMarkAsRead, useMarkAllAsRead } from "@/lib/hooks/useNotifications"
+import { formatDistanceToNow } from "date-fns"
 
 export default function DashboardLayout({
     children,
@@ -47,18 +42,25 @@ export default function DashboardLayout({
     const pathname = usePathname()
     const [isSidebarOpen, setSidebarOpen] = useState(false)
 
-    useEffect(() => {
-        if (!isLoading && !isAuthenticated) {
-            router.push("/login")
-        }
-    }, [isLoading, isAuthenticated, router])
+    // Notification hooks - MUST be called before any conditional returns
+    const { data: notificationsData } = useNotifications(10, 0)
+    const { data: unreadCountData } = useUnreadCount()
+    const markAsReadMutation = useMarkAsRead()
+    const markAllAsReadMutation = useMarkAllAsRead()
 
+    useEffect(() => {
+        if (!isAuthenticated && !isLoading) {
+            router.push('/login')
+        }
+    }, [isAuthenticated, isLoading, router])
+
+    // Early return AFTER all hooks
     if (isLoading) {
         return (
-            <div className="flex items-center justify-center min-h-screen bg-neutral-50">
-                <div className="flex flex-col items-center gap-4">
-                    <div className="h-12 w-12 border-4 border-neutral-200 border-t-neutral-900 rounded-full animate-spin"></div>
-                    <p className="text-neutral-500 font-medium animate-pulse">Loading Workspace...</p>
+            <div className="h-screen w-full flex items-center justify-center bg-[#F8FAFC]">
+                <div className="text-center">
+                    <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600 mx-auto"></div>
+                    <p className="mt-4 text-slate-600">Loading...</p>
                 </div>
             </div>
         )
@@ -67,6 +69,35 @@ export default function DashboardLayout({
     if (!isAuthenticated) return null
 
     const isManagementRole = ['HR', 'ADMIN', 'SUPER_ADMIN'].includes(user?.role || '')
+
+    const notifications = notificationsData?.data || []
+    const unreadCount = unreadCountData?.data?.count || 0
+
+    const handleMarkAsRead = (notificationId: string) => {
+        markAsReadMutation.mutate(notificationId)
+    }
+
+    const handleMarkAllAsRead = () => {
+        markAllAsReadMutation.mutate()
+    }
+
+    const getNotificationIcon = (type: string) => {
+        switch (type) {
+            case 'SUCCESS': return '✓'
+            case 'WARNING': return '⚠'
+            case 'ERROR': return '✕'
+            default: return 'ℹ'
+        }
+    }
+
+    const getNotificationColor = (type: string) => {
+        switch (type) {
+            case 'SUCCESS': return 'text-green-600'
+            case 'WARNING': return 'text-amber-600'
+            case 'ERROR': return 'text-red-600'
+            default: return 'text-blue-600'
+        }
+    }
 
     const personalNavItems = [
         { name: "Overview", href: "/dashboard", icon: LayoutDashboard },
@@ -268,69 +299,116 @@ export default function DashboardLayout({
                                     <PopoverTrigger asChild>
                                         <Button variant="ghost" size="icon" className="relative w-8 h-8 rounded-full text-slate-500 hover:text-indigo-600 transition-colors">
                                             <Bell className="w-4 h-4" />
-                                            {/* Animated Ping Dot */}
-                                            <span className="absolute top-2 right-2 flex h-2 w-2">
-                                                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-indigo-400 opacity-75"></span>
-                                                <span className="relative inline-flex rounded-full h-2 w-2 bg-indigo-500"></span>
-                                            </span>
+                                            {unreadCount > 0 && (
+                                                <span className="absolute top-2 right-2 flex h-2 w-2">
+                                                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-indigo-400 opacity-75"></span>
+                                                    <span className="relative inline-flex rounded-full h-2 w-2 bg-indigo-500"></span>
+                                                </span>
+                                            )}
                                         </Button>
                                     </PopoverTrigger>
-                                    <PopoverContent className="w-80 mt-2 p-0 rounded-2xl shadow-2xl border-slate-200" align="end">
+                                    <PopoverContent className="w-96 mt-2 p-0 rounded-2xl shadow-2xl border-slate-200" align="end">
                                         <div className="p-4 bg-slate-50/50 rounded-t-2xl border-b border-slate-100 flex items-center justify-between">
-                                            <h4 className="font-bold text-xs uppercase tracking-widest text-slate-500">Activity</h4>
-                                            <span className="text-[10px] text-indigo-600 font-bold cursor-pointer hover:underline">Mark all read</span>
-                                        </div>
-                                        <div className="p-8 text-center space-y-3">
-                                            <div className="w-12 h-12 bg-slate-50 rounded-full flex items-center justify-center mx-auto">
-                                                <Bell className="w-5 h-5 text-slate-300" />
+                                            <div>
+                                                <h4 className="font-bold text-xs uppercase tracking-widest text-slate-500">Notifications</h4>
+                                                {unreadCount > 0 && (
+                                                    <p className="text-xs text-slate-400 mt-0.5">{unreadCount} unread</p>
+                                                )}
                                             </div>
-                                            <p className="text-sm font-medium text-slate-400 italic">No updates in your feed</p>
+                                            {notifications.length > 0 && (
+                                                <button
+                                                    onClick={handleMarkAllAsRead}
+                                                    className="text-[10px] text-indigo-600 font-bold cursor-pointer hover:underline"
+                                                >
+                                                    Mark all read
+                                                </button>
+                                            )}
+                                        </div>
+                                        <div className="max-h-96 overflow-y-auto">
+                                            {notifications.length === 0 ? (
+                                                <div className="p-8 text-center space-y-3">
+                                                    <div className="w-12 h-12 bg-slate-50 rounded-full flex items-center justify-center mx-auto">
+                                                        <Bell className="w-5 h-5 text-slate-300" />
+                                                    </div>
+                                                    <p className="text-sm font-medium text-slate-400 italic">No notifications yet</p>
+                                                </div>
+                                            ) : (
+                                                <div className="divide-y divide-slate-100">
+                                                    {notifications.map((notification) => (
+                                                        <div
+                                                            key={notification.id}
+                                                            className={`p-4 hover:bg-slate-50 transition-colors cursor-pointer ${!notification.isRead ? 'bg-indigo-50/30' : ''}`}
+                                                            onClick={() => !notification.isRead && handleMarkAsRead(notification.id)}
+                                                        >
+                                                            <div className="flex gap-3">
+                                                                <div className={`w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 ${getNotificationColor(notification.type)} bg-current bg-opacity-10`}>
+                                                                    <span className="text-sm">{getNotificationIcon(notification.type)}</span>
+                                                                </div>
+                                                                <div className="flex-1 min-w-0">
+                                                                    <div className="flex items-start justify-between gap-2">
+                                                                        <h5 className="text-sm font-semibold text-slate-900">{notification.title}</h5>
+                                                                        {!notification.isRead && (
+                                                                            <span className="w-2 h-2 bg-indigo-500 rounded-full flex-shrink-0 mt-1.5"></span>
+                                                                        )}
+                                                                    </div>
+                                                                    <p className="text-xs text-slate-600 mt-1 line-clamp-2">{notification.message}</p>
+                                                                    <p className="text-[10px] text-slate-400 mt-2">
+                                                                        {formatDistanceToNow(new Date(notification.createdAt), { addSuffix: true })}
+                                                                    </p>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    ))}
+                                                </div>
+                                            )}
                                         </div>
                                     </PopoverContent>
                                 </Popover>
                             </div>
 
                             {/* Profile Section */}
-                            <DropdownMenu>
-                                <DropdownMenuTrigger asChild>
+                            <Popover>
+                                <PopoverTrigger asChild>
                                     <button className="flex items-center gap-2 group p-0.5 pr-3 rounded-full hover:bg-slate-100/80 transition-all outline-none">
                                         <div className="relative">
                                             <Avatar className="h-9 w-9 border-2 border-white shadow-sm ring-1 ring-slate-200">
                                                 <AvatarFallback className="bg-gradient-to-tr from-indigo-500 to-violet-500 text-white font-black text-xs">
-                                                    {user?.name?.charAt(0) || 'U'}
+                                                    {user?.employee?.name?.charAt(0) || user?.name?.charAt(0) || 'U'}
                                                 </AvatarFallback>
                                             </Avatar>
                                             <span className="absolute bottom-0 right-0 w-2.5 h-2.5 bg-emerald-500 border-2 border-white rounded-full"></span>
                                         </div>
                                         <div className="hidden text-left lg:block">
-                                            <p className="text-xs font-bold text-slate-900 leading-none">{user?.name}</p>
-                                            <p className="text-[10px] text-slate-500 font-medium tracking-wide mt-1 uppercase italic">
-                                                {user?.role}
+                                            <p className="text-xs font-bold text-slate-900 leading-none">{user?.employee?.name || user?.name}</p>
+                                            <p className="text-[10px] text-slate-500 font-medium tracking-wide mt-1">
+                                                {user?.role ? formatRole(user.role) : 'Employee'}
                                             </p>
                                         </div>
                                         <ChevronDown className="w-3 h-3 text-slate-400 group-hover:text-slate-900 transition-colors" />
                                     </button>
-                                </DropdownMenuTrigger>
-                                <DropdownMenuContent align="end" className="w-60 p-1.5 rounded-2xl shadow-xl border-slate-200 mt-2">
-                                    <div className="px-3 py-2 border-b border-slate-100 mb-1">
-                                        <p className="text-[10px] font-bold text-slate-400 uppercase tracking-tighter">Connected as</p>
-                                        <p className="text-xs font-semibold text-slate-600 truncate">{user?.email}</p>
+                                </PopoverTrigger>
+                                <PopoverContent align="end" className="w-60 p-0 rounded-2xl shadow-2xl border-slate-200" sideOffset={8}>
+                                    <div className="px-4 py-3 bg-slate-50/50 rounded-t-2xl border-b border-slate-100">
+                                        <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Connected as</p>
+                                        <p className="text-xs font-semibold text-slate-600 truncate mt-1">{user?.email}</p>
                                     </div>
-                                    <DropdownMenuItem className="rounded-xl py-2 cursor-pointer focus:bg-slate-50">
-                                        <User className="w-4 h-4 mr-2 text-slate-400" />
-                                        <span className="text-sm font-medium">Profile Details</span>
-                                    </DropdownMenuItem>
-                                    <DropdownMenuItem className="rounded-xl py-2 cursor-pointer focus:bg-slate-50">
-                                        <Settings className="w-4 h-4 mr-2 text-slate-400" />
-                                        <span className="text-sm font-medium">Preferences</span>
-                                    </DropdownMenuItem>
-                                    <DropdownMenuSeparator className="bg-slate-100" />
-                                    <DropdownMenuItem onClick={logout} className="rounded-xl py-2 cursor-pointer text-rose-600 focus:bg-rose-50 focus:text-rose-600">
-                                        <LogOut className="w-4 h-4 mr-2" />
-                                        <span className="text-sm font-bold">Sign Out</span>
-                                    </DropdownMenuItem>
-                                </DropdownMenuContent>
-                            </DropdownMenu>
+                                    <div className="p-1.5">
+                                        <button className="w-full flex items-center gap-2 px-3 py-2 rounded-xl hover:bg-slate-50 transition-colors text-left">
+                                            <User className="w-4 h-4 text-slate-400" />
+                                            <span className="text-sm font-medium text-slate-700">Profile Details</span>
+                                        </button>
+                                        <button className="w-full flex items-center gap-2 px-3 py-2 rounded-xl hover:bg-slate-50 transition-colors text-left">
+                                            <Settings className="w-4 h-4 text-slate-400" />
+                                            <span className="text-sm font-medium text-slate-700">Preferences</span>
+                                        </button>
+                                        <div className="h-px bg-slate-100 my-1"></div>
+                                        <button onClick={logout} className="w-full flex items-center gap-2 px-3 py-2 rounded-xl hover:bg-rose-50 transition-colors text-left text-rose-600">
+                                            <LogOut className="w-4 h-4" />
+                                            <span className="text-sm font-bold">Sign Out</span>
+                                        </button>
+                                    </div>
+                                </PopoverContent>
+                            </Popover>
                         </div>
                     </div>
                 </header>

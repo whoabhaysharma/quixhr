@@ -55,6 +55,16 @@ export const config = {
         skipSuccessfulRequests: process.env.RATE_LIMIT_SKIP_SUCCESS === 'true',
         skipFailedRequests: process.env.RATE_LIMIT_SKIP_FAILED === 'true',
     },
+
+    // Notifications
+    notification: {
+        retentionDays: parseInt(process.env.NOTIFICATION_RETENTION_DAYS || '2'),
+    },
+
+    // Audit
+    audit: {
+        retentionDays: parseInt(process.env.AUDIT_RETENTION_DAYS || '7'),
+    },
 } as const;
 
 /**

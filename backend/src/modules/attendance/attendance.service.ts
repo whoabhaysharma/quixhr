@@ -41,8 +41,21 @@ export async function checkIn(employeeId: string, dto: CheckInDto): Promise<Atte
             checkIn: timestamp,
             attendanceType: AttendanceType.FULL,
             dayType: dayType
-        }
+        },
+        include: {
+            employee: {
+                select: {
+                    userId: true,
+                },
+            },
+        },
     });
+
+    // Create notification for check-in
+    if (attendance.employee?.userId) {
+        const { notifyAttendance } = await import('../notification/notification.helper');
+        await notifyAttendance.checkedIn(attendance.employee.userId, timestamp);
+    }
 
     return attendance;
 }
@@ -78,8 +91,29 @@ export async function checkOut(employeeId: string, dto: CheckOutDto): Promise<At
         data: {
             checkOut: timestamp
             // Here logic could be added to calculate AttendanceType based on duration
-        }
+        },
+        include: {
+            employee: {
+                select: {
+                    userId: true,
+                },
+            },
+        },
     });
+
+    // Calculate hours worked
+    const hoursWorked = (timestamp.getTime() - attendance.checkIn.getTime()) / (1000 * 60 * 60);
+
+    // Create notification for check-out
+    if (updated.employee?.userId) {
+        const { notifyAttendance } = await import('../notification/notification.helper');
+        await notifyAttendance.checkedOut(
+            updated.employee.userId,
+            attendance.checkIn,
+            timestamp,
+            hoursWorked
+        );
+    }
 
     return updated;
 }

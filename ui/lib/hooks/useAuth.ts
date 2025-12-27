@@ -102,3 +102,15 @@ export function useResetPassword() {
         },
     })
 }
+
+export function useVerifyEmail() {
+    return useMutation({
+        mutationFn: (token: string) => authService.verifyEmail(token),
+        onSuccess: (data) => {
+            toast.success(data.data?.message || 'Email verified successfully');
+        },
+        onError: (error: any) => {
+            toast.error(error.response?.data?.error || 'Email verification failed');
+        },
+    })
+}
