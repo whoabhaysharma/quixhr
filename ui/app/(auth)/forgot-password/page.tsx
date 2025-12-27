@@ -5,12 +5,12 @@ import Link from 'next/link'
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { useForgotPassword } from "@/lib/hooks/useAuth"
+import { Mail } from "lucide-react"
 
 export default function ForgotPasswordPage() {
     const [email, setEmail] = useState("")
-    const [message, setMessage] = useState("")
+    const [isSuccess, setIsSuccess] = useState(false)
 
     const forgotPasswordMutation = useForgotPassword()
 
@@ -18,89 +18,123 @@ export default function ForgotPasswordPage() {
         e.preventDefault()
         if (!email) return
 
-        setMessage("")
-
         forgotPasswordMutation.mutate(email, {
-            onSuccess: (data) => {
-                // The backend might return a link for dev/testing purposes
-                const link = (data as any)?.data?.link
-
-                if (link) {
-                    try {
-                        const url = new URL(link);
-                        const oobCode = url.searchParams.get("oobCode");
-                        if (oobCode) {
-                            const localLink = `${window.location.origin}/reset-password?oobCode=${oobCode}`;
-                            setMessage(`Password reset link generated. Click below to test locally: ${localLink}`);
-                        } else {
-                            setMessage(`Password reset link generated: ${link}`);
-                        }
-                    } catch (e) {
-                        setMessage(`Password reset link generated: ${link}`);
-                    }
-                } else {
-                    setMessage("We have generated a password reset link for you.")
-                }
+            onSuccess: () => {
+                setIsSuccess(true)
             }
         })
     }
 
-    return (
-        <div className="min-h-screen w-full flex items-center justify-center bg-[#fbfbfb] text-black relative font-sans">
-            {/* Dot Pattern Background */}
-            <div className="absolute inset-0 bg-[radial-gradient(#000000_1px,transparent_1px)] [background-size:24px_24px] opacity-10"></div>
-
-            <Card className="w-full max-w-[500px] z-10 border-2 border-black bg-white shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] rounded-none">
-                <CardHeader className="text-center space-y-4 pt-8">
-                    <div className="mx-auto bg-black text-white px-3 py-1 text-xl font-black tracking-tighter inline-block transform -rotate-2">
-                        RECOVER ACCESS
+    if (isSuccess) {
+        return (
+            <div className="min-h-screen w-full flex items-center justify-center bg-slate-50 p-4">
+                <div className="w-full max-w-[500px] bg-white rounded-2xl shadow-xl overflow-hidden border border-slate-100 p-8 text-center space-y-6">
+                    <div className="flex justify-center">
+                        <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center">
+                            <Mail className="w-8 h-8 text-blue-600" />
+                        </div>
                     </div>
-                    <CardTitle className="text-3xl font-black tracking-tighter uppercase">Forgot Password</CardTitle>
-                    <CardDescription className="text-black font-medium text-base">
-                        Enter your email to receive a reset link.
-                    </CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-6 pt-4">
-                    {message && (
-                        <div className="text-green-600 font-bold text-center border-2 border-green-600 p-2 bg-green-50 break-words">
-                            {message.startsWith("Password reset link generated. Click below") ? (
-                                <>
-                                    <p className="mb-2">Link generated for testing:</p>
-                                    <a href={message.split(": ")[1]} className="underline decoration-2">Click to Reset (Local)</a>
-                                </>
-                            ) : message.startsWith("Password reset link generated:") ? (
-                                <>
-                                    <p className="mb-2">Link generated:</p>
-                                    <a href={message.replace("Password reset link generated: ", "")} target="_blank" rel="noopener noreferrer" className="underline decoration-2">Click to Reset</a>
-                                </>
-                            ) : message}
-                        </div>
-                    )}
+                    <div className="space-y-2">
+                        <h2 className="text-2xl font-bold text-slate-900">Check your email</h2>
+                        <p className="text-slate-500">
+                            If an account exists for <span className="font-medium text-slate-900">{email}</span>, we've sent a password reset link.
+                        </p>
+                        <p className="text-sm text-slate-400">
+                            Please check your inbox and spam folder.
+                        </p>
+                    </div>
+                    <div className="pt-4">
+                        <Link href="/login">
+                            <Button className="w-full bg-slate-900 hover:bg-slate-800 text-white font-bold py-2 rounded-xl">
+                                Back to Login
+                            </Button>
+                        </Link>
+                    </div>
+                </div>
+            </div>
+        )
+    }
 
-                    <form onSubmit={handleSubmit} className="space-y-4">
-                        <div className="space-y-2">
-                            <Label htmlFor="email" className="font-bold text-base uppercase">Email</Label>
-                            <Input
-                                id="email"
-                                type="email"
-                                placeholder="YOUR@EMAIL.COM"
-                                value={email}
-                                onChange={(e) => setEmail(e.target.value)}
-                                className="border-2 border-black rounded-none shadow-[2px_2px_0px_0px_rgba(0,0,0,0.5)] focus-visible:ring-0 focus-visible:shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] focus-visible:translate-x-[-2px] focus-visible:translate-y-[-2px] transition-all bg-white font-bold placeholder:text-gray-400 placeholder:font-medium h-12"
-                                required
-                            />
+    return (
+        <div className="min-h-screen w-full flex items-center justify-center bg-slate-50 p-4">
+            <div className="w-full max-w-[1000px] h-[600px] bg-white rounded-2xl shadow-xl overflow-hidden flex border border-slate-100">
+                {/* Left Side - Brand */}
+                <div className="hidden lg:flex w-1/2 bg-slate-900 flex-col justify-between p-12 text-white relative overflow-hidden">
+                    <div className="z-10">
+                        <div className="flex items-center gap-2 mb-2">
+                            <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center font-bold text-sm">Q</div>
+                            <span className="text-xl font-bold tracking-tight">QuixHR</span>
                         </div>
-                        <Button type="submit" disabled={forgotPasswordMutation.isPending} className="w-full bg-[#ffd300] text-black border-2 border-black rounded-none shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] hover:translate-x-[2px] hover:translate-y-[2px] transition-all font-black text-lg h-12 uppercase">
-                            {forgotPasswordMutation.isPending ? "Sending..." : "Send Reset Link"}
-                        </Button>
-                    </form>
-                </CardContent>
-                <CardFooter className="justify-center pb-8">
-                    <Link href="/login" className="text-sm font-bold underline decoration-2 underline-offset-2 hover:bg-black hover:text-white transition-colors px-1">
-                        Back to Login
-                    </Link>
-                </CardFooter>
-            </Card>
+                        <p className="text-blue-200 text-sm font-medium">People-first HR tools that scale.</p>
+                    </div>
+
+                    <div className="z-10 relative">
+                        <div className="absolute -left-4 -top-6 text-6xl text-blue-700/50 font-serif">"</div>
+                        <h2 className="text-2xl font-medium leading-relaxed mb-6 italic relative">
+                            Secure password recovery in seconds. We've got your back.
+                        </h2>
+                        <div className="flex items-center gap-3">
+                            <div className="w-10 h-10 rounded-full bg-blue-500/20 flex items-center justify-center font-bold text-sm text-blue-200">SD</div>
+                            <div>
+                                <div className="font-semibold text-white">Security Team</div>
+                                <div className="text-xs text-blue-300 uppercase tracking-wider">QuixHR</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div className="z-10 text-xs text-blue-300/80 space-y-1">
+                        <p>• Encrypted Reset Links</p>
+                        <p>• 1-Hour Validity</p>
+                    </div>
+
+                    {/* Abstract Background Shapes */}
+                    <div className="absolute top-0 right-0 w-80 h-80 bg-blue-600/20 rounded-full blur-[100px] -translate-y-1/2 translate-x-1/2 pointer-events-none"></div>
+                    <div className="absolute bottom-0 left-0 w-80 h-80 bg-indigo-600/20 rounded-full blur-[100px] translate-y-1/2 -translate-x-1/3 pointer-events-none"></div>
+                </div>
+
+                {/* Right Side - Form */}
+                <div className="flex-1 flex flex-col justify-center p-8 lg:p-12 bg-white relative">
+                    <div className="w-full max-w-sm mx-auto space-y-8">
+                        <div className="text-center">
+                            <div className="inline-flex items-center justify-center w-10 h-10 rounded-lg bg-slate-900 text-white mb-4 lg:hidden">
+                                <span className="font-bold text-sm">Q</span>
+                            </div>
+                            <h2 className="text-2xl font-bold tracking-tight text-slate-900">Forgot Password</h2>
+                            <p className="text-sm text-slate-500 mt-2">Enter your email to receive a reset link</p>
+                        </div>
+
+                        <form onSubmit={handleSubmit} className="space-y-5">
+                            <div className="space-y-2">
+                                <Label htmlFor="email" className="text-slate-700">Email</Label>
+                                <Input
+                                    id="email"
+                                    type="email"
+                                    placeholder="name@example.com"
+                                    value={email}
+                                    onChange={(e) => setEmail(e.target.value)}
+                                    className="h-10 rounded-md border-slate-200 focus:ring-slate-900 focus:border-slate-900"
+                                    required
+                                />
+                            </div>
+
+                            <Button
+                                type="submit"
+                                disabled={forgotPasswordMutation.isPending}
+                                className="w-full bg-slate-900 hover:bg-slate-800 text-white font-bold py-3 rounded-xl shadow-lg transition-all"
+                            >
+                                {forgotPasswordMutation.isPending ? "Sending..." : "Send Reset Link"}
+                            </Button>
+                        </form>
+
+                        <div className="text-center text-sm text-slate-500">
+                            Remember your password?{" "}
+                            <Link href="/login" className="font-medium text-slate-900 hover:underline">
+                                Sign in
+                            </Link>
+                        </div>
+                    </div>
+                </div>
+            </div>
         </div>
     )
 }

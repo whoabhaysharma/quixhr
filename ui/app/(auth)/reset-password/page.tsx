@@ -6,18 +6,21 @@ import { useRouter, useSearchParams } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { useResetPassword } from "@/lib/hooks/useAuth"
+import { Eye, EyeOff, CheckCircle2 } from "lucide-react"
 import { toast } from "sonner"
 
 export default function ResetPasswordPage() {
     const searchParams = useSearchParams()
+    const router = useRouter()
 
     // Support both 'token' (standard) and 'oobCode' (Firebase style/local test)
     const token = searchParams.get("token") || searchParams.get("oobCode")
 
     const [password, setPassword] = useState("")
     const [confirmPassword, setConfirmPassword] = useState("")
+    const [showPassword, setShowPassword] = useState(false)
+    const [showConfirmPassword, setShowConfirmPassword] = useState(false)
     const [success, setSuccess] = useState(false)
 
     const resetPasswordMutation = useResetPassword()
@@ -46,84 +49,155 @@ export default function ResetPasswordPage() {
 
     if (success) {
         return (
-            <div className="min-h-screen w-full flex items-center justify-center bg-[#fbfbfb] text-black relative font-sans">
-                <div className="absolute inset-0 bg-[radial-gradient(#000000_1px,transparent_1px)] [background-size:24px_24px] opacity-10"></div>
-                <Card className="w-full max-w-[500px] z-10 border-2 border-black bg-white shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] rounded-none">
-                    <CardHeader className="text-center space-y-4 pt-8">
-                        <CardTitle className="text-3xl font-black tracking-tighter uppercase text-[#00e378]">Success!</CardTitle>
-                        <CardDescription className="text-black font-medium text-base">
+            <div className="min-h-screen w-full flex items-center justify-center bg-slate-50 p-4">
+                <div className="w-full max-w-[500px] bg-white rounded-2xl shadow-xl overflow-hidden border border-slate-100 p-8 text-center space-y-6">
+                    <div className="flex justify-center">
+                        <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center">
+                            <CheckCircle2 className="w-8 h-8 text-green-600" />
+                        </div>
+                    </div>
+                    <div className="space-y-2">
+                        <h2 className="text-2xl font-bold text-slate-900">Password Reset!</h2>
+                        <p className="text-slate-500">
                             Your password has been reset successfully.
-                        </CardDescription>
-                    </CardHeader>
-                    <CardContent className="space-y-6 pt-4 text-center">
+                        </p>
+                        <p className="text-sm text-slate-400">
+                            You can now log in with your new password.
+                        </p>
+                    </div>
+                    <div className="pt-4">
                         <Link href="/login">
-                            <Button className="w-full bg-black text-white border-2 border-black rounded-none shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] hover:translate-x-[2px] hover:translate-y-[2px] transition-all font-black text-lg h-12 uppercase">
+                            <Button className="w-full bg-slate-900 hover:bg-slate-800 text-white font-bold py-2 rounded-xl">
                                 Go to Login
                             </Button>
                         </Link>
-                    </CardContent>
-                </Card>
+                    </div>
+                </div>
             </div>
         )
     }
 
     return (
-        <div className="min-h-screen w-full flex items-center justify-center bg-[#fbfbfb] text-black relative font-sans">
-            {/* Dot Pattern Background */}
-            <div className="absolute inset-0 bg-[radial-gradient(#000000_1px,transparent_1px)] [background-size:24px_24px] opacity-10"></div>
-
-            <Card className="w-full max-w-[500px] z-10 border-2 border-black bg-white shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] rounded-none">
-                <CardHeader className="text-center space-y-4 pt-8">
-                    <div className="mx-auto bg-black text-white px-3 py-1 text-xl font-black tracking-tighter inline-block transform -rotate-2">
-                        SECURE ACCOUNT
-                    </div>
-                    <CardTitle className="text-3xl font-black tracking-tighter uppercase">Reset Password</CardTitle>
-                    <CardDescription className="text-black font-medium text-base">
-                        Enter your new password.
-                    </CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-6 pt-4">
-                    {!token ? (
-                        <div className="text-center">
-                            <p className="font-bold">Missing Reset Token</p>
-                            <Link href="/forgot-password" className="underline">Request a new link</Link>
+        <div className="min-h-screen w-full flex items-center justify-center bg-slate-50 p-4">
+            <div className="w-full max-w-[1000px] h-[600px] bg-white rounded-2xl shadow-xl overflow-hidden flex border border-slate-100">
+                {/* Left Side - Brand */}
+                <div className="hidden lg:flex w-1/2 bg-slate-900 flex-col justify-between p-12 text-white relative overflow-hidden">
+                    <div className="z-10">
+                        <div className="flex items-center gap-2 mb-2">
+                            <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center font-bold text-sm">Q</div>
+                            <span className="text-xl font-bold tracking-tight">QuixHR</span>
                         </div>
-                    ) : (
-                        <form onSubmit={handleReset} className="space-y-4">
-                            <div className="space-y-2">
-                                <Label htmlFor="password" className="font-bold text-base uppercase">New Password</Label>
-                                <Input
-                                    id="password"
-                                    type="password"
-                                    value={password}
-                                    onChange={(e) => setPassword(e.target.value)}
-                                    className="border-2 border-black rounded-none shadow-[2px_2px_0px_0px_rgba(0,0,0,0.5)] focus-visible:ring-0 focus-visible:shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] focus-visible:translate-x-[-2px] focus-visible:translate-y-[-2px] transition-all bg-white font-bold h-12"
-                                    required
-                                />
+                        <p className="text-blue-200 text-sm font-medium">People-first HR tools that scale.</p>
+                    </div>
+
+                    <div className="z-10 relative">
+                        <div className="absolute -left-4 -top-6 text-6xl text-blue-700/50 font-serif">"</div>
+                        <h2 className="text-2xl font-medium leading-relaxed mb-6 italic relative">
+                            Create a strong password to keep your account secure.
+                        </h2>
+                        <div className="flex items-center gap-3">
+                            <div className="w-10 h-10 rounded-full bg-blue-500/20 flex items-center justify-center font-bold text-sm text-blue-200">SD</div>
+                            <div>
+                                <div className="font-semibold text-white">Security Team</div>
+                                <div className="text-xs text-blue-300 uppercase tracking-wider">QuixHR</div>
                             </div>
-                            <div className="space-y-2">
-                                <Label htmlFor="confirmPassword" className="font-bold text-base uppercase">Confirm Password</Label>
-                                <Input
-                                    id="confirmPassword"
-                                    type="password"
-                                    value={confirmPassword}
-                                    onChange={(e) => setConfirmPassword(e.target.value)}
-                                    className="border-2 border-black rounded-none shadow-[2px_2px_0px_0px_rgba(0,0,0,0.5)] focus-visible:ring-0 focus-visible:shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] focus-visible:translate-x-[-2px] focus-visible:translate-y-[-2px] transition-all bg-white font-bold h-12"
-                                    required
-                                />
+                        </div>
+                    </div>
+
+                    <div className="z-10 text-xs text-blue-300/80 space-y-1">
+                        <p>• Secure Password Hashing</p>
+                        <p>• SOC2 Compliant</p>
+                    </div>
+
+                    {/* Abstract Background Shapes */}
+                    <div className="absolute top-0 right-0 w-80 h-80 bg-blue-600/20 rounded-full blur-[100px] -translate-y-1/2 translate-x-1/2 pointer-events-none"></div>
+                    <div className="absolute bottom-0 left-0 w-80 h-80 bg-indigo-600/20 rounded-full blur-[100px] translate-y-1/2 -translate-x-1/3 pointer-events-none"></div>
+                </div>
+
+                {/* Right Side - Form */}
+                <div className="flex-1 flex flex-col justify-center p-8 lg:p-12 bg-white relative">
+                    <div className="w-full max-w-sm mx-auto space-y-8">
+                        <div className="text-center">
+                            <div className="inline-flex items-center justify-center w-10 h-10 rounded-lg bg-slate-900 text-white mb-4 lg:hidden">
+                                <span className="font-bold text-sm">Q</span>
                             </div>
-                            <Button type="submit" disabled={resetPasswordMutation.isPending} className="w-full bg-[#00e378] text-black border-2 border-black rounded-none shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] hover:translate-x-[2px] hover:translate-y-[2px] transition-all font-black text-lg h-12 uppercase">
-                                {resetPasswordMutation.isPending ? "Resetting..." : "Reset Password"}
-                            </Button>
-                        </form>
-                    )}
-                </CardContent>
-                <CardFooter className="justify-center pb-8">
-                    <Link href="/login" className="text-sm font-bold underline decoration-2 underline-offset-2 hover:bg-black hover:text-white transition-colors px-1">
-                        Back to Login
-                    </Link>
-                </CardFooter>
-            </Card>
+                            <h2 className="text-2xl font-bold tracking-tight text-slate-900">Reset Password</h2>
+                            <p className="text-sm text-slate-500 mt-2">Enter your new password</p>
+                        </div>
+
+                        {!token ? (
+                            <div className="text-center space-y-4">
+                                <p className="text-red-500 font-medium">Missing Reset Token</p>
+                                <Link href="/forgot-password">
+                                    <Button className="w-full bg-slate-900 hover:bg-slate-800 text-white font-bold py-3 rounded-xl">
+                                        Request a new link
+                                    </Button>
+                                </Link>
+                            </div>
+                        ) : (
+                            <form onSubmit={handleReset} className="space-y-5">
+                                <div className="space-y-2">
+                                    <Label htmlFor="password" className="text-slate-700">New Password</Label>
+                                    <div className="relative">
+                                        <Input
+                                            id="password"
+                                            type={showPassword ? "text" : "password"}
+                                            value={password}
+                                            onChange={(e) => setPassword(e.target.value)}
+                                            className="h-10 rounded-md border-slate-200 focus:ring-slate-900 focus:border-slate-900 pr-10"
+                                            placeholder="8+ characters"
+                                            required
+                                        />
+                                        <button
+                                            type="button"
+                                            onClick={() => setShowPassword(!showPassword)}
+                                            className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
+                                        >
+                                            {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                                        </button>
+                                    </div>
+                                </div>
+
+                                <div className="space-y-2">
+                                    <Label htmlFor="confirmPassword" className="text-slate-700">Confirm Password</Label>
+                                    <div className="relative">
+                                        <Input
+                                            id="confirmPassword"
+                                            type={showConfirmPassword ? "text" : "password"}
+                                            value={confirmPassword}
+                                            onChange={(e) => setConfirmPassword(e.target.value)}
+                                            className="h-10 rounded-md border-slate-200 focus:ring-slate-900 focus:border-slate-900 pr-10"
+                                            placeholder="Confirm password"
+                                            required
+                                        />
+                                        <button
+                                            type="button"
+                                            onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                                            className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
+                                        >
+                                            {showConfirmPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                                        </button>
+                                    </div>
+                                </div>
+
+                                <Button
+                                    type="submit"
+                                    disabled={resetPasswordMutation.isPending}
+                                    className="w-full bg-slate-900 hover:bg-slate-800 text-white font-bold py-3 rounded-xl shadow-lg transition-all"
+                                >
+                                    {resetPasswordMutation.isPending ? "Resetting..." : "Reset Password"}
+                                </Button>
+                            </form>
+                        )}
+
+                        <div className="text-center text-sm text-slate-500">
+                            <Link href="/login" className="font-medium text-slate-900 hover:underline">
+                                Back to Login
+                            </Link>
+                        </div>
+                    </div>
+                </div>
+            </div>
         </div>
     )
 }

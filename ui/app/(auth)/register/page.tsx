@@ -7,26 +7,28 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
-import { Eye, EyeOff } from "lucide-react"
+import { Eye, EyeOff, CheckCircle2 } from "lucide-react"
 import { authService } from "@/lib/services/auth"
 
 export default function RegisterPage() {
     const { login } = useAuth()
     const router = useRouter()
+
+    // Form State
     const [name, setName] = useState("")
-    const [organizationName, setOrganizationName] = useState("")
+    const [companyName, setCompanyName] = useState("")
     const [email, setEmail] = useState("")
     const [password, setPassword] = useState("")
     const [confirmPassword, setConfirmPassword] = useState("")
+
+    // UI State
     const [showPassword, setShowPassword] = useState(false)
     const [showConfirmPassword, setShowConfirmPassword] = useState(false)
-    const [otp, setOtp] = useState("")
-    const [step, setStep] = useState<'register' | 'verify'>('register')
     const [isLoading, setIsLoading] = useState(false)
     const [error, setError] = useState("")
+    const [isSuccess, setIsSuccess] = useState(false)
 
-
-    const handleInitiateRegister = async (e: React.FormEvent) => {
+    const handleRegister = async (e: React.FormEvent) => {
         e.preventDefault()
         setIsLoading(true)
         setError("")
@@ -38,52 +40,59 @@ export default function RegisterPage() {
         }
 
         try {
-            const response = await authService.sendVerificationCode(email)
-            if (response.success) {
-                setStep('verify')
-            } else {
-                throw new Error(response.error?.message || "Failed to send verification code")
-            }
-        } catch (err: any) {
-            setError(err.response?.data?.error?.message || err.message)
-        } finally {
-            setIsLoading(false)
-        }
-    }
-
-    const handleVerifyAndRegister = async () => {
-        setIsLoading(true)
-        setError("")
-
-        try {
             const response = await authService.register({
                 email,
                 password,
                 name,
-                otp,
-                organizationName
+                companyName
             })
 
             if (response.success) {
-                // Auto-login on success - need to call login endpoint
-                const loginRes = await authService.login(email, password)
-                if (loginRes.success) {
-                    login(loginRes.data.token)
-                }
+                setIsSuccess(true)
             } else {
-                throw new Error(response.error?.message || "Registration failed")
+                setError(response.error?.message || "Registration failed")
             }
         } catch (err: any) {
-            setError(err.response?.data?.error?.message || err.message)
+            setError(err.response?.data?.error?.message || err.message || "Registration failed")
         } finally {
             setIsLoading(false)
         }
     }
 
+    if (isSuccess) {
+        return (
+            <div className="min-h-screen w-full flex items-center justify-center bg-slate-50 p-4">
+                <div className="w-full max-w-[500px] bg-white rounded-2xl shadow-xl overflow-hidden border border-slate-100 p-8 text-center space-y-6">
+                    <div className="flex justify-center">
+                        <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center">
+                            <CheckCircle2 className="w-8 h-8 text-green-600" />
+                        </div>
+                    </div>
+                    <div className="space-y-2">
+                        <h2 className="text-2xl font-bold text-slate-900">Check your inbox</h2>
+                        <p className="text-slate-500">
+                            We've sent a verification link to <span className="font-medium text-slate-900">{email}</span>.
+                        </p>
+                        <p className="text-sm text-slate-400">
+                            Please verify your email to activate your account and log in.
+                        </p>
+                    </div>
+                    <div className="pt-4">
+                        <Link href="/login">
+                            <Button className="w-full bg-slate-900 hover:bg-slate-800 text-white font-bold py-2 rounded-xl">
+                                Back to Login
+                            </Button>
+                        </Link>
+                    </div>
+                </div>
+            </div>
+        )
+    }
+
     return (
         <div className="min-h-screen w-full flex items-center justify-center bg-slate-50 p-4">
-            <div className="w-full max-w-[1000px] h-[650px] bg-white rounded-2xl shadow-xl overflow-hidden flex border border-slate-100">
-                {/* Left Side - Matching Login Theme */}
+            <div className="w-full max-w-[1000px] h-[700px] bg-white rounded-2xl shadow-xl overflow-hidden flex border border-slate-100">
+                {/* Left Side - Brand & Marketing */}
                 <div className="hidden lg:flex w-1/2 bg-slate-900 flex-col justify-between p-12 text-white relative overflow-hidden">
                     <div className="z-10">
                         <div className="flex items-center gap-2 mb-2">
@@ -100,19 +109,19 @@ export default function RegisterPage() {
                         <div className="space-y-4">
                             <div className="flex items-center gap-3">
                                 <div className="w-8 h-8 rounded-full bg-blue-500/20 flex items-center justify-center text-blue-300">
-                                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" /></svg>
+                                    <CheckCircle2 className="w-5 h-5" />
                                 </div>
                                 <span className="text-blue-100">Free 14-day trial</span>
                             </div>
                             <div className="flex items-center gap-3">
                                 <div className="w-8 h-8 rounded-full bg-blue-500/20 flex items-center justify-center text-blue-300">
-                                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" /></svg>
+                                    <CheckCircle2 className="w-5 h-5" />
                                 </div>
                                 <span className="text-blue-100">No credit card required</span>
                             </div>
                             <div className="flex items-center gap-3">
                                 <div className="w-8 h-8 rounded-full bg-blue-500/20 flex items-center justify-center text-blue-300">
-                                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" /></svg>
+                                    <CheckCircle2 className="w-5 h-5" />
                                 </div>
                                 <span className="text-blue-100">Cancel anytime</span>
                             </div>
@@ -134,18 +143,12 @@ export default function RegisterPage() {
                             <div className="inline-flex items-center justify-center w-10 h-10 rounded-lg bg-slate-900 text-white mb-4 lg:hidden">
                                 <span className="font-bold text-sm">Q</span>
                             </div>
-                            <h2 className="text-2xl font-bold tracking-tight text-slate-900">
-                                {step === 'register' ? "Create an account" : "Verify your email"}
-                            </h2>
-                            <p className="text-sm text-slate-500 mt-2">
-                                {step === 'register'
-                                    ? "Get started with QuixHR in seconds"
-                                    : `We've sent a code to ${email}`}
-                            </p>
+                            <h2 className="text-2xl font-bold tracking-tight text-slate-900">Create an account</h2>
+                            <p className="text-sm text-slate-500 mt-2">Get started with QuixHR in seconds</p>
                         </div>
 
-                        {step === 'register' ? (
-                            <form onSubmit={handleInitiateRegister} className="space-y-4">
+                        <form onSubmit={handleRegister} className="space-y-4">
+                            <div className="grid grid-cols-2 gap-4">
                                 <div className="space-y-2">
                                     <Label htmlFor="name" className="text-slate-700">Full Name</Label>
                                     <Input
@@ -158,126 +161,87 @@ export default function RegisterPage() {
                                         required
                                     />
                                 </div>
-
                                 <div className="space-y-2">
-                                    <Label htmlFor="orgName" className="text-slate-700">Company Name</Label>
+                                    <Label htmlFor="companyName" className="text-slate-700">Company</Label>
                                     <Input
-                                        id="orgName"
+                                        id="companyName"
                                         type="text"
                                         placeholder="Acme Inc."
-                                        value={organizationName}
-                                        onChange={(e) => setOrganizationName(e.target.value)}
+                                        value={companyName}
+                                        onChange={(e) => setCompanyName(e.target.value)}
                                         className="h-10 rounded-md border-slate-200 focus:ring-slate-900 focus:border-slate-900"
                                         required
                                     />
-                                </div>
-
-                                <div className="space-y-2">
-                                    <Label htmlFor="email" className="text-slate-700">Email Address</Label>
-                                    <Input
-                                        id="email"
-                                        type="email"
-                                        placeholder="name@company.com"
-                                        value={email}
-                                        onChange={(e) => setEmail(e.target.value)}
-                                        className="h-10 rounded-md border-slate-200 focus:ring-slate-900 focus:border-slate-900"
-                                        required
-                                    />
-                                </div>
-
-                                <div className="space-y-2">
-                                    <Label htmlFor="password" className="text-slate-700">Password</Label>
-                                    <div className="relative">
-                                        <Input
-                                            id="password"
-                                            type={showPassword ? "text" : "password"}
-                                            placeholder="8+ characters"
-                                            value={password}
-                                            onChange={(e) => setPassword(e.target.value)}
-                                            className="h-10 rounded-md border-slate-200 focus:ring-slate-900 focus:border-slate-900 pr-10"
-                                            required
-                                        />
-                                        <button
-                                            type="button"
-                                            onClick={() => setShowPassword(!showPassword)}
-                                            className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
-                                        >
-                                            {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                                        </button>
-                                    </div>
-                                </div>
-
-                                <div className="space-y-2">
-                                    <Label htmlFor="confirmPassword" className="text-slate-700">Confirm Password</Label>
-                                    <div className="relative">
-                                        <Input
-                                            id="confirmPassword"
-                                            type={showConfirmPassword ? "text" : "password"}
-                                            placeholder="Confirm password"
-                                            value={confirmPassword}
-                                            onChange={(e) => setConfirmPassword(e.target.value)}
-                                            className="h-10 rounded-md border-slate-200 focus:ring-slate-900 focus:border-slate-900 pr-10"
-                                            required
-                                        />
-                                        <button
-                                            type="button"
-                                            onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                                            className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
-                                        >
-                                            {showConfirmPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                                        </button>
-                                    </div>
-                                </div>
-
-                                {error && <p className="text-red-500 text-sm text-center bg-red-50 p-2 rounded-md font-medium">{error}</p>}
-
-                                <Button
-                                    type="submit"
-                                    disabled={isLoading}
-                                    className="w-full h-10 bg-slate-900 hover:bg-slate-800 text-white rounded-md font-medium transition-all shadow-lg shadow-slate-900/10"
-                                >
-                                    {isLoading ? "Sending code..." : "Get Started"}
-                                </Button>
-                            </form>
-                        ) : (
-                            <div className="space-y-6">
-                                <div className="space-y-2">
-                                    <Label htmlFor="otp" className="text-slate-700">Verification Code</Label>
-                                    <Input
-                                        id="otp"
-                                        type="text"
-                                        placeholder="123456"
-                                        value={otp}
-                                        onChange={(e) => setOtp(e.target.value)}
-                                        className="text-center text-2xl tracking-[0.5em] h-14 font-bold border-slate-200 focus:ring-slate-900 focus:border-slate-900"
-                                        maxLength={6}
-                                        autoFocus
-                                    />
-                                    <p className="text-xs text-slate-500 text-center">
-                                        Check your spam folder if you don't see the email.
-                                    </p>
-                                </div>
-
-                                {error && <p className="text-red-500 text-sm text-center bg-red-50 p-2 rounded-md font-medium">{error}</p>}
-
-                                <div className="space-y-3">
-                                    <Button
-                                        onClick={handleVerifyAndRegister}
-                                        disabled={isLoading || otp.length !== 6}
-                                        className="w-full h-10 bg-slate-900 hover:bg-slate-800 text-white rounded-md font-medium transition-all shadow-lg shadow-slate-900/10"
-                                    >
-                                        {isLoading ? "Verifying..." : "Verify & Create Account"}
-                                    </Button>
-                                    <Button
-                                        variant="ghost"
-                                        onClick={() => setStep('register')}
-                                        className="w-full h-10 text-slate-500 hover:text-slate-900"
-                                    >
-                                        Back to details
-                                    </Button>
                                 </div>
                             </div>
-                        )}
+
+                            <div className="space-y-2">
+                                <Label htmlFor="email" className="text-slate-700">Email Address</Label>
+                                <Input
+                                    id="email"
+                                    type="email"
+                                    placeholder="name@company.com"
+                                    value={email}
+                                    onChange={(e) => setEmail(e.target.value)}
+                                    className="h-10 rounded-md border-slate-200 focus:ring-slate-900 focus:border-slate-900"
+                                    required
+                                />
+                            </div>
+
+                            <div className="space-y-2">
+                                <Label htmlFor="password" className="text-slate-700">Password</Label>
+                                <div className="relative">
+                                    <Input
+                                        id="password"
+                                        type={showPassword ? "text" : "password"}
+                                        placeholder="8+ characters"
+                                        value={password}
+                                        onChange={(e) => setPassword(e.target.value)}
+                                        className="h-10 rounded-md border-slate-200 focus:ring-slate-900 focus:border-slate-900 pr-10"
+                                        required
+                                    />
+                                    <button
+                                        type="button"
+                                        onClick={() => setShowPassword(!showPassword)}
+                                        className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
+                                    >
+                                        {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                                    </button>
+                                </div>
+                            </div>
+
+                            <div className="space-y-2">
+                                <Label htmlFor="confirmPassword" className="text-slate-700">Confirm Password</Label>
+                                <div className="relative">
+                                    <Input
+                                        id="confirmPassword"
+                                        type={showConfirmPassword ? "text" : "password"}
+                                        placeholder="Confirm password"
+                                        value={confirmPassword}
+                                        onChange={(e) => setConfirmPassword(e.target.value)}
+                                        className="h-10 rounded-md border-slate-200 focus:ring-slate-900 focus:border-slate-900 pr-10"
+                                        required
+                                    />
+                                    <button
+                                        type="button"
+                                        onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                                        className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
+                                    >
+                                        {showConfirmPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                                    </button>
+                                </div>
+                            </div>
+
+                            {error && <p className="text-red-500 text-sm text-center bg-red-50 p-2 rounded-md font-medium">{error}</p>}
+
+                            <Button
+                                type="submit"
+                                disabled={isLoading}
+                                className="w-full bg-slate-900 hover:bg-slate-800 text-white font-bold py-3 rounded-xl shadow-lg transition-all"
+                            >
+                                {isLoading ? "Creating Account..." : "Create Account"}
+                            </Button>
+                        </form>
 
                         <div className="text-center text-sm text-slate-500">
                             Already have an account?{" "}

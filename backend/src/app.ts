@@ -25,14 +25,14 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
 // Global rate limiting (1000 requests per hour)
-app.use('/api', apiRateLimit);
+app.use('/api/v1', apiRateLimit);
 
 // Routes
-app.use('/api/auth', authRoutes);
-app.use('/api/companies', companyRoutes);
-app.use('/api/employees', employeeRoutes);
-app.use('/api/calendars', calendarRoutes);
-app.use('/api/attendance', attendanceRoutes);
+app.use('/api/v1/auth', authRoutes);
+app.use('/api/v1/companies', companyRoutes);
+app.use('/api/v1/employees', employeeRoutes);
+app.use('/api/v1/calendars', calendarRoutes);
+app.use('/api/v1/attendance', attendanceRoutes);
 
 // Health check
 app.get('/health', (req, res) => {

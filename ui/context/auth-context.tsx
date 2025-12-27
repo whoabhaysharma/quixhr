@@ -81,9 +81,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
 
     useEffect(() => {
+        // Only check auth on initial mount, not on every pathname change
         const token = localStorage.getItem("token")
         checkAuth(token)
-    }, [pathname]) // Re-check on path change to enforce protection
+    }, []) // Empty dependency array - only run once on mount
 
     const login = (token: string) => {
         localStorage.setItem("token", token)

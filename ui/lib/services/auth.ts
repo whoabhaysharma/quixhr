@@ -25,19 +25,12 @@ export const authService = {
         return response.data;
     },
 
-    // Send verification code for registration
-    sendVerificationCode: async (email: string): Promise<ApiResponse<{ message: string }>> => {
-        const response = await api.post('/auth/send-verification', { email });
-        return response.data;
-    },
-
     // Complete registration
     register: async (data: {
         name: string;
         email: string;
         password: string;
-        otp: string;
-        organizationName: string;
+        companyName: string;
     }): Promise<ApiResponse<RegisterResponse>> => {
         const response = await api.post('/auth/register', data);
         return response.data;
@@ -76,7 +69,7 @@ export const authService = {
 
     // Reset password
     resetPassword: async (token: string, password: string): Promise<ApiResponse<{ message: string }>> => {
-        const response = await api.post('/auth/reset-password', { token, password });
+        const response = await api.post('/auth/reset-password', { token, newPassword: password });
         return response.data;
     },
 };
