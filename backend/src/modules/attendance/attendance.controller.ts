@@ -2,7 +2,7 @@ import { Response } from 'express';
 import { AuthRequest } from '../../shared/middleware/auth.middleware';
 import * as attendanceService from './attendance.service';
 import { checkInSchema, checkOutSchema } from './attendance.types';
-import * as employeeService from '../employee/employee.service';
+import * as memberService from '../member/member.service';
 import { logAction } from '../audit/audit.service';
 import { redis } from '../../infra/redis/redis.connection';
 
@@ -29,7 +29,7 @@ export async function checkIn(req: AuthRequest, res: Response): Promise<void> {
         // Set lock for 5 seconds
         await redis.set(lockKey, '1', 'EX', 5);
 
-        const employee = await employeeService.getEmployeeByUserId(userId);
+        const employee = await memberService.getMemberByUserId(userId);
         if (!employee) {
             res.status(404).json({ success: false, error: 'Employee profile not found' });
             return;
@@ -68,7 +68,7 @@ export async function checkOut(req: AuthRequest, res: Response): Promise<void> {
             return;
         }
 
-        const employee = await employeeService.getEmployeeByUserId(userId);
+        const employee = await memberService.getMemberByUserId(userId);
         if (!employee) {
             res.status(404).json({ success: false, error: 'Employee profile not found' });
             return;
@@ -107,7 +107,7 @@ export async function getMyAppAttendance(req: AuthRequest, res: Response): Promi
             return;
         }
 
-        const employee = await employeeService.getEmployeeByUserId(userId);
+        const employee = await memberService.getMemberByUserId(userId);
         if (!employee) {
             res.status(404).json({ success: false, error: 'Employee profile not found' });
             return;

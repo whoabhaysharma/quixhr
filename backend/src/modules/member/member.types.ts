@@ -1,4 +1,4 @@
-export interface CreateEmployeeDto {
+export interface CreateMemberDto {
     name: string;
     email: string;
     role?: string; // Optional, default to EMPLOYEE
@@ -6,13 +6,13 @@ export interface CreateEmployeeDto {
     status?: string;
 }
 
-export interface UpdateEmployeeDto {
+export interface UpdateMemberDto {
     name?: string;
     status?: string;
     role?: string;
 }
 
-export interface EmployeeResponseDto {
+export interface MemberResponseDto {
     id: string;
     userId: string;
     companyId: string;

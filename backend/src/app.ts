@@ -7,11 +7,13 @@ import { apiRateLimit } from './shared/middleware';
 // Import routes
 import authRoutes from './modules/auth/auth.routes';
 import companyRoutes from './modules/company/company.routes';
-import employeeRoutes from './modules/employee/employee.routes';
+import memberRoutes from './modules/member/member.routes';
 import calendarRoutes from './modules/calendar/calendar.routes';
 import attendanceRoutes from './modules/attendance/attendance.routes';
 import notificationRoutes from './modules/notification/notification.controller';
 import dashboardRoutes from './modules/dashboard/dashboard.controller';
+import auditRoutes from './modules/audit/audit.routes';
+import invitationRoutes from './modules/invitation/invitation.routes';
 
 const app = express();
 
@@ -32,11 +34,13 @@ app.use('/api/v1', apiRateLimit);
 // Routes
 app.use('/api/v1/auth', authRoutes);
 app.use('/api/v1/companies', companyRoutes);
-app.use('/api/v1/employees', employeeRoutes);
+app.use('/api/v1/members', memberRoutes);
 app.use('/api/v1/calendars', calendarRoutes);
 app.use('/api/v1/attendance', attendanceRoutes);
 app.use('/api/v1/notifications', notificationRoutes);
 app.use('/api/v1/dashboard', dashboardRoutes);
+app.use('/api/v1/audit', auditRoutes);
+app.use('/api/v1/invitations', invitationRoutes);
 
 // Health check
 app.get('/health', (req, res) => {

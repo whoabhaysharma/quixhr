@@ -20,7 +20,8 @@ import {
     Plus,
     CalendarDays,
     Clock,
-    Timer
+    Timer,
+    FileText
 } from "lucide-react"
 import {
     Popover,
@@ -68,7 +69,7 @@ export default function DashboardLayout({
 
     if (!isAuthenticated) return null
 
-    const isManagementRole = ['HR', 'ADMIN', 'SUPER_ADMIN'].includes(user?.role || '')
+    const isManagementRole = ['HR_ADMIN', 'ADMIN', 'SUPER_ADMIN', 'MANAGER'].includes(user?.role || '')
 
     const notifications = notificationsData?.data || []
     const unreadCount = unreadCountData?.data?.count || 0
@@ -108,8 +109,9 @@ export default function DashboardLayout({
 
     const managementNavItems = [
         { name: "People", href: "/manage/members", icon: Users },
-        { name: "Attendance", href: "/manage/attendance", icon: Clock },
+        { name: "Attendence", href: "/manage/attendance", icon: Clock },
         { name: "Leave Requests", href: "/manage/leaves", icon: Calendar },
+        { name: "Audit Logs", href: "/audit", icon: FileText },
     ]
 
     return (

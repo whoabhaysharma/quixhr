@@ -1,41 +1,26 @@
-import api, { ApiResponse } from '../api';
+import api, { ApiResponse, PaginatedResponse } from '../api';
 
 export interface Member {
     id: string;
+    userId: string;
+    companyId: string;
     name: string;
     email: string;
-    role: 'ADMIN' | 'HR' | 'EMPLOYEE';
-    organizationId: string;
-    createdAt: string;
-}
-
-export interface MembersResponse {
-    members: Member[];
-}
-
-export interface Invite {
-    id: string;
-    email: string;
-    role: 'ADMIN' | 'HR' | 'EMPLOYEE';
-    organizationId: string;
-    token: string;
-    expiresAt: string;
+    role: 'SUPER_ADMIN' | 'HR_ADMIN' | 'MANAGER' | 'EMPLOYEE';
+    status: string;
     createdAt: string;
 }
 
 export const membersService = {
-    // Get all members in organization
-    getAllMembers: async (): Promise<ApiResponse<MembersResponse>> => {
-        const response = await api.get('/members');
-        return response.data;
-    },
+    // Get all members in company
+    getAllMembers: async (page = 1, limit = 10, search?: string): Promise<PaginatedResponse<Member[]>> => {
+        const params = new URLSearchParams({
+            page: page.toString(),
+            limit: limit.toString(),
+        });
+        if (search) params.append('search', search);
 
-    // Send invite to new member
-    sendInvite: async (data: {
-        email: string;
-        role: 'ADMIN' | 'HR' | 'EMPLOYEE';
-    }): Promise<ApiResponse<{ message: string; invite: Invite }>> => {
-        const response = await api.post('/invites', data);
+        const response = await api.get(`/members?${params.toString()}`);
         return response.data;
     },
 
@@ -48,7 +33,7 @@ export const membersService = {
     // Update member role
     updateMemberRole: async (
         memberId: string,
-        role: 'ADMIN' | 'HR' | 'EMPLOYEE'
+        role: string
     ): Promise<ApiResponse<Member>> => {
         const response = await api.patch(`/members/${memberId}`, { role });
         return response.data;

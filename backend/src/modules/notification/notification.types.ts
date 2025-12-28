@@ -45,6 +45,7 @@ export enum EmailTemplate {
     LEAVE_REJECTED = 'leave-rejected',
     ATTENDANCE_REMINDER = 'attendance-reminder',
     EMAIL_VERIFICATION = 'email-verification',
+    INVITATION = 'invitation',
 }
 
 // Email Payload Interface

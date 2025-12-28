@@ -1,11 +1,11 @@
 import { Response } from 'express';
 import { z } from 'zod';
 import { AuthRequest } from '../../shared/middleware/auth.middleware';
-import * as employeeService from './employee.service';
+import * as memberService from './member.service';
 import { logAction } from '../audit/audit.service';
 import { Role } from '@prisma/client';
 
-const createEmployeeSchema = z.object({
+const createMemberSchema = z.object({
     name: z.string().min(1, 'Name is required'),
     email: z.string().email('Invalid email'),
     role: z.nativeEnum(Role).optional(),
@@ -13,20 +13,20 @@ const createEmployeeSchema = z.object({
     companyId: z.string().uuid('Invalid company ID'),
 });
 
-const updateEmployeeSchema = z.object({
+const updateMemberSchema = z.object({
     name: z.string().optional(),
     status: z.string().optional(),
     role: z.nativeEnum(Role).optional(),
 });
 
 /**
- * Create a new employee
+ * Create a new member
  */
 export async function create(req: AuthRequest, res: Response): Promise<void> {
     try {
-        const dto = createEmployeeSchema.parse(req.body);
+        const dto = createMemberSchema.parse(req.body);
 
-        // Security check: Only HR_ADMIN can create employees
+        // Security check: Only HR_ADMIN can create members
         // And they can only create for their own company unless SUPER_ADMIN
         if (req.user?.role !== Role.SUPER_ADMIN && req.user?.role !== Role.HR_ADMIN) {
             res.status(403).json({ success: false, error: 'Insufficient permissions' });
@@ -34,33 +34,33 @@ export async function create(req: AuthRequest, res: Response): Promise<void> {
         }
 
         if (req.user?.role === Role.HR_ADMIN && req.user.companyId !== dto.companyId) {
-            res.status(403).json({ success: false, error: 'Cannot create employee for another company' });
+            res.status(403).json({ success: false, error: 'Cannot create member for another company' });
             return;
         }
 
-        const employee = await employeeService.createEmployee(dto);
+        const member = await memberService.createMember(dto);
 
         // Audit Log
         if (req.user?.id) {
             await logAction({
                 userId: req.user.id,
-                action: 'EMPLOYEE_CREATE',
-                resource: 'Employee',
-                resourceId: employee.id,
+                action: 'MEMBER_CREATE',
+                resource: 'Member',
+                resourceId: member.id,
                 ipAddress: req.ip || req.socket.remoteAddress || 'Unknown',
                 userAgent: req.headers['user-agent'],
-                details: { name: employee.name, email: dto.email, companyId: dto.companyId }
+                details: { name: member.name, email: dto.email, companyId: dto.companyId }
             });
         }
 
-        res.status(201).json({ success: true, data: employee });
+        res.status(201).json({ success: true, data: member });
     } catch (error: any) {
-        res.status(400).json({ success: false, error: error.message || 'Failed to create employee' });
+        res.status(400).json({ success: false, error: error.message || 'Failed to create member' });
     }
 }
 
 /**
- * Get all employees
+ * Get all members
  */
 export async function getAll(req: AuthRequest, res: Response): Promise<void> {
     try {
@@ -82,77 +82,77 @@ export async function getAll(req: AuthRequest, res: Response): Promise<void> {
             return;
         }
 
-        const result = await employeeService.getAllEmployees(companyId, page, limit, search);
+        const result = await memberService.getAllMembers(companyId, page, limit, search);
         res.json({ success: true, data: result.data, pagination: { page, limit, total: result.total } });
     } catch (error: any) {
-        res.status(500).json({ success: false, error: 'Failed to fetch employees' });
+        res.status(500).json({ success: false, error: 'Failed to fetch members' });
     }
 }
 
 /**
- * Get employee by ID
+ * Get member by ID
  */
 export async function getOne(req: AuthRequest, res: Response): Promise<void> {
     try {
-        const employee = await employeeService.getEmployeeById(req.params.id);
+        const member = await memberService.getMemberById(req.params.id);
 
-        if (!employee) {
-            res.status(404).json({ success: false, error: 'Employee not found' });
+        if (!member) {
+            res.status(404).json({ success: false, error: 'Member not found' });
             return;
         }
 
         // Security check
         if (req.user?.role !== Role.SUPER_ADMIN) {
             // Must be in same company
-            if (employee.companyId !== req.user?.companyId) {
+            if (member.companyId !== req.user?.companyId) {
                 res.status(403).json({ success: false, error: 'Access denied' });
                 return;
             }
 
             // If strictly an EMPLOYEE (not HR/Manager), can only view own profile
-            if (req.user.role === Role.EMPLOYEE && req.user.employeeId !== employee.id) {
+            if (req.user.role === Role.EMPLOYEE && req.user.employeeId !== member.id) {
                 res.status(403).json({ success: false, error: 'Access denied' });
                 return;
             }
         }
 
-        res.json({ success: true, data: employee });
+        res.json({ success: true, data: member });
     } catch (error: any) {
-        res.status(500).json({ success: false, error: 'Failed to fetch employee' });
+        res.status(500).json({ success: false, error: 'Failed to fetch member' });
     }
 }
 
 /**
- * Update employee
+ * Update member
  */
 export async function update(req: AuthRequest, res: Response): Promise<void> {
     try {
-        const dto = updateEmployeeSchema.parse(req.body);
+        const dto = updateMemberSchema.parse(req.body);
         const { id } = req.params;
 
-        const existingEmployee = await employeeService.getEmployeeById(id);
-        if (!existingEmployee) {
-            res.status(404).json({ success: false, error: 'Employee not found' });
+        const existingMember = await memberService.getMemberById(id);
+        if (!existingMember) {
+            res.status(404).json({ success: false, error: 'Member not found' });
             return;
         }
 
         // Security check
         if (req.user?.role !== Role.SUPER_ADMIN) {
             // Only HR_ADMIN of the same company
-            if (req.user?.role !== Role.HR_ADMIN || req.user.companyId !== existingEmployee.companyId) {
+            if (req.user?.role !== Role.HR_ADMIN || req.user.companyId !== existingMember.companyId) {
                 res.status(403).json({ success: false, error: 'Insufficient permissions' });
                 return;
             }
         }
 
-        const employee = await employeeService.updateEmployee(id, dto);
+        const member = await memberService.updateMember(id, dto);
 
         // Audit Log
         if (req.user?.id) {
             await logAction({
                 userId: req.user.id,
-                action: 'EMPLOYEE_UPDATE',
-                resource: 'Employee',
+                action: 'MEMBER_UPDATE',
+                resource: 'Member',
                 resourceId: id,
                 ipAddress: req.ip || req.socket.remoteAddress || 'Unknown',
                 userAgent: req.headers['user-agent'],
@@ -160,57 +160,57 @@ export async function update(req: AuthRequest, res: Response): Promise<void> {
             });
         }
 
-        res.json({ success: true, data: employee });
+        res.json({ success: true, data: member });
     } catch (error: any) {
-        res.status(400).json({ success: false, error: error.message || 'Failed to update employee' });
+        res.status(400).json({ success: false, error: error.message || 'Failed to update member' });
     }
 }
 
 /**
- * Delete employee
+ * Delete member
  */
 export async function deleteOne(req: AuthRequest, res: Response): Promise<void> {
     try {
         const { id } = req.params;
-        const existingEmployee = await employeeService.getEmployeeById(id);
+        const existingMember = await memberService.getMemberById(id);
 
-        if (!existingEmployee) {
-            res.status(404).json({ success: false, error: 'Employee not found' });
+        if (!existingMember) {
+            res.status(404).json({ success: false, error: 'Member not found' });
             return;
         }
 
         // Security check
         if (req.user?.role !== Role.SUPER_ADMIN) {
             // Only HR_ADMIN of the same company
-            if (req.user?.role !== Role.HR_ADMIN || req.user.companyId !== existingEmployee.companyId) {
+            if (req.user?.role !== Role.HR_ADMIN || req.user.companyId !== existingMember.companyId) {
                 res.status(403).json({ success: false, error: 'Insufficient permissions' });
                 return;
             }
         }
 
-        await employeeService.deleteEmployee(id);
+        await memberService.deleteMember(id);
 
         // Audit Log
         if (req.user?.id) {
             await logAction({
                 userId: req.user.id,
-                action: 'EMPLOYEE_DELETE',
-                resource: 'Employee',
+                action: 'MEMBER_DELETE',
+                resource: 'Member',
                 resourceId: id,
                 ipAddress: req.ip || req.socket.remoteAddress || 'Unknown',
                 userAgent: req.headers['user-agent'],
-                details: { deletedEmployeeId: id }
+                details: { deletedMemberId: id }
             });
         }
 
-        res.json({ success: true, message: 'Employee deleted successfully' });
+        res.json({ success: true, message: 'Member deleted successfully' });
     } catch (error: any) {
-        res.status(400).json({ success: false, error: error.message || 'Failed to delete employee' });
+        res.status(400).json({ success: false, error: error.message || 'Failed to delete member' });
     }
 }
 
 /**
- * Assign calendar to employee
+ * Assign calendar to member
  */
 export async function assignCalendar(req: AuthRequest, res: Response): Promise<void> {
     try {
@@ -222,22 +222,22 @@ export async function assignCalendar(req: AuthRequest, res: Response): Promise<v
             return;
         }
 
-        const employee = await employeeService.getEmployeeById(id);
-        if (!employee) {
-            res.status(404).json({ success: false, error: 'Employee not found' });
+        const member = await memberService.getMemberById(id);
+        if (!member) {
+            res.status(404).json({ success: false, error: 'Member not found' });
             return;
         }
 
         // Security
         if (req.user?.role !== Role.SUPER_ADMIN) {
-            if (req.user?.role !== Role.HR_ADMIN || req.user?.companyId !== employee.companyId) {
+            if (req.user?.role !== Role.HR_ADMIN || req.user?.companyId !== member.companyId) {
                 res.status(403).json({ success: false, error: 'Insufficient permissions' });
                 return;
             }
         }
 
-        await employeeService.assignCalendarToEmployee(id, calendarId);
-        res.json({ success: true, message: 'Calendar assigned to employee successfully' });
+        await memberService.assignCalendarToMember(id, calendarId);
+        res.json({ success: true, message: 'Calendar assigned to member successfully' });
     } catch (error: any) {
         res.status(400).json({ success: false, error: error.message || 'Failed to assign calendar' });
     }
