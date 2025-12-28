@@ -1,38 +1,56 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Pricing | Quixhr</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Lexend:wght@400;700;900&display=swap" rel="stylesheet">
-    <link rel="icon" href="/favicon-v2.ico" sizes="any">
-    <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
-    <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
+    <link rel="icon" type="image/png" sizes="96x96" href="/favicon-96.png">
+    <link rel="icon" type="image/png" sizes="48x48" href="/favicon-48.png">
+    <link rel="icon" type="image/png" sizes="144x144" href="/favicon-144.png">
     <style>
         body {
             font-family: 'Lexend', sans-serif;
             background-color: #F0F0F0;
         }
+
         .neo-brutal-border {
             border: 3px solid #000000;
         }
+
         .neo-brutal-shadow {
-            box-shadow: 8px 8px 0px 0px rgba(0,0,0,1);
+            box-shadow: 8px 8px 0px 0px rgba(0, 0, 0, 1);
         }
+
         .neo-brutal-shadow-sm {
-            box-shadow: 4px 4px 0px 0px rgba(0,0,0,1);
+            box-shadow: 4px 4px 0px 0px rgba(0, 0, 0, 1);
         }
+
         .neo-brutal-shadow:active {
-            box-shadow: 2px 2px 0px 0px rgba(0,0,0,1);
+            box-shadow: 2px 2px 0px 0px rgba(0, 0, 0, 1);
             transform: translate(2px, 2px);
         }
-        .bg-quixhr-yellow { background-color: #FFDE03; }
-        .bg-quixhr-pink { background-color: #FF6AC1; }
-        .bg-quixhr-blue { background-color: #3B82F6; }
-        .bg-quixhr-green { background-color: #00FF66; }
+
+        .bg-quixhr-yellow {
+            background-color: #FFDE03;
+        }
+
+        .bg-quixhr-pink {
+            background-color: #FF6AC1;
+        }
+
+        .bg-quixhr-blue {
+            background-color: #3B82F6;
+        }
+
+        .bg-quixhr-green {
+            background-color: #00FF66;
+        }
     </style>
-    <meta name="description" content="Quixhr is the all-in-one HR Management System (HRMS) for modern teams. Simplify attendance, leave tracking, and workforce management.">
+    <meta name="description"
+        content="Quixhr is the all-in-one HR Management System (HRMS) for modern teams. Simplify attendance, leave tracking, and workforce management.">
     <meta name="keywords" content="HRMS, HR software, workforce management, leave tracking, employee attendance">
     <meta name="author" content="Quixhr">
     <script type="application/ld+json">
@@ -45,10 +63,12 @@
         }
     </script>
 </head>
+
 <body class="p-4 md:p-8">
 
     <nav class="flex justify-between items-center mb-12 relative">
-        <a href="index.html" class="neo-brutal-border bg-black text-white px-4 py-2 font-black text-2xl uppercase tracking-tighter">
+        <a href="index.html"
+            class="neo-brutal-border bg-black text-white px-4 py-2 font-black text-2xl uppercase tracking-tighter">
             Quixhr
         </a>
         <div class="hidden md:flex gap-8 font-bold">
@@ -59,10 +79,11 @@
         </div>
         <div class="flex items-center gap-4">
             <button class="hidden md:block neo-brutal-border bg-quixhr-green px-6 py-2 font-black neo-brutal-shadow-sm">
-            LOGIN
-        </button>
+                LOGIN
+            </button>
             <button id="mobile-menu-btn" class="md:hidden neo-brutal-border bg-white px-4 py-2 neo-brutal-shadow-sm">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24"
+                    stroke="currentColor">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
                 </svg>
             </button>
@@ -72,7 +93,8 @@
     <div id="mobile-menu" class="hidden fixed inset-0 bg-white z-50 p-4 overflow-y-auto">
         <div class="flex justify-end mb-8">
             <button id="close-menu-btn" class="neo-brutal-border bg-white px-4 py-2 neo-brutal-shadow-sm">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24"
+                    stroke="currentColor">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
                 </svg>
             </button>
@@ -110,42 +132,48 @@
             No hidden fees. No complicated tiers. Just one simple price for everything.
         </p>
 
-        <div class="neo-brutal-border bg-quixhr-pink p-6 mb-12 text-center transform -rotate-1 max-w-3xl mx-auto neo-brutal-shadow-sm">
+        <div
+            class="neo-brutal-border bg-quixhr-pink p-6 mb-12 text-center transform -rotate-1 max-w-3xl mx-auto neo-brutal-shadow-sm">
             <h3 class="text-2xl md:text-4xl font-black uppercase mb-2">We don't want your money.</h3>
             <p class="font-bold text-lg md:text-xl">Seriously. We just need to cover the server costs. That's it.</p>
         </div>
-        
+
         <div class="grid grid-cols-1 md:grid-cols-2 gap-8 items-center">
             <!-- Pricing Card -->
             <div class="neo-brutal-border bg-white p-8 md:p-12 neo-brutal-shadow relative">
-               
+
                 <h2 class="text-3xl font-black uppercase mb-4">Standard Plan</h2>
                 <div class="flex items-baseline mb-6">
                     <span class="text-5xl font-black">₹29</span>
                     <span class="text-xl font-bold ml-2 text-gray-600">/ employee / month</span>
                 </div>
                 <p class="font-bold mb-8">Everything you need to manage leave for your team.</p>
-                
+
                 <ul class="space-y-4 mb-8 font-bold">
                     <li class="flex items-center gap-3">
-                        <div class="w-6 h-6 bg-quixhr-green neo-brutal-border flex items-center justify-center text-sm">✓</div>
+                        <div class="w-6 h-6 bg-quixhr-green neo-brutal-border flex items-center justify-center text-sm">
+                            ✓</div>
                         Unlimited Leave Types
                     </li>
                     <li class="flex items-center gap-3">
-                        <div class="w-6 h-6 bg-quixhr-green neo-brutal-border flex items-center justify-center text-sm">✓</div>
+                        <div class="w-6 h-6 bg-quixhr-green neo-brutal-border flex items-center justify-center text-sm">
+                            ✓</div>
                         Automated Accruals
                     </li>
                     <li class="flex items-center gap-3">
-                        <div class="w-6 h-6 bg-quixhr-green neo-brutal-border flex items-center justify-center text-sm">✓</div>
+                        <div class="w-6 h-6 bg-quixhr-green neo-brutal-border flex items-center justify-center text-sm">
+                            ✓</div>
                         Manager Approvals
                     </li>
                     <li class="flex items-center gap-3">
-                        <div class="w-6 h-6 bg-quixhr-green neo-brutal-border flex items-center justify-center text-sm">✓</div>
+                        <div class="w-6 h-6 bg-quixhr-green neo-brutal-border flex items-center justify-center text-sm">
+                            ✓</div>
                         Email Support
                     </li>
                 </ul>
 
-                <button class="w-full neo-brutal-border bg-quixhr-yellow px-6 py-4 font-black uppercase text-xl neo-brutal-shadow hover:translate-x-1 hover:translate-y-1 hover:shadow-none transition-all">
+                <button
+                    class="w-full neo-brutal-border bg-quixhr-yellow px-6 py-4 font-black uppercase text-xl neo-brutal-shadow hover:translate-x-1 hover:translate-y-1 hover:shadow-none transition-all">
                     Start Free Trial
                 </button>
             </div>
@@ -200,4 +228,5 @@
     </footer>
 
 </body>
+
 </html>

@@ -1,38 +1,56 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Contact Us | Quixhr</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Lexend:wght@400;700;900&display=swap" rel="stylesheet">
-    <link rel="icon" href="/favicon-v2.ico" sizes="any">
-    <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
-    <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
+    <link rel="icon" type="image/png" sizes="96x96" href="/favicon-96.png">
+    <link rel="icon" type="image/png" sizes="48x48" href="/favicon-48.png">
+    <link rel="icon" type="image/png" sizes="144x144" href="/favicon-144.png">
     <style>
         body {
             font-family: 'Lexend', sans-serif;
             background-color: #F0F0F0;
         }
+
         .neo-brutal-border {
             border: 3px solid #000000;
         }
+
         .neo-brutal-shadow {
-            box-shadow: 8px 8px 0px 0px rgba(0,0,0,1);
+            box-shadow: 8px 8px 0px 0px rgba(0, 0, 0, 1);
         }
+
         .neo-brutal-shadow-sm {
-            box-shadow: 4px 4px 0px 0px rgba(0,0,0,1);
+            box-shadow: 4px 4px 0px 0px rgba(0, 0, 0, 1);
         }
+
         .neo-brutal-shadow:active {
-            box-shadow: 2px 2px 0px 0px rgba(0,0,0,1);
+            box-shadow: 2px 2px 0px 0px rgba(0, 0, 0, 1);
             transform: translate(2px, 2px);
         }
-        .bg-quixhr-yellow { background-color: #FFDE03; }
-        .bg-quixhr-pink { background-color: #FF6AC1; }
-        .bg-quixhr-blue { background-color: #3B82F6; }
-        .bg-quixhr-green { background-color: #00FF66; }
+
+        .bg-quixhr-yellow {
+            background-color: #FFDE03;
+        }
+
+        .bg-quixhr-pink {
+            background-color: #FF6AC1;
+        }
+
+        .bg-quixhr-blue {
+            background-color: #3B82F6;
+        }
+
+        .bg-quixhr-green {
+            background-color: #00FF66;
+        }
     </style>
-    <meta name="description" content="Quixhr is the all-in-one HR Management System (HRMS) for modern teams. Simplify attendance, leave tracking, and workforce management.">
+    <meta name="description"
+        content="Quixhr is the all-in-one HR Management System (HRMS) for modern teams. Simplify attendance, leave tracking, and workforce management.">
     <meta name="keywords" content="HRMS, HR software, workforce management, leave tracking, employee attendance">
     <meta name="author" content="Quixhr">
     <script type="application/ld+json">
@@ -45,10 +63,12 @@
         }
     </script>
 </head>
+
 <body class="p-4 md:p-8">
 
     <nav class="flex justify-between items-center mb-12 relative">
-        <a href="index.html" class="neo-brutal-border bg-black text-white px-4 py-2 font-black text-2xl uppercase tracking-tighter">
+        <a href="index.html"
+            class="neo-brutal-border bg-black text-white px-4 py-2 font-black text-2xl uppercase tracking-tighter">
             Quixhr
         </a>
         <div class="hidden md:flex gap-8 font-bold">
@@ -59,10 +79,11 @@
         </div>
         <div class="flex items-center gap-4">
             <button class="hidden md:block neo-brutal-border bg-quixhr-green px-6 py-2 font-black neo-brutal-shadow-sm">
-            LOGIN
-        </button>
+                LOGIN
+            </button>
             <button id="mobile-menu-btn" class="md:hidden neo-brutal-border bg-white px-4 py-2 neo-brutal-shadow-sm">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24"
+                    stroke="currentColor">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
                 </svg>
             </button>
@@ -72,7 +93,8 @@
     <div id="mobile-menu" class="hidden fixed inset-0 bg-white z-50 p-4 overflow-y-auto">
         <div class="flex justify-end mb-8">
             <button id="close-menu-btn" class="neo-brutal-border bg-white px-4 py-2 neo-brutal-shadow-sm">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24"
+                    stroke="currentColor">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
                 </svg>
             </button>
@@ -106,24 +128,31 @@
         <h1 class="text-5xl md:text-7xl font-black uppercase mb-8 text-center">
             <span class="bg-quixhr-yellow px-2">Contact</span> Us
         </h1>
-        
+
         <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
             <div class="neo-brutal-border bg-white p-8 neo-brutal-shadow">
                 <h2 class="text-2xl font-black uppercase mb-6">Get in Touch</h2>
                 <form class="space-y-4">
                     <div>
                         <label class="block font-bold mb-2 uppercase text-sm">Name</label>
-                        <input type="text" class="w-full neo-brutal-border p-3 font-bold focus:outline-none focus:bg-quixhr-blue/10" placeholder="John Doe">
+                        <input type="text"
+                            class="w-full neo-brutal-border p-3 font-bold focus:outline-none focus:bg-quixhr-blue/10"
+                            placeholder="John Doe">
                     </div>
                     <div>
                         <label class="block font-bold mb-2 uppercase text-sm">Email</label>
-                        <input type="email" class="w-full neo-brutal-border p-3 font-bold focus:outline-none focus:bg-quixhr-blue/10" placeholder="john@company.com">
+                        <input type="email"
+                            class="w-full neo-brutal-border p-3 font-bold focus:outline-none focus:bg-quixhr-blue/10"
+                            placeholder="john@company.com">
                     </div>
                     <div>
                         <label class="block font-bold mb-2 uppercase text-sm">Message</label>
-                        <textarea class="w-full neo-brutal-border p-3 font-bold h-32 focus:outline-none focus:bg-quixhr-blue/10" placeholder="How can we help?"></textarea>
+                        <textarea
+                            class="w-full neo-brutal-border p-3 font-bold h-32 focus:outline-none focus:bg-quixhr-blue/10"
+                            placeholder="How can we help?"></textarea>
                     </div>
-                    <button class="w-full neo-brutal-border bg-quixhr-pink px-6 py-3 font-black uppercase neo-brutal-shadow hover:bg-quixhr-pink/90">
+                    <button
+                        class="w-full neo-brutal-border bg-quixhr-pink px-6 py-3 font-black uppercase neo-brutal-shadow hover:bg-quixhr-pink/90">
                         Send Message
                     </button>
                 </form>
@@ -135,7 +164,7 @@
                     <p class="font-bold mb-4">Need help with your account?</p>
                     <a href="mailto:support@quixhr.com" class="font-black underline text-xl">support@quixhr.com</a>
                 </div>
-                
+
                 <div class="neo-brutal-border bg-quixhr-green p-8 neo-brutal-shadow">
                     <h3 class="text-2xl font-black uppercase mb-2">Sales</h3>
                     <p class="font-bold mb-4">Want a demo for your team?</p>
@@ -177,4 +206,5 @@
     </footer>
 
 </body>
+
 </html>
