@@ -18,171 +18,27 @@ enum Role {
   EMPLOYEE
 }
 
+// CHANGE: Updated to HALF_DAY instead of ALTERNATE
 enum WeeklyRuleType {
   WORKING
   OFF
-  ALTERNATE
+  HALF_DAY
 }
 
-enum DayType {
-  WORKING
-  WEEKLY_OFF
-  HOLIDAY
-}
-
+// CHANGE: Updated for new attendance model
 enum AttendanceType {
-  FULL
-  HALF_AM
-  HALF_PM
+  PRESENT
   ABSENT
-}
-
-enum LeaveDuration {
-  FULL
-  HALF_AM
-  HALF_PM
+  HALF_DAY
+  LATE
 }
 
 enum LeaveStatus {
   PENDING
   APPROVED
   REJECTED
+  CANCELLED  // CHANGE: Added CANCELLED status
 }
-
-///////////////////////
-// AUTH
-///////////////////////
-
-model User {
-  id            String   @id @default(uuid())
-  email         String   @unique
-  password      String
-  role          Role
-  
-  notifications Notification[]
-  auditLogs     AuditLog[]
-  emailVerified Boolean  @default(false)
-  createdAt     DateTime @default(now())
-  employee      Employee?
-  sentInvitations Invitation[]
-}
-
-///////////////////////
-// COMPANY & EMPLOYEE
-///////////////////////
-
-model Company {
-  id        String   @id @default(uuid())
-  name      String
-  timezone  String
-  employees Employee[]
-  calendars Calendar[]
-  invitations Invitation[]
-}
-
-model Employee {
-  id        String   @id @default(uuid())
-  userId    String   @unique
-  companyId String
-  name      String
-  status    String
-  createdAt DateTime @default(now())
-
-  user      User     @relation(fields: [userId], references: [id])
-  company   Company  @relation(fields: [companyId], references: [id])
-
-  calendar  EmployeeCalendar?
-  attendance Attendance[]
-  leaves     LeaveRequest[]
-  leaveBalances LeaveBalance[]
-}
-
-///////////////////////
-// CALENDAR (POLICY)
-///////////////////////
-
-model Calendar {
-  id              String   @id @default(uuid())
-  companyId       String
-  name            String
-  year            Int
-
-  dayStartTime    String   // "09:00"
-  midDayCutoff    String   // "13:00"
-  dayEndTime      String   // "18:00"
-
-  createdAt       DateTime @default(now())
-
-  company         Company  @relation(fields: [companyId], references: [id])
-
-  weeklyRules     CalendarWeeklyRule[]
-  holidays        CalendarHoliday[]
-  employees       EmployeeCalendar[]
-}
-
-model EmployeeCalendar {
-  id          String   @id @default(uuid())
-  employeeId  String   @unique
-  calendarId  String
-
-  employee    Employee @relation(fields: [employeeId], references: [id])
-  calendar    Calendar @relation(fields: [calendarId], references: [id])
-}
-
-///////////////////////
-// WEEKLY RULES
-///////////////////////
-
-model CalendarWeeklyRule {
-  id          String         @id @default(uuid())
-  calendarId  String
-  dayOfWeek   Int            // 0 = Sunday ... 6 = Saturday
-  rule        WeeklyRuleType
-
-  calendar    Calendar       @relation(fields: [calendarId], references: [id])
-
-  @@unique([calendarId, dayOfWeek])
-}
-
-///////////////////////
-// HOLIDAYS (RANGE-BASED)
-///////////////////////
-
-model CalendarHoliday {
-  id          String   @id @default(uuid())
-  calendarId  String
-  startDate   DateTime
-  endDate     DateTime
-  name        String
-
-  calendar    Calendar @relation(fields: [calendarId], references: [id])
-
-  @@index([calendarId, startDate, endDate])
-}
-
-///////////////////////
-// ATTENDANCE
-///////////////////////
-
-model Attendance {
-  id             String          @id @default(uuid())
-  employeeId     String
-  date           DateTime
-  checkIn        DateTime
-  checkOut       DateTime?
-  attendanceType AttendanceType
-  dayType        DayType
-
-  createdAt      DateTime @default(now())
-
-  employee       Employee @relation(fields: [employeeId], references: [id])
-
-  @@unique([employeeId, date])
-}
-
-///////////////////////
-// LEAVES (RANGE-BASED)
-///////////////////////
 
 enum LeaveType {
   ANNUAL
@@ -194,40 +50,204 @@ enum LeaveType {
   OTHER
 }
 
-model LeaveRequest {
-  id            String        @id @default(uuid())
-  employeeId    String
-  startDate     DateTime
-  endDate       DateTime
-  duration      LeaveDuration
-  status        LeaveStatus
-  type          LeaveType     @default(ANNUAL) // Defaulting to avoid breaking existing data immediately
-  reason        String?
-  batchId       String?       // for UI grouping only
+///////////////////////
+// AUTH & USERS
+///////////////////////
 
-  createdAt     DateTime @default(now())
-
-  employee      Employee  @relation(fields: [employeeId], references: [id])
-
-  @@index([employeeId, startDate, endDate])
+model User {
+  id            String    @id @default(uuid())
+  email         String    @unique
+  password      String
+  role          Role
+  
+  employee      Employee? // Relation to employee profile
+  
+  notifications Notification[]
+  auditLogs     AuditLog[]
+  emailVerified Boolean   @default(false)
+  createdAt     DateTime  @default(now())
+  
+  sentInvitations Invitation[]
 }
 
-model LeaveBalance {
-  id            String    @id @default(uuid())
-  employeeId    String
-  type          LeaveType
-  allocated     Float     @default(0)
-  used          Float     @default(0)
-  year          Int       
-
-  employee      Employee  @relation(fields: [employeeId], references: [id])
+model Company {
+  id        String     @id @default(uuid())
+  name      String
+  timezone  String     // e.g. "Asia/Kolkata"
   
-  @@unique([employeeId, type, year])
-  @@index([employeeId])
+  employees Employee[]
+  calendars Calendar[]
+  invitations Invitation[]
 }
 
 ///////////////////////
-// AUDIT LOG
+// EMPLOYEE (CORE)
+///////////////////////
+
+model Employee {
+  id          String    @id @default(uuid())
+  userId      String?   @unique 
+  companyId   String
+  
+  // CHANGE: Direct relation to Calendar (Much simpler than a pivot table)
+  calendarId  String?   
+  
+  name        String
+  status      String    // ACTIVE, INACTIVE, PROBATION
+  createdAt   DateTime  @default(now())
+
+  user        User?     @relation(fields: [userId], references: [id])
+  company     Company   @relation(fields: [companyId], references: [id])
+  calendar    Calendar? @relation(fields: [calendarId], references: [id])
+
+  attendance    Attendance[]
+  leaves        LeaveRequest[]
+  leaveBalances LeaveBalance[]
+}
+
+///////////////////////
+// CALENDAR & POLICIES
+///////////////////////
+
+model Calendar {
+  id            String   @id @default(uuid())
+  companyId     String
+  name          String   // e.g. "General Shift", "Night Shift"
+  
+  // CHANGE: Use Int (Minutes from midnight) for easy comparison
+  // 09:00 AM = 540, 06:00 PM = 1080
+  dayStartTime  Int      
+  dayEndTime    Int      
+  
+  createdAt     DateTime @default(now())
+  company       Company  @relation(fields: [companyId], references: [id])
+
+  // Relations
+  employees     Employee[]
+  weeklyRules   CalendarWeeklyRule[]
+  holidays      CalendarHoliday[]
+  leavePolicies LeavePolicy[] // CHANGE: Added to define allowed leaves for this calendar
+}
+
+model CalendarWeeklyRule {
+  id          String         @id @default(uuid())
+  calendarId  String
+  dayOfWeek   Int            // 0 = Sunday ... 6 = Saturday
+  rule        WeeklyRuleType
+  
+  // CHANGE: Added to handle "Alternate Saturdays" logic
+  // e.g. [1, 3, 5] means this rule applies to 1st, 3rd, 5th week of month
+  weekNumbers Int[]          
+  
+  calendar    Calendar       @relation(fields: [calendarId], references: [id])
+}
+
+model CalendarHoliday {
+  id          String   @id @default(uuid())
+  calendarId  String
+  startDate   DateTime
+  endDate     DateTime
+  name        String
+  
+  calendar    Calendar @relation(fields: [calendarId], references: [id])
+  
+  @@index([calendarId, startDate])
+}
+
+// CHANGE: New Model to define "What leaves people on this calendar get"
+model LeavePolicy {
+  id              String    @id @default(uuid())
+  calendarId      String
+  leaveType       LeaveType
+  
+  annualAllowance Float     // e.g. 12.0
+  canCarryForward Boolean   @default(false)
+  maxCarryOver    Float     @default(0)
+  
+  calendar        Calendar  @relation(fields: [calendarId], references: [id])
+  
+  @@unique([calendarId, leaveType])
+}
+
+///////////////////////
+// ATTENDANCE (Optimized)
+///////////////////////
+
+model Attendance {
+  id             String         @id @default(uuid())
+  employeeId     String
+  date           DateTime       @db.Date // Store just the date part
+  
+  // CHANGE: Summary fields for fast Reporting
+  firstCheckIn   DateTime?
+  lastCheckOut   DateTime?
+  totalMinutes   Int            @default(0) // CHANGE: Pre-calculate total work duration
+  
+  status         AttendanceType
+  
+  logs           AttendanceLog[] // Relation to raw punches
+  employee       Employee        @relation(fields: [employeeId], references: [id])
+
+  @@unique([employeeId, date])
+  @@index([date])
+}
+
+// CHANGE: New Model for raw punch data (Audit trail)
+model AttendanceLog {
+  id           String     @id @default(uuid())
+  attendanceId String
+  punchTime    DateTime
+  type         String     // "IN" or "OUT"
+  source       String?    // "WEB", "MOBILE", "BIOMETRIC"
+  
+  attendance   Attendance @relation(fields: [attendanceId], references: [id])
+}
+
+///////////////////////
+// LEAVES (Optimized)
+///////////////////////
+
+model LeaveRequest {
+  id          String      @id @default(uuid())
+  employeeId  String
+  
+  startDate   DateTime
+  endDate     DateTime
+  
+  // CHANGE: Store cost immediately to avoid complex runtime math
+  totalDays   Float       // e.g. 2.5
+  
+  // CHANGE: Store complex day info here. 
+  // e.g. { "2024-02-01": "HALF_AM", "2024-02-02": "FULL" }
+  dayDetails  Json?       
+  
+  status      LeaveStatus
+  type        LeaveType   
+  reason      String?
+  
+  createdAt   DateTime    @default(now())
+  employee    Employee    @relation(fields: [employeeId], references: [id])
+
+  @@index([employeeId, startDate, endDate])
+  @@index([status])
+}
+
+model LeaveBalance {
+  id          String    @id @default(uuid())
+  employeeId  String
+  type        LeaveType
+  
+  allocated   Float     // Copied from LeavePolicy when calendar is assigned
+  used        Float     @default(0)
+  year        Int       
+  
+  employee    Employee  @relation(fields: [employeeId], references: [id])
+  
+  @@unique([employeeId, type, year])
+}
+
+///////////////////////
+// LOGS & SYSTEM
 ///////////////////////
 
 model AuditLog {
@@ -238,51 +258,34 @@ model AuditLog {
   resourceId String
   details    Json?
   ipAddress  String?
-  userAgent  String?
   createdAt  DateTime @default(now())
 
   user       User     @relation(fields: [userId], references: [id])
 }
 
-///////////////////////
-// NOTIFICATIONS
-///////////////////////
-
 model Notification {
-  id          String   @id @default(uuid())
-  userId      String
-  title       String
-  message     String
-  type        String   // INFO, SUCCESS, WARNING, ERROR
-  isRead      Boolean  @default(false)
-  actionUrl   String?
-  expiresAt   DateTime?
-  createdAt   DateTime @default(now())
+  id        String   @id @default(uuid())
+  userId    String
+  title     String
+  message   String
+  isRead    Boolean  @default(false)
+  createdAt DateTime @default(now())
   
-  user        User     @relation(fields: [userId], references: [id])
+  user      User     @relation(fields: [userId], references: [id])
   
-  @@index([userId, isRead, createdAt])
+  @@index([userId, isRead])
 }
 
-///////////////////////
-// INVITATION
-///////////////////////
-
 model Invitation {
-  id          String   @id @default(uuid())
-  email       String
-  role        Role
-  companyId   String
-  token       String   @unique
-  expiresAt   DateTime
-  invitedBy   String
-  status      String   @default("PENDING") // PENDING, ACCEPTED, EXPIRED
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-
-  company     Company  @relation(fields: [companyId], references: [id])
-  inviter     User     @relation(fields: [invitedBy], references: [id])
-
-  @@index([email, companyId])
-  @@index([token])
+  id         String   @id @default(uuid())
+  email      String
+  role       Role
+  companyId  String
+  token      String   @unique
+  expiresAt  DateTime
+  invitedBy  String
+  status     String   @default("PENDING") 
+  
+  company    Company  @relation(fields: [companyId], references: [id])
+  inviter    User     @relation(fields: [invitedBy], references: [id])
 }

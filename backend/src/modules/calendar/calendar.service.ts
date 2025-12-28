@@ -2,6 +2,7 @@ import { PrismaClient } from '@prisma/client';
 import { CreateCalendarDto, UpdateCalendarDto, CalendarResponseDto } from './calendar.types';
 import * as rulesService from './rules/rules.service';
 import * as holidaysService from './holidays/holidays.service';
+import { timeToMinutes, minutesToTime } from '../../utils/time.utils';
 export { resolveDay } from './resolver/resolver.service';
 
 const prisma = new PrismaClient();
@@ -14,20 +15,36 @@ const formatCalendar = (calendar: any): CalendarResponseDto => {
         id: calendar.id,
         companyId: calendar.companyId,
         name: calendar.name,
-        year: calendar.year,
-        dayStartTime: calendar.dayStartTime,
-        midDayCutoff: calendar.midDayCutoff,
-        dayEndTime: calendar.dayEndTime,
-        weeklyRules: calendar.weeklyRules?.map((r: any) => ({ dayOfWeek: r.dayOfWeek, rule: r.rule })) || [],
-        holidays: calendar.holidays?.map((h: any) => ({ startDate: h.startDate, endDate: h.endDate, name: h.name })) || [],
-        assignedEmployees: calendar.employees?.map((ec: any) => ({
-            id: ec.employee.id,
-            name: ec.employee.name,
-            role: ec.employee.user.role,
-            email: ec.employee.user.email,
-            // Filter balances for this calendar's year
-            leaveBalances: ec.employee.leaveBalances?.filter((lb: any) => lb.year === calendar.year)
-                .map((lb: any) => ({ type: lb.type, allocated: lb.allocated, used: lb.used })) || []
+        // Convert Int (minutes) back to String (HH:MM) for API
+        dayStartTime: minutesToTime(calendar.dayStartTime),
+        dayEndTime: minutesToTime(calendar.dayEndTime),
+        weeklyRules: calendar.weeklyRules?.map((r: any) => ({
+            dayOfWeek: r.dayOfWeek,
+            rule: r.rule,
+            weekNumbers: r.weekNumbers || []
+        })) || [],
+        holidays: calendar.holidays?.map((h: any) => ({
+            startDate: h.startDate,
+            endDate: h.endDate,
+            name: h.name
+        })) || [],
+        leavePolicies: calendar.leavePolicies?.map((lp: any) => ({
+            leaveType: lp.leaveType,
+            annualAllowance: lp.annualAllowance,
+            canCarryForward: lp.canCarryForward,
+            maxCarryOver: lp.maxCarryOver
+        })) || [],
+        // Direct employee relation (no more EmployeeCalendar pivot)
+        assignedEmployees: calendar.employees?.map((emp: any) => ({
+            id: emp.id,
+            name: emp.name,
+            role: emp.user?.role || 'EMPLOYEE',
+            email: emp.user?.email || '',
+            leaveBalances: emp.leaveBalances?.map((lb: any) => ({
+                type: lb.type,
+                allocated: lb.allocated,
+                used: lb.used
+            })) || []
         })) || [],
         createdAt: calendar.createdAt
     };
@@ -38,15 +55,13 @@ const formatCalendar = (calendar: any): CalendarResponseDto => {
  */
 export async function createCalendar(dto: CreateCalendarDto): Promise<CalendarResponseDto> {
     const calendar = await prisma.$transaction(async (tx) => {
-        // Create base calendar
+        // Create base calendar - convert time strings to integers
         const cal = await tx.calendar.create({
             data: {
                 companyId: dto.companyId,
                 name: dto.name,
-                year: dto.year,
-                dayStartTime: dto.dayStartTime,
-                midDayCutoff: dto.midDayCutoff,
-                dayEndTime: dto.dayEndTime,
+                dayStartTime: timeToMinutes(dto.dayStartTime),
+                dayEndTime: timeToMinutes(dto.dayEndTime),
             }
         });
 
@@ -56,7 +71,8 @@ export async function createCalendar(dto: CreateCalendarDto): Promise<CalendarRe
                 data: dto.weeklyRules.map(r => ({
                     calendarId: cal.id,
                     dayOfWeek: r.dayOfWeek,
-                    rule: r.rule
+                    rule: r.rule,
+                    weekNumbers: r.weekNumbers || []
                 }))
             });
         } else {
@@ -88,14 +104,12 @@ export async function getAllCalendars(companyId: string): Promise<CalendarRespon
         include: {
             weeklyRules: { orderBy: { dayOfWeek: 'asc' } },
             holidays: { orderBy: { startDate: 'asc' } },
+            leavePolicies: true,
+            // Direct employee relation
             employees: {
                 include: {
-                    employee: {
-                        include: {
-                            user: true,
-                            leaveBalances: true // Include all, filter in formatter
-                        }
-                    }
+                    user: true,
+                    leaveBalances: true
                 }
             }
         },
@@ -114,14 +128,12 @@ export async function getCalendarById(id: string): Promise<CalendarResponseDto |
         include: {
             weeklyRules: { orderBy: { dayOfWeek: 'asc' } },
             holidays: { orderBy: { startDate: 'asc' } },
+            leavePolicies: true,
+            // Direct employee relation
             employees: {
                 include: {
-                    employee: {
-                        include: {
-                            user: true,
-                            leaveBalances: true // Include all, filter in formatter
-                        }
-                    }
+                    user: true,
+                    leaveBalances: true
                 }
             }
         }
@@ -136,15 +148,14 @@ export async function getCalendarById(id: string): Promise<CalendarResponseDto |
  */
 export async function updateCalendar(id: string, dto: UpdateCalendarDto): Promise<CalendarResponseDto> {
     await prisma.$transaction(async (tx) => {
-        // Update basic fields
-        if (dto.name || dto.dayStartTime || dto.midDayCutoff || dto.dayEndTime) {
+        // Update basic fields - convert time strings to integers
+        if (dto.name || dto.dayStartTime || dto.dayEndTime) {
             await tx.calendar.update({
                 where: { id },
                 data: {
                     name: dto.name,
-                    dayStartTime: dto.dayStartTime,
-                    midDayCutoff: dto.midDayCutoff,
-                    dayEndTime: dto.dayEndTime,
+                    dayStartTime: dto.dayStartTime ? timeToMinutes(dto.dayStartTime) : undefined,
+                    dayEndTime: dto.dayEndTime ? timeToMinutes(dto.dayEndTime) : undefined,
                 }
             });
         }
@@ -157,7 +168,8 @@ export async function updateCalendar(id: string, dto: UpdateCalendarDto): Promis
                     data: dto.weeklyRules.map(r => ({
                         calendarId: id,
                         dayOfWeek: r.dayOfWeek,
-                        rule: r.rule
+                        rule: r.rule,
+                        weekNumbers: r.weekNumbers || []
                     }))
                 });
             }
@@ -181,8 +193,8 @@ export async function updateCalendar(id: string, dto: UpdateCalendarDto): Promis
  * Delete calendar
  */
 export async function deleteCalendar(id: string): Promise<void> {
-    // Check if any employees are using this calendar
-    const usageCount = await prisma.employeeCalendar.count({
+    // Check if any employees are using this calendar (direct relation)
+    const usageCount = await prisma.employee.count({
         where: { calendarId: id }
     });
 
@@ -195,6 +207,7 @@ export async function deleteCalendar(id: string): Promise<void> {
     await prisma.$transaction([
         prisma.calendarWeeklyRule.deleteMany({ where: { calendarId: id } }),
         prisma.calendarHoliday.deleteMany({ where: { calendarId: id } }),
+        prisma.leavePolicy.deleteMany({ where: { calendarId: id } }),
         prisma.calendar.delete({ where: { id } })
     ]);
 }
@@ -203,20 +216,20 @@ export async function deleteCalendar(id: string): Promise<void> {
  * Get upcoming holidays for an employee
  */
 export async function getUpcomingHolidays(employeeId: string, limit: number = 3): Promise<any[]> {
-    // Find assigned calendar
-    const assignment = await prisma.employeeCalendar.findFirst({
-        where: { employeeId },
+    // Find employee with calendar assignment (direct relation)
+    const employee = await prisma.employee.findUnique({
+        where: { id: employeeId },
         select: { calendarId: true }
     });
 
-    if (!assignment) return [];
+    if (!employee || !employee.calendarId) return [];
 
     const today = new Date();
     today.setHours(0, 0, 0, 0);
 
     const holidays = await prisma.calendarHoliday.findMany({
         where: {
-            calendarId: assignment.calendarId,
+            calendarId: employee.calendarId,
             startDate: { gte: today }
         },
         orderBy: { startDate: 'asc' },

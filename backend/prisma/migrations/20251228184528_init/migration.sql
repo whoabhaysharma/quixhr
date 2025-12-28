@@ -2,19 +2,13 @@
 CREATE TYPE "Role" AS ENUM ('SUPER_ADMIN', 'HR_ADMIN', 'MANAGER', 'EMPLOYEE');
 
 -- CreateEnum
-CREATE TYPE "WeeklyRuleType" AS ENUM ('WORKING', 'OFF', 'ALTERNATE');
+CREATE TYPE "WeeklyRuleType" AS ENUM ('WORKING', 'OFF', 'HALF_DAY');
 
 -- CreateEnum
-CREATE TYPE "DayType" AS ENUM ('WORKING', 'WEEKLY_OFF', 'HOLIDAY');
+CREATE TYPE "AttendanceType" AS ENUM ('PRESENT', 'ABSENT', 'HALF_DAY', 'LATE');
 
 -- CreateEnum
-CREATE TYPE "AttendanceType" AS ENUM ('FULL', 'HALF_AM', 'HALF_PM', 'ABSENT');
-
--- CreateEnum
-CREATE TYPE "LeaveDuration" AS ENUM ('FULL', 'HALF_AM', 'HALF_PM');
-
--- CreateEnum
-CREATE TYPE "LeaveStatus" AS ENUM ('PENDING', 'APPROVED', 'REJECTED');
+CREATE TYPE "LeaveStatus" AS ENUM ('PENDING', 'APPROVED', 'REJECTED', 'CANCELLED');
 
 -- CreateEnum
 CREATE TYPE "LeaveType" AS ENUM ('ANNUAL', 'SICK', 'CASUAL', 'UNPAID', 'MATERNITY', 'PATERNITY', 'OTHER');
@@ -43,8 +37,9 @@ CREATE TABLE "Company" (
 -- CreateTable
 CREATE TABLE "Employee" (
     "id" TEXT NOT NULL,
-    "userId" TEXT NOT NULL,
+    "userId" TEXT,
     "companyId" TEXT NOT NULL,
+    "calendarId" TEXT,
     "name" TEXT NOT NULL,
     "status" TEXT NOT NULL,
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -57,22 +52,11 @@ CREATE TABLE "Calendar" (
     "id" TEXT NOT NULL,
     "companyId" TEXT NOT NULL,
     "name" TEXT NOT NULL,
-    "year" INTEGER NOT NULL,
-    "dayStartTime" TEXT NOT NULL,
-    "midDayCutoff" TEXT NOT NULL,
-    "dayEndTime" TEXT NOT NULL,
+    "dayStartTime" INTEGER NOT NULL,
+    "dayEndTime" INTEGER NOT NULL,
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
 
     CONSTRAINT "Calendar_pkey" PRIMARY KEY ("id")
-);
-
--- CreateTable
-CREATE TABLE "EmployeeCalendar" (
-    "id" TEXT NOT NULL,
-    "employeeId" TEXT NOT NULL,
-    "calendarId" TEXT NOT NULL,
-
-    CONSTRAINT "EmployeeCalendar_pkey" PRIMARY KEY ("id")
 );
 
 -- CreateTable
@@ -81,6 +65,7 @@ CREATE TABLE "CalendarWeeklyRule" (
     "calendarId" TEXT NOT NULL,
     "dayOfWeek" INTEGER NOT NULL,
     "rule" "WeeklyRuleType" NOT NULL,
+    "weekNumbers" INTEGER[],
 
     CONSTRAINT "CalendarWeeklyRule_pkey" PRIMARY KEY ("id")
 );
@@ -97,17 +82,39 @@ CREATE TABLE "CalendarHoliday" (
 );
 
 -- CreateTable
+CREATE TABLE "LeavePolicy" (
+    "id" TEXT NOT NULL,
+    "calendarId" TEXT NOT NULL,
+    "leaveType" "LeaveType" NOT NULL,
+    "annualAllowance" DOUBLE PRECISION NOT NULL,
+    "canCarryForward" BOOLEAN NOT NULL DEFAULT false,
+    "maxCarryOver" DOUBLE PRECISION NOT NULL DEFAULT 0,
+
+    CONSTRAINT "LeavePolicy_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
 CREATE TABLE "Attendance" (
     "id" TEXT NOT NULL,
     "employeeId" TEXT NOT NULL,
-    "date" TIMESTAMP(3) NOT NULL,
-    "checkIn" TIMESTAMP(3) NOT NULL,
-    "checkOut" TIMESTAMP(3),
-    "attendanceType" "AttendanceType" NOT NULL,
-    "dayType" "DayType" NOT NULL,
-    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "date" DATE NOT NULL,
+    "firstCheckIn" TIMESTAMP(3),
+    "lastCheckOut" TIMESTAMP(3),
+    "totalMinutes" INTEGER NOT NULL DEFAULT 0,
+    "status" "AttendanceType" NOT NULL,
 
     CONSTRAINT "Attendance_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "AttendanceLog" (
+    "id" TEXT NOT NULL,
+    "attendanceId" TEXT NOT NULL,
+    "punchTime" TIMESTAMP(3) NOT NULL,
+    "type" TEXT NOT NULL,
+    "source" TEXT,
+
+    CONSTRAINT "AttendanceLog_pkey" PRIMARY KEY ("id")
 );
 
 -- CreateTable
@@ -116,11 +123,11 @@ CREATE TABLE "LeaveRequest" (
     "employeeId" TEXT NOT NULL,
     "startDate" TIMESTAMP(3) NOT NULL,
     "endDate" TIMESTAMP(3) NOT NULL,
-    "duration" "LeaveDuration" NOT NULL,
+    "totalDays" DOUBLE PRECISION NOT NULL,
+    "dayDetails" JSONB,
     "status" "LeaveStatus" NOT NULL,
-    "type" "LeaveType" NOT NULL DEFAULT 'ANNUAL',
+    "type" "LeaveType" NOT NULL,
     "reason" TEXT,
-    "batchId" TEXT,
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
 
     CONSTRAINT "LeaveRequest_pkey" PRIMARY KEY ("id")
@@ -131,7 +138,7 @@ CREATE TABLE "LeaveBalance" (
     "id" TEXT NOT NULL,
     "employeeId" TEXT NOT NULL,
     "type" "LeaveType" NOT NULL,
-    "allocated" DOUBLE PRECISION NOT NULL DEFAULT 0,
+    "allocated" DOUBLE PRECISION NOT NULL,
     "used" DOUBLE PRECISION NOT NULL DEFAULT 0,
     "year" INTEGER NOT NULL,
 
@@ -147,7 +154,6 @@ CREATE TABLE "AuditLog" (
     "resourceId" TEXT NOT NULL,
     "details" JSONB,
     "ipAddress" TEXT,
-    "userAgent" TEXT,
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
 
     CONSTRAINT "AuditLog_pkey" PRIMARY KEY ("id")
@@ -159,10 +165,7 @@ CREATE TABLE "Notification" (
     "userId" TEXT NOT NULL,
     "title" TEXT NOT NULL,
     "message" TEXT NOT NULL,
-    "type" TEXT NOT NULL,
     "isRead" BOOLEAN NOT NULL DEFAULT false,
-    "actionUrl" TEXT,
-    "expiresAt" TIMESTAMP(3),
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
 
     CONSTRAINT "Notification_pkey" PRIMARY KEY ("id")
@@ -178,8 +181,6 @@ CREATE TABLE "Invitation" (
     "expiresAt" TIMESTAMP(3) NOT NULL,
     "invitedBy" TEXT NOT NULL,
     "status" TEXT NOT NULL DEFAULT 'PENDING',
-    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    "updatedAt" TIMESTAMP(3) NOT NULL,
 
     CONSTRAINT "Invitation_pkey" PRIMARY KEY ("id")
 );
@@ -191,13 +192,13 @@ CREATE UNIQUE INDEX "User_email_key" ON "User"("email");
 CREATE UNIQUE INDEX "Employee_userId_key" ON "Employee"("userId");
 
 -- CreateIndex
-CREATE UNIQUE INDEX "EmployeeCalendar_employeeId_key" ON "EmployeeCalendar"("employeeId");
+CREATE INDEX "CalendarHoliday_calendarId_startDate_idx" ON "CalendarHoliday"("calendarId", "startDate");
 
 -- CreateIndex
-CREATE UNIQUE INDEX "CalendarWeeklyRule_calendarId_dayOfWeek_key" ON "CalendarWeeklyRule"("calendarId", "dayOfWeek");
+CREATE UNIQUE INDEX "LeavePolicy_calendarId_leaveType_key" ON "LeavePolicy"("calendarId", "leaveType");
 
 -- CreateIndex
-CREATE INDEX "CalendarHoliday_calendarId_startDate_endDate_idx" ON "CalendarHoliday"("calendarId", "startDate", "endDate");
+CREATE INDEX "Attendance_date_idx" ON "Attendance"("date");
 
 -- CreateIndex
 CREATE UNIQUE INDEX "Attendance_employeeId_date_key" ON "Attendance"("employeeId", "date");
@@ -206,37 +207,28 @@ CREATE UNIQUE INDEX "Attendance_employeeId_date_key" ON "Attendance"("employeeId
 CREATE INDEX "LeaveRequest_employeeId_startDate_endDate_idx" ON "LeaveRequest"("employeeId", "startDate", "endDate");
 
 -- CreateIndex
-CREATE INDEX "LeaveBalance_employeeId_idx" ON "LeaveBalance"("employeeId");
+CREATE INDEX "LeaveRequest_status_idx" ON "LeaveRequest"("status");
 
 -- CreateIndex
 CREATE UNIQUE INDEX "LeaveBalance_employeeId_type_year_key" ON "LeaveBalance"("employeeId", "type", "year");
 
 -- CreateIndex
-CREATE INDEX "Notification_userId_isRead_createdAt_idx" ON "Notification"("userId", "isRead", "createdAt");
+CREATE INDEX "Notification_userId_isRead_idx" ON "Notification"("userId", "isRead");
 
 -- CreateIndex
 CREATE UNIQUE INDEX "Invitation_token_key" ON "Invitation"("token");
 
--- CreateIndex
-CREATE INDEX "Invitation_email_companyId_idx" ON "Invitation"("email", "companyId");
-
--- CreateIndex
-CREATE INDEX "Invitation_token_idx" ON "Invitation"("token");
-
 -- AddForeignKey
-ALTER TABLE "Employee" ADD CONSTRAINT "Employee_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+ALTER TABLE "Employee" ADD CONSTRAINT "Employee_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE SET NULL ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "Employee" ADD CONSTRAINT "Employee_companyId_fkey" FOREIGN KEY ("companyId") REFERENCES "Company"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
+ALTER TABLE "Employee" ADD CONSTRAINT "Employee_calendarId_fkey" FOREIGN KEY ("calendarId") REFERENCES "Calendar"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+
+-- AddForeignKey
 ALTER TABLE "Calendar" ADD CONSTRAINT "Calendar_companyId_fkey" FOREIGN KEY ("companyId") REFERENCES "Company"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
-
--- AddForeignKey
-ALTER TABLE "EmployeeCalendar" ADD CONSTRAINT "EmployeeCalendar_employeeId_fkey" FOREIGN KEY ("employeeId") REFERENCES "Employee"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
-
--- AddForeignKey
-ALTER TABLE "EmployeeCalendar" ADD CONSTRAINT "EmployeeCalendar_calendarId_fkey" FOREIGN KEY ("calendarId") REFERENCES "Calendar"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "CalendarWeeklyRule" ADD CONSTRAINT "CalendarWeeklyRule_calendarId_fkey" FOREIGN KEY ("calendarId") REFERENCES "Calendar"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
@@ -245,7 +237,13 @@ ALTER TABLE "CalendarWeeklyRule" ADD CONSTRAINT "CalendarWeeklyRule_calendarId_f
 ALTER TABLE "CalendarHoliday" ADD CONSTRAINT "CalendarHoliday_calendarId_fkey" FOREIGN KEY ("calendarId") REFERENCES "Calendar"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
+ALTER TABLE "LeavePolicy" ADD CONSTRAINT "LeavePolicy_calendarId_fkey" FOREIGN KEY ("calendarId") REFERENCES "Calendar"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
 ALTER TABLE "Attendance" ADD CONSTRAINT "Attendance_employeeId_fkey" FOREIGN KEY ("employeeId") REFERENCES "Employee"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "AttendanceLog" ADD CONSTRAINT "AttendanceLog_attendanceId_fkey" FOREIGN KEY ("attendanceId") REFERENCES "Attendance"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "LeaveRequest" ADD CONSTRAINT "LeaveRequest_employeeId_fkey" FOREIGN KEY ("employeeId") REFERENCES "Employee"("id") ON DELETE RESTRICT ON UPDATE CASCADE;

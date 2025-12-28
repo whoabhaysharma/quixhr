@@ -15,8 +15,8 @@ function getWeekOfMonth(date: Date): number {
  * Resolves the day type for an employee on a specific date
  */
 export async function resolveDay(employeeId: string, date: Date): Promise<DayResolution> {
-    const employeeCalendar = await prisma.employeeCalendar.findUnique({
-        where: { employeeId },
+    const employee = await prisma.employee.findUnique({
+        where: { id: employeeId },
         include: {
             calendar: {
                 include: {
@@ -27,26 +27,26 @@ export async function resolveDay(employeeId: string, date: Date): Promise<DayRes
         }
     });
 
-    if (!employeeCalendar) {
+    if (!employee || !employee.calendar) {
         throw new Error('Employee has no assigned calendar');
     }
 
-    const { calendar } = employeeCalendar;
+    const { calendar } = employee;
 
     // Check for Holiday
-    const holiday = calendar.holidays.find(h => {
+    const holiday = calendar.holidays.find((h: { startDate: Date; endDate: Date }) => {
         const start = new Date(h.startDate);
         const end = new Date(h.endDate);
         return date >= start && date <= end;
     });
 
     if (holiday) {
-        return { dayType: 'HOLIDAY', isWorkingDay: false };
+        return { dayType: 'HOLIDAY', isWorkingDay: false, isHoliday: true };
     }
 
     // Check Weekly Rule
     const dayOfWeek = date.getDay();
-    const weeklyRule = calendar.weeklyRules.find(r => r.dayOfWeek === dayOfWeek);
+    const weeklyRule = calendar.weeklyRules.find((r: { dayOfWeek: number }) => r.dayOfWeek === dayOfWeek);
 
     const rule = weeklyRule ? weeklyRule.rule : WeeklyRuleType.WORKING;
 
@@ -54,13 +54,8 @@ export async function resolveDay(employeeId: string, date: Date): Promise<DayRes
         return { dayType: 'WEEKLY_OFF', isWorkingDay: false };
     }
 
-    if (rule === WeeklyRuleType.ALTERNATE) {
-        const weekNumber = getWeekOfMonth(date);
-        const isOff = weekNumber % 2 === 0;
-        return {
-            dayType: isOff ? 'WEEKLY_OFF' : 'WORKING',
-            isWorkingDay: !isOff
-        };
+    if (rule === WeeklyRuleType.HALF_DAY) {
+        return { dayType: 'WORKING', isWorkingDay: true };
     }
 
     return { dayType: 'WORKING', isWorkingDay: true };

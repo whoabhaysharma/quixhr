@@ -36,7 +36,9 @@ export async function addHoliday(calendarId: string, dto: HolidayDto) {
     });
 
     // Notify all employees in the company about the new holiday
-    const userIds = holiday.calendar.company.employees.map(emp => emp.userId);
+    const userIds = holiday.calendar.company.employees
+        .map(emp => emp.userId)
+        .filter((id): id is string => id !== null);
     if (userIds.length > 0) {
         const { notifyCalendar } = await import('../../notification/notification.helper');
         await notifyCalendar.holidayAdded(userIds, dto.name, new Date(dto.startDate));
@@ -92,7 +94,9 @@ export async function deleteHoliday(calendarId: string, holidayId: string) {
     });
 
     // Notify all employees in the company about the deleted holiday
-    const userIds = holiday.calendar.company.employees.map(emp => emp.userId);
+    const userIds = holiday.calendar.company.employees
+        .map(emp => emp.userId)
+        .filter((id): id is string => id !== null);
     if (userIds.length > 0) {
         const { notifyCalendar } = await import('../../notification/notification.helper');
         await notifyCalendar.holidayDeleted(userIds, holiday.name);

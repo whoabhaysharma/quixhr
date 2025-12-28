@@ -47,7 +47,7 @@ export async function checkIn(req: AuthRequest, res: Response): Promise<void> {
                 resourceId: result.id,
                 ipAddress: req.ip || req.socket.remoteAddress || 'Unknown',
                 userAgent: req.headers['user-agent'],
-                details: { checkInTime: result.checkIn, type: result.attendanceType }
+                details: { checkInTime: result.firstCheckIn, type: result.status }
             });
         }
 
@@ -86,7 +86,7 @@ export async function checkOut(req: AuthRequest, res: Response): Promise<void> {
                 resourceId: result.id,
                 ipAddress: req.ip || req.socket.remoteAddress || 'Unknown',
                 userAgent: req.headers['user-agent'],
-                details: { checkOutTime: result.checkOut }
+                details: { checkOutTime: result.lastCheckOut }
             });
         }
 
