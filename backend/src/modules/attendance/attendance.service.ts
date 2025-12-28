@@ -136,3 +136,20 @@ export async function getEmployeeAttendance(employeeId: string, startDate?: Date
         orderBy: { date: 'desc' }
     });
 }
+
+/**
+ * Get Today's Status
+ */
+export async function getTodayStatus(employeeId: string): Promise<AttendanceResponseDto | null> {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    return prisma.attendance.findUnique({
+        where: {
+            employeeId_date: {
+                employeeId,
+                date: today
+            }
+        }
+    });
+}

@@ -11,8 +11,11 @@ router.use(authMiddleware);
 // Create calendar (HR Only)
 router.post('/', requireRole(Role.SUPER_ADMIN, Role.HR_ADMIN), calendarController.create);
 
-// Get all calendars (HR & Manager)
-router.get('/', requireRole(Role.SUPER_ADMIN, Role.HR_ADMIN, Role.MANAGER), calendarController.getAll);
+// Get all calendars (HR & Manager & Employee)
+router.get('/', requireRole(Role.SUPER_ADMIN, Role.HR_ADMIN, Role.MANAGER, Role.EMPLOYEE), calendarController.getAll);
+
+// Get upcoming holidays for authenticated user
+router.get('/upcoming', calendarController.getUpcomingHolidays);
 
 // Get single calendar (All authenticated - controller handles specific permission)
 // Employees might need to see their own calendar, controller already restricts logic if needed

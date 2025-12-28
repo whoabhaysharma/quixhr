@@ -16,7 +16,7 @@ export default function EmployeeDashboardView({ user, stats, leaves }: any) {
 
             {/* Balance Overview */}
             <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-6">
-                <BalanceCard label="Annual Leave" current={stats?.used || 0} total={stats?.allowance || 20} color="bg-indigo-600" />
+                <BalanceCard label="Annual Leave" current={stats?.leaveBalance?.used || 0} total={stats?.leaveBalance?.total || 20} color="bg-indigo-600" />
                 <BalanceCard label="Pending Requests" current={stats?.pendingRequests || 0} total={5} color="bg-amber-500" />
                 {/* Attendance Widget */}
                 <div className="md:col-span-1 lg:col-span-2">

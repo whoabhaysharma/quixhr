@@ -381,15 +381,15 @@ export function AttendanceWidget() {
     })
 
     const handleClockAction = () => {
-        if (todayStatus?.clockIn && !todayStatus?.clockOut) {
+        if (todayStatus?.checkIn && !todayStatus?.checkOut) {
             clockOutMutation.mutate()
         } else {
             clockInMutation.mutate()
         }
     }
 
-    const isWorking = todayStatus?.clockIn && !todayStatus?.clockOut
-    const isDayComplete = todayStatus?.clockIn && todayStatus?.clockOut
+    const isWorking = todayStatus?.checkIn && !todayStatus?.checkOut
+    const isDayComplete = todayStatus?.checkIn && todayStatus?.checkOut
 
     const calculateDuration = (start: string) => {
         const startDate = new Date(start)
@@ -421,7 +421,7 @@ export function AttendanceWidget() {
                         </p>
                         {isWorking && (
                             <span className="text-[10px] font-mono font-medium text-slate-400 bg-slate-100 px-1.5 py-0.5 rounded-md">
-                                {calculateDuration(todayStatus.clockIn)}
+                                {calculateDuration(todayStatus.checkIn)}
                             </span>
                         )}
                     </div>

@@ -96,7 +96,12 @@ export async function getAll(req: AuthRequest, res: Response): Promise<void> {
         const calendars = await calendarService.getAllCalendars(companyId);
         res.json({ success: true, data: calendars });
     } catch (error: any) {
-        res.status(500).json({ success: false, error: 'Failed to fetch calendars' });
+        console.error("GetAllCalendars Error:", error);
+        res.status(500).json({
+            success: false,
+            error: error.message || 'Failed to fetch calendars',
+            details: error.stack
+        });
     }
 }
 
@@ -266,5 +271,23 @@ export async function deleteHoliday(req: AuthRequest, res: Response): Promise<vo
         res.json({ success: true, message: 'Holiday deleted successfully' });
     } catch (error: any) {
         res.status(400).json({ success: false, error: error.message || 'Failed to delete holiday' });
+    }
+}
+
+/**
+ * Get upcoming holidays for the authenticated employee
+ */
+export async function getUpcomingHolidays(req: AuthRequest, res: Response): Promise<void> {
+    try {
+        const employeeId = req.user?.employeeId;
+        if (!employeeId) {
+            res.status(400).json({ success: false, error: 'Employee profile not found' });
+            return;
+        }
+
+        const holidays = await calendarService.getUpcomingHolidays(employeeId);
+        res.json({ success: true, data: { holidays } });
+    } catch (error: any) {
+        res.status(500).json({ success: false, error: 'Failed to fetch upcoming holidays' });
     }
 }

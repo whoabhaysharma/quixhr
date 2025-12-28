@@ -16,12 +16,16 @@ CREATE TYPE "LeaveDuration" AS ENUM ('FULL', 'HALF_AM', 'HALF_PM');
 -- CreateEnum
 CREATE TYPE "LeaveStatus" AS ENUM ('PENDING', 'APPROVED', 'REJECTED');
 
+-- CreateEnum
+CREATE TYPE "LeaveType" AS ENUM ('ANNUAL', 'SICK', 'CASUAL', 'UNPAID', 'MATERNITY', 'PATERNITY', 'OTHER');
+
 -- CreateTable
 CREATE TABLE "User" (
     "id" TEXT NOT NULL,
     "email" TEXT NOT NULL,
     "password" TEXT NOT NULL,
     "role" "Role" NOT NULL,
+    "emailVerified" BOOLEAN NOT NULL DEFAULT false,
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
 
     CONSTRAINT "User_pkey" PRIMARY KEY ("id")
@@ -114,6 +118,7 @@ CREATE TABLE "LeaveRequest" (
     "endDate" TIMESTAMP(3) NOT NULL,
     "duration" "LeaveDuration" NOT NULL,
     "status" "LeaveStatus" NOT NULL,
+    "type" "LeaveType" NOT NULL DEFAULT 'ANNUAL',
     "reason" TEXT,
     "batchId" TEXT,
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -122,17 +127,61 @@ CREATE TABLE "LeaveRequest" (
 );
 
 -- CreateTable
+CREATE TABLE "LeaveBalance" (
+    "id" TEXT NOT NULL,
+    "employeeId" TEXT NOT NULL,
+    "type" "LeaveType" NOT NULL,
+    "allocated" DOUBLE PRECISION NOT NULL DEFAULT 0,
+    "used" DOUBLE PRECISION NOT NULL DEFAULT 0,
+    "year" INTEGER NOT NULL,
+
+    CONSTRAINT "LeaveBalance_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
 CREATE TABLE "AuditLog" (
     "id" TEXT NOT NULL,
-    "actorId" TEXT NOT NULL,
+    "userId" TEXT NOT NULL,
     "action" TEXT NOT NULL,
-    "entity" TEXT NOT NULL,
-    "entityId" TEXT NOT NULL,
-    "before" JSONB,
-    "after" JSONB,
+    "resource" TEXT NOT NULL,
+    "resourceId" TEXT NOT NULL,
+    "details" JSONB,
+    "ipAddress" TEXT,
+    "userAgent" TEXT,
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
 
     CONSTRAINT "AuditLog_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "Notification" (
+    "id" TEXT NOT NULL,
+    "userId" TEXT NOT NULL,
+    "title" TEXT NOT NULL,
+    "message" TEXT NOT NULL,
+    "type" TEXT NOT NULL,
+    "isRead" BOOLEAN NOT NULL DEFAULT false,
+    "actionUrl" TEXT,
+    "expiresAt" TIMESTAMP(3),
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT "Notification_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "Invitation" (
+    "id" TEXT NOT NULL,
+    "email" TEXT NOT NULL,
+    "role" "Role" NOT NULL,
+    "companyId" TEXT NOT NULL,
+    "token" TEXT NOT NULL,
+    "expiresAt" TIMESTAMP(3) NOT NULL,
+    "invitedBy" TEXT NOT NULL,
+    "status" TEXT NOT NULL DEFAULT 'PENDING',
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMP(3) NOT NULL,
+
+    CONSTRAINT "Invitation_pkey" PRIMARY KEY ("id")
 );
 
 -- CreateIndex
@@ -155,6 +204,24 @@ CREATE UNIQUE INDEX "Attendance_employeeId_date_key" ON "Attendance"("employeeId
 
 -- CreateIndex
 CREATE INDEX "LeaveRequest_employeeId_startDate_endDate_idx" ON "LeaveRequest"("employeeId", "startDate", "endDate");
+
+-- CreateIndex
+CREATE INDEX "LeaveBalance_employeeId_idx" ON "LeaveBalance"("employeeId");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "LeaveBalance_employeeId_type_year_key" ON "LeaveBalance"("employeeId", "type", "year");
+
+-- CreateIndex
+CREATE INDEX "Notification_userId_isRead_createdAt_idx" ON "Notification"("userId", "isRead", "createdAt");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "Invitation_token_key" ON "Invitation"("token");
+
+-- CreateIndex
+CREATE INDEX "Invitation_email_companyId_idx" ON "Invitation"("email", "companyId");
+
+-- CreateIndex
+CREATE INDEX "Invitation_token_idx" ON "Invitation"("token");
 
 -- AddForeignKey
 ALTER TABLE "Employee" ADD CONSTRAINT "Employee_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
@@ -182,3 +249,18 @@ ALTER TABLE "Attendance" ADD CONSTRAINT "Attendance_employeeId_fkey" FOREIGN KEY
 
 -- AddForeignKey
 ALTER TABLE "LeaveRequest" ADD CONSTRAINT "LeaveRequest_employeeId_fkey" FOREIGN KEY ("employeeId") REFERENCES "Employee"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "LeaveBalance" ADD CONSTRAINT "LeaveBalance_employeeId_fkey" FOREIGN KEY ("employeeId") REFERENCES "Employee"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "AuditLog" ADD CONSTRAINT "AuditLog_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "Notification" ADD CONSTRAINT "Notification_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "Invitation" ADD CONSTRAINT "Invitation_companyId_fkey" FOREIGN KEY ("companyId") REFERENCES "Company"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "Invitation" ADD CONSTRAINT "Invitation_invitedBy_fkey" FOREIGN KEY ("invitedBy") REFERENCES "User"("id") ON DELETE RESTRICT ON UPDATE CASCADE;

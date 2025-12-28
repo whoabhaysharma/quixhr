@@ -17,13 +17,23 @@ import {
     Trash2,
     Calendar as CalendarIcon,
     Clock,
-    Edit2
+    Edit2,
+    Users,
+    ChevronDown
 } from "lucide-react"
+import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { calendarService, type WeeklyRule, type Holiday } from "@/lib/services/calendar"
 import Link from "next/link"
 import { toast } from "sonner"
 import { format } from "date-fns"
+import { useAssignLeaveBalance } from "@/lib/hooks/useLeaves"
+import {
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuItem,
+    DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
 
 const DAYS = [
     { label: "Sunday", value: 0 },
@@ -47,6 +57,9 @@ export default function CalendarDetailPage() {
     const { user } = useAuth()
     const queryClient = useQueryClient()
     const calendarId = params.calendarId as string
+
+    // Hooks
+    const assignBalanceMutation = useAssignLeaveBalance()
 
     const { data: calendarResponse, isLoading } = useQuery({
         queryKey: ['calendar', calendarId],
@@ -102,6 +115,9 @@ export default function CalendarDetailPage() {
         midDayCutoff: "",
         dayEndTime: "",
     })
+
+    // New State for Allocation
+    const [allocation, setAllocation] = useState({ type: 'ANNUAL', days: 12 })
 
     const updateCalendarMutation = useMutation({
         mutationFn: (data: any) => calendarService.updateCalendar(calendarId, data),
@@ -162,6 +178,45 @@ export default function CalendarDetailPage() {
         }
     }
 
+    const handleAssignBalance = async (e: React.FormEvent) => {
+        e.preventDefault()
+        if (!calendar.assignedEmployees || calendar.assignedEmployees.length === 0) {
+            toast.error("No employees assigned to this calendar.")
+            return
+        }
+
+        if (!confirm(`Are you sure you want to assign ${allocation.days} ${allocation.type} leaves to ALL ${calendar.assignedEmployees.length} members? This will overwrite their existing allocations for ${calendar.year}.`)) {
+            return;
+        }
+
+        try {
+            await Promise.all(calendar.assignedEmployees.map((emp: any) =>
+                assignBalanceMutation.mutateAsync({
+                    employeeId: emp.id,
+                    type: allocation.type,
+                    allocated: Number(allocation.days),
+                    year: calendar.year
+                })
+            ))
+            toast.success(`Successfully updated ${allocation.type} leave quota for ${calendar.assignedEmployees.length} members.`)
+        } catch (error) {
+            console.error(error)
+            // Toast handled by mutation error mostly, but since we do Promise.all, one fail might trigger
+        }
+    }
+
+    const LEAVE_TYPES_LABELS: Record<string, string> = {
+        'ANNUAL': 'Annual / Earned',
+        'CASUAL': 'Casual',
+        'SICK': 'Sick',
+        'MATERNITY': 'Maternity',
+        'PATERNITY': 'Paternity',
+        'COMPENSATORY': 'Compensatory',
+        'STUDY': 'Study',
+        'UNPAID': 'Unpaid (Loss of Pay)'
+    }
+
+
     const getRuleForDay = (dayOfWeek: number): WeeklyRule['rule'] => {
         const rule = calendar?.weeklyRules?.find(r => r.dayOfWeek === dayOfWeek)
         return rule?.rule || 'WORKING'
@@ -190,7 +245,7 @@ export default function CalendarDetailPage() {
     }
 
     // Calculate total holiday days
-    const totalHolidayDays = calendar.holidays?.reduce((total, holiday) => {
+    const totalHolidayDays = calendar.holidays?.reduce((total: number, holiday: any) => {
         const startDate = new Date(holiday.startDate)
         const endDate = new Date(holiday.endDate)
         const days = Math.ceil((endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24)) + 1
@@ -513,7 +568,7 @@ export default function CalendarDetailPage() {
                     ) : (
                         <div className="divide-y divide-slate-100">
                             {calendar.holidays
-                                .sort((a, b) => new Date(a.startDate).getTime() - new Date(b.startDate).getTime())
+                                .sort((a: any, b: any) => new Date(a.startDate).getTime() - new Date(b.startDate).getTime())
                                 .map((holiday: any) => {
                                     const startDate = new Date(holiday.startDate)
                                     const endDate = new Date(holiday.endDate)
@@ -577,7 +632,137 @@ export default function CalendarDetailPage() {
                     )}
                 </CardContent>
             </Card>
-        </div>
+
+            {/* Leave Entitlements Section (New) */}
+            {isAdmin && (
+                <Card>
+                    <CardHeader>
+                        <div className="flex items-center gap-3">
+                            <div className="w-10 h-10 bg-emerald-50 rounded-lg flex items-center justify-center">
+                                <CalendarIcon className="w-5 h-5 text-emerald-600" />
+                            </div>
+                            <div>
+                                <CardTitle className="text-xl">Leave Entitlements</CardTitle>
+                                <CardDescription className="mt-1">
+                                    Set default leave quotas for all employees assigned to this calendar (e.g. 20 Annual Leaves).
+                                </CardDescription>
+                            </div>
+                        </div>
+                    </CardHeader>
+                    <CardContent>
+                        <form onSubmit={handleAssignBalance} className="flex flex-col sm:flex-row items-end gap-4 p-4 bg-slate-50 rounded-lg border border-slate-100">
+                            <div className="grid gap-2 w-full sm:w-1/3">
+                                <Label htmlFor="leaveType">Leave Type</Label>
+                                <DropdownMenu>
+                                    <DropdownMenuTrigger asChild>
+                                        <Button
+                                            variant="outline"
+                                            role="combobox"
+                                            className="w-full justify-between font-normal bg-white"
+                                        >
+                                            {LEAVE_TYPES_LABELS[allocation.type] || allocation.type}
+                                            <ChevronDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                                        </Button>
+                                    </DropdownMenuTrigger>
+                                    <DropdownMenuContent className="w-[300px]" align="start">
+                                        {Object.entries(LEAVE_TYPES_LABELS).map(([value, label]) => (
+                                            <DropdownMenuItem
+                                                key={value}
+                                                onSelect={() => setAllocation({ ...allocation, type: value })}
+                                                className="cursor-pointer"
+                                            >
+                                                {label}
+                                            </DropdownMenuItem>
+                                        ))}
+                                    </DropdownMenuContent>
+                                </DropdownMenu>
+                            </div>
+                            <div className="grid gap-2 w-full sm:w-1/4">
+                                <Label htmlFor="days">Days per Year</Label>
+                                <Input
+                                    id="days"
+                                    type="number"
+                                    min="0"
+                                    value={allocation.days}
+                                    onChange={(e) => setAllocation({ ...allocation, days: Number(e.target.value) })}
+                                />
+                            </div>
+                            <Button
+                                type="submit"
+                                className="bg-emerald-600 hover:bg-emerald-700 text-white w-full sm:w-auto"
+                                disabled={assignBalanceMutation.isPending}
+                            >
+                                {assignBalanceMutation.isPending ? "Update Quotas" : "Update Quotas"}
+                            </Button>
+                        </form>
+                        <p className="text-xs text-slate-500 mt-2 px-1">
+                            * This will bulk-update the <strong>{LEAVE_TYPES_LABELS[allocation.type]}</strong> leave balance for all currently assigned members (Overwrites existing values).
+                        </p>
+                    </CardContent>
+                </Card>
+            )}
+
+            {/* Assigned Employees Section */}
+            <Card>
+                <CardHeader>
+                    <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 bg-indigo-50 rounded-lg flex items-center justify-center">
+                            <Users className="w-5 h-5 text-indigo-600" />
+                        </div>
+                        <div>
+                            <CardTitle className="text-xl">Assigned Team Members</CardTitle>
+                            <CardDescription className="mt-1">
+                                {calendar.assignedEmployees?.length || 0} member{(calendar.assignedEmployees?.length || 0) !== 1 ? 's' : ''} are following this schedule
+                            </CardDescription>
+                        </div>
+                    </div>
+                </CardHeader>
+                <CardContent>
+                    {!calendar.assignedEmployees || calendar.assignedEmployees.length === 0 ? (
+                        <div className="text-center py-8 text-slate-500 text-sm">
+                            No members assigned to this calendar yet.
+                        </div>
+                    ) : (
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                            {calendar.assignedEmployees.map((emp: any) => (
+                                <div key={emp.id} className="flex flex-col gap-2 p-3 rounded-lg border border-slate-100 bg-slate-50/50 hover:bg-slate-50 transition-colors">
+                                    <div className="flex items-center gap-3">
+                                        <Avatar className="h-10 w-10 border border-white shadow-sm">
+                                            <AvatarFallback className="bg-indigo-100 text-indigo-700 font-bold text-sm">
+                                                {emp.name ? emp.name.charAt(0).toUpperCase() : '?'}
+                                            </AvatarFallback>
+                                        </Avatar>
+                                        <div className="min-w-0">
+                                            <p className="font-semibold text-slate-900 text-sm truncate">{emp.name}</p>
+                                            <div className="flex items-center gap-2 text-xs text-slate-500">
+                                                <span className="truncate">{emp.role}</span>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    {/* Leave Balances Display */}
+                                    <div className="flex flex-wrap gap-1.5 pt-1 border-t border-slate-100/50 mt-1">
+                                        {emp.leaveBalances && emp.leaveBalances.length > 0 ? (
+                                            emp.leaveBalances.map((lb: any) => (
+                                                <Badge
+                                                    key={lb.type}
+                                                    variant="outline"
+                                                    className="text-[10px] px-1.5 py-0 h-5 font-normal bg-white text-slate-600 border-slate-200"
+                                                >
+                                                    {lb.type}: <span className="font-semibold ml-0.5 text-slate-900">{lb.allocated}</span>
+                                                </Badge>
+                                            ))
+                                        ) : (
+                                            <span className="text-[10px] text-slate-400 italic px-1">No leave quotas assigned</span>
+                                        )}
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    )}
+                </CardContent>
+            </Card>
+        </div >
     )
 }
 

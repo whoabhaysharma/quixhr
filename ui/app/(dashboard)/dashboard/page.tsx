@@ -10,9 +10,13 @@ import EmployeeDashboardView from "@/components/views/employee/EmployeeDashboard
 export default function RedesignedDashboard() {
     const { user, isLoading: authLoading } = useAuth()
 
+    // Determine roles for conditional fetching
+    const isAdmin = ['HR_ADMIN', 'SUPER_ADMIN', 'MANAGER'].includes(user?.role);
+    const isEmployee = user?.role === 'EMPLOYEE';
+
     // Use TanStack Query hooks based on user role
-    const { data: adminStats, isLoading: adminStatsLoading } = useAdminStats()
-    const { data: employeeStats, isLoading: employeeStatsLoading } = useEmployeeStats()
+    const { data: adminStats, isLoading: adminStatsLoading } = useAdminStats(isAdmin)
+    const { data: employeeStats, isLoading: employeeStatsLoading } = useEmployeeStats(isEmployee)
     const { data: leaves = [], isLoading: leavesLoading } = useLeaves(
         user?.role === 'EMPLOYEE' ? user.id : undefined
     )
@@ -29,7 +33,7 @@ export default function RedesignedDashboard() {
     return (
         <div className="bg-[#f8fafc] min-h-[calc(100vh-4rem)] pb-20">
             <div className="max-w-[1600px] mx-auto px-6 pt-8 space-y-10">
-                {['ADMIN', 'HR', 'SUPER_ADMIN'].includes(user?.role) ? (
+                {['HR_ADMIN', 'SUPER_ADMIN'].includes(user?.role) ? (
                     <AdminDashboardView user={user} stats={dashboardStats} leaves={recentLeaves} />
                 ) : user?.role === 'EMPLOYEE' ? (
                     <EmployeeDashboardView user={user} stats={dashboardStats} leaves={recentLeaves} />

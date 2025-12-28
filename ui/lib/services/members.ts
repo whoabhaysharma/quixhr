@@ -38,4 +38,13 @@ export const membersService = {
         const response = await api.patch(`/members/${memberId}`, { role });
         return response.data;
     },
+
+    // Assign calendar to member
+    assignCalendar: async (
+        memberId: string,
+        calendarId: string
+    ): Promise<ApiResponse<Member>> => {
+        const response = await api.post(`/members/${memberId}/calendar`, { calendarId });
+        return response.data;
+    },
 };

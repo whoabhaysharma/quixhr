@@ -65,5 +65,11 @@ export interface CalendarResponseDto {
     dayEndTime: string;
     weeklyRules: WeeklyRuleDto[];
     holidays: HolidayDto[];
+    assignedEmployees?: {
+        id: string;
+        name: string;
+        role: string;
+        email: string;
+    }[];
     createdAt: Date;
 }

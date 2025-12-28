@@ -123,3 +123,27 @@ export async function getMyAppAttendance(req: AuthRequest, res: Response): Promi
         res.status(500).json({ success: false, error: 'Failed to fetch attendance' });
     }
 }
+
+/**
+ * Get Today's Status
+ */
+export async function getToday(req: AuthRequest, res: Response): Promise<void> {
+    try {
+        const userId = req.user?.id;
+        if (!userId) {
+            res.status(401).json({ success: false, error: 'Unauthorized' });
+            return;
+        }
+
+        const employee = await memberService.getMemberByUserId(userId);
+        if (!employee) {
+            res.status(404).json({ success: false, error: 'Employee profile not found' });
+            return;
+        }
+
+        const data = await attendanceService.getTodayStatus(employee.id);
+        res.json({ success: true, data });
+    } catch (error: any) {
+        res.status(500).json({ success: false, error: 'Failed to fetch today status' });
+    }
+}

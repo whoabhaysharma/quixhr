@@ -14,13 +14,13 @@ export interface Holiday {
 export const holidaysService = {
     // Get holidays by calendar
     getHolidaysByCalendar: async (calendarId: string): Promise<ApiResponse<{ holidays: Holiday[] }>> => {
-        const response = await api.get(`/holidays/calendar/${calendarId}`);
+        const response = await api.get(`/calendars/${calendarId}/holidays`);
         return response.data;
     },
 
     // Get upcoming holidays for user
     getUpcomingHolidays: async (limit?: number): Promise<ApiResponse<{ holidays: Holiday[] }>> => {
-        const response = await api.get('/holidays/upcoming', {
+        const response = await api.get('/calendars/upcoming', {
             params: { limit },
         });
         return response.data;

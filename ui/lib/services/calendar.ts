@@ -10,6 +10,12 @@ export interface Calendar {
     dayEndTime: string;
     weeklyRules: WeeklyRule[];
     holidays: Holiday[];
+    assignedEmployees?: {
+        id: string;
+        name: string;
+        role: string;
+        email: string;
+    }[];
     createdAt: string;
 }
 

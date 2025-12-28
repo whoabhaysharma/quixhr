@@ -10,7 +10,7 @@ export function useLeaves(userId?: string) {
                 const response = userId
                     ? await leavesService.getUserLeaves(userId)
                     : await leavesService.getAllLeaves()
-                return response.data.leaves
+                return response.data
             } catch (error: any) {
                 toast.error(error.response?.data?.message || 'Failed to load leave records')
                 throw error
@@ -76,6 +76,21 @@ export function useDeleteLeave() {
         },
         onError: (error: any) => {
             toast.error(error.response?.data?.message || 'Failed to delete leave request');
+        },
+    })
+}
+
+export function useAssignLeaveBalance() {
+    const queryClient = useQueryClient()
+
+    return useMutation({
+        mutationFn: (data: { employeeId: string, type: string, allocated: number, year: number }) => leavesService.assignLeaveBalance(data),
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['calendar'] })
+            toast.success('Leave balance assigned successfully');
+        },
+        onError: (error: any) => {
+            toast.error(error.response?.data?.message || 'Failed to assign leave balance');
         },
     })
 }

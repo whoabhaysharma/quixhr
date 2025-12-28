@@ -1,6 +1,7 @@
 "use client"
 
 import { InviteUserModal } from '@/components/members/InviteUserModal'
+import { AssignCalendarModal } from '@/components/members/AssignCalendarModal'
 
 import { useState } from "react"
 import { Button } from "@/components/ui/button"
@@ -48,6 +49,7 @@ import {
     UserCog,
     Search,
     XCircle,
+    Calendar,
 } from "lucide-react"
 import { useMembers, useDeleteMember, useUpdateMemberRole, useInvitations, useResendInvitation, useDeleteInvitation } from "@/lib/hooks/useMembers"
 import { Member } from "@/lib/services/members"
@@ -57,6 +59,7 @@ export default function MemberManagerView() {
     const { user: currentUser } = useAuth()
     const [isAddModalOpen, setIsAddModalOpen] = useState(false)
     const [itemToDelete, setItemToDelete] = useState<{ id: string, name: string, type: 'MEMBER' | 'INVITE' } | null>(null)
+    const [calendarModalState, setCalendarModalState] = useState<{ isOpen: boolean, memberId: string | null, memberName: string }>({ isOpen: false, memberId: null, memberName: '' })
 
     // TanStack Query hooks
     // TanStack Query hooks
@@ -306,6 +309,15 @@ export default function MemberManagerView() {
                                                             </DropdownMenuSub>
                                                             <DropdownMenuItem
                                                                 onClick={() => {
+                                                                    setCalendarModalState({ isOpen: true, memberId: user.id, memberName: user.name })
+                                                                }}
+                                                                className="cursor-pointer"
+                                                            >
+                                                                <Calendar className="w-4 h-4 mr-2" />
+                                                                Assign Calendar
+                                                            </DropdownMenuItem>
+                                                            <DropdownMenuItem
+                                                                onClick={() => {
                                                                     setItemToDelete({ id: user.id, name: user.name, type: 'MEMBER' })
                                                                 }}
                                                                 className="cursor-pointer text-red-600 focus:text-red-600 focus:bg-red-50"
@@ -326,6 +338,14 @@ export default function MemberManagerView() {
                     </Table>
                 </div>
             </div>
+
+            {/* Calendar Assignment Modal */}
+            <AssignCalendarModal
+                open={calendarModalState.isOpen}
+                onOpenChange={(open) => setCalendarModalState(prev => ({ ...prev, isOpen: open }))}
+                memberId={calendarModalState.memberId}
+                memberName={calendarModalState.memberName}
+            />
 
             <AlertDialog open={!!itemToDelete} onOpenChange={(open) => !open && setItemToDelete(null)}>
                 <AlertDialogContent>

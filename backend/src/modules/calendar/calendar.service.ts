@@ -20,6 +20,15 @@ const formatCalendar = (calendar: any): CalendarResponseDto => {
         dayEndTime: calendar.dayEndTime,
         weeklyRules: calendar.weeklyRules?.map((r: any) => ({ dayOfWeek: r.dayOfWeek, rule: r.rule })) || [],
         holidays: calendar.holidays?.map((h: any) => ({ startDate: h.startDate, endDate: h.endDate, name: h.name })) || [],
+        assignedEmployees: calendar.employees?.map((ec: any) => ({
+            id: ec.employee.id,
+            name: ec.employee.name,
+            role: ec.employee.user.role,
+            email: ec.employee.user.email,
+            // Filter balances for this calendar's year
+            leaveBalances: ec.employee.leaveBalances?.filter((lb: any) => lb.year === calendar.year)
+                .map((lb: any) => ({ type: lb.type, allocated: lb.allocated, used: lb.used })) || []
+        })) || [],
         createdAt: calendar.createdAt
     };
 };
@@ -41,7 +50,6 @@ export async function createCalendar(dto: CreateCalendarDto): Promise<CalendarRe
             }
         });
 
-        // Add weekly rules
         // Add weekly rules
         if (dto.weeklyRules && dto.weeklyRules.length > 0) {
             await tx.calendarWeeklyRule.createMany({
@@ -79,7 +87,17 @@ export async function getAllCalendars(companyId: string): Promise<CalendarRespon
         where: { companyId },
         include: {
             weeklyRules: { orderBy: { dayOfWeek: 'asc' } },
-            holidays: { orderBy: { startDate: 'asc' } }
+            holidays: { orderBy: { startDate: 'asc' } },
+            employees: {
+                include: {
+                    employee: {
+                        include: {
+                            user: true,
+                            leaveBalances: true // Include all, filter in formatter
+                        }
+                    }
+                }
+            }
         },
         orderBy: { createdAt: 'desc' }
     });
@@ -95,7 +113,17 @@ export async function getCalendarById(id: string): Promise<CalendarResponseDto |
         where: { id },
         include: {
             weeklyRules: { orderBy: { dayOfWeek: 'asc' } },
-            holidays: { orderBy: { startDate: 'asc' } }
+            holidays: { orderBy: { startDate: 'asc' } },
+            employees: {
+                include: {
+                    employee: {
+                        include: {
+                            user: true,
+                            leaveBalances: true // Include all, filter in formatter
+                        }
+                    }
+                }
+            }
         }
     });
 
@@ -169,4 +197,37 @@ export async function deleteCalendar(id: string): Promise<void> {
         prisma.calendarHoliday.deleteMany({ where: { calendarId: id } }),
         prisma.calendar.delete({ where: { id } })
     ]);
+}
+
+/**
+ * Get upcoming holidays for an employee
+ */
+export async function getUpcomingHolidays(employeeId: string, limit: number = 3): Promise<any[]> {
+    // Find assigned calendar
+    const assignment = await prisma.employeeCalendar.findFirst({
+        where: { employeeId },
+        select: { calendarId: true }
+    });
+
+    if (!assignment) return [];
+
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    const holidays = await prisma.calendarHoliday.findMany({
+        where: {
+            calendarId: assignment.calendarId,
+            startDate: { gte: today }
+        },
+        orderBy: { startDate: 'asc' },
+        take: limit
+    });
+
+    return holidays.map(h => ({
+        id: h.id,
+        name: h.name,
+        date: h.startDate,
+        endDate: h.endDate,
+        calendarId: h.calendarId,
+    }));
 }

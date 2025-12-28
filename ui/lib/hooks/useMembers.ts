@@ -117,3 +117,20 @@ export function useDeleteInvitation() {
         }
     })
 }
+
+export function useAssignCalendar() {
+    const queryClient = useQueryClient()
+
+    return useMutation({
+        mutationFn: ({ memberId, calendarId }: { memberId: string, calendarId: string }) =>
+            membersService.assignCalendar(memberId, calendarId),
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['members'] })
+            toast.success('Calendar assigned successfully')
+        },
+        onError: (error: any) => {
+            const errorMessage = error.response?.data?.error || error.response?.data?.message || 'Failed to assign calendar'
+            toast.error(errorMessage)
+        }
+    })
+}

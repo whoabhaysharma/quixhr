@@ -3,8 +3,8 @@ import api from "../api"
 export interface AttendanceRecord {
     id: string
     date: string
-    clockIn: string
-    clockOut?: string
+    checkIn: string
+    checkOut?: string
     status: 'PRESENT' | 'ABSENT' | 'HALF_DAY'
 }
 

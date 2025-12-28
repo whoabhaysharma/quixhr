@@ -47,6 +47,7 @@ export interface EmployeeStatsResponseDto {
         used: number;
         remaining: number;
     };
+    pendingRequests: number;
     recentAttendance: RecentAttendance[];
     upcomingHolidays: UpcomingHoliday[];
 }

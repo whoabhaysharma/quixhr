@@ -173,6 +173,14 @@ export async function getEmployeeStats(employeeId: string): Promise<EmployeeStat
     const totalLeaves = 20; // This should come from company policy
     const remainingLeaves = totalLeaves - usedLeaves;
 
+    // Get pending leave requests
+    const pendingRequests = await prisma.leaveRequest.count({
+        where: {
+            employeeId,
+            status: LeaveStatus.PENDING,
+        },
+    });
+
     // Get recent attendance (last 7 days)
     const sevenDaysAgo = new Date();
     sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
@@ -216,6 +224,7 @@ export async function getEmployeeStats(employeeId: string): Promise<EmployeeStat
             used: usedLeaves,
             remaining: remainingLeaves,
         },
+        pendingRequests,
         recentAttendance,
         upcomingHolidays,
     };

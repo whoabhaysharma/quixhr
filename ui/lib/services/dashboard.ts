@@ -35,6 +35,7 @@ export interface EmployeeStats {
         used: number;
         remaining: number;
     };
+    pendingRequests: number;
     recentAttendance: Array<{
         date: string;
         type: string;

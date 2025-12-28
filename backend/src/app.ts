@@ -14,6 +14,7 @@ import notificationRoutes from './modules/notification/notification.controller';
 import dashboardRoutes from './modules/dashboard/dashboard.controller';
 import auditRoutes from './modules/audit/audit.routes';
 import invitationRoutes from './modules/invitation/invitation.routes';
+import leaveRoutes from './modules/leave/leave.routes';
 
 const app = express();
 
@@ -41,6 +42,7 @@ app.use('/api/v1/notifications', notificationRoutes);
 app.use('/api/v1/dashboard', dashboardRoutes);
 app.use('/api/v1/audit', auditRoutes);
 app.use('/api/v1/invitations', invitationRoutes);
+app.use('/api/v1/leaves', leaveRoutes);
 
 // Health check
 app.get('/health', (req, res) => {
