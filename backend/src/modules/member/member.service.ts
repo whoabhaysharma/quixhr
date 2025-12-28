@@ -47,6 +47,10 @@ export async function createMember(dto: CreateMemberDto): Promise<MemberResponse
     const { notifyEmployee } = await import('../notification/notification.helper');
     await notifyEmployee.added(user.id, dto.name, member.company.name);
 
+    if (!member.user || !member.userId) {
+        throw new Error('Member must have an associated user');
+    }
+
     return {
         id: member.id,
         userId: member.userId,
@@ -81,16 +85,18 @@ export async function getAllMembers(companyId: string, page = 1, limit = 10, sea
         prisma.employee.count({ where })
     ]);
 
-    const data = members.map(mem => ({
-        id: mem.id,
-        userId: mem.userId,
-        companyId: mem.companyId,
-        name: mem.name,
-        status: mem.status,
-        email: mem.user.email,
-        role: mem.user.role,
-        createdAt: mem.createdAt
-    }));
+    const data = members
+        .filter(mem => mem.user && mem.userId)
+        .map(mem => ({
+            id: mem.id,
+            userId: mem.userId!,
+            companyId: mem.companyId,
+            name: mem.name,
+            status: mem.status,
+            email: mem.user!.email,
+            role: mem.user!.role,
+            createdAt: mem.createdAt
+        }));
 
     return { data, total };
 }
@@ -101,7 +107,7 @@ export async function getMemberById(id: string): Promise<MemberResponseDto | nul
         include: { user: true }
     });
 
-    if (!member) return null;
+    if (!member || !member.user || !member.userId) return null;
 
     return {
         id: member.id,
@@ -122,8 +128,8 @@ export async function updateMember(id: string, dto: UpdateMemberDto): Promise<Me
         include: { user: true },
     });
 
-    if (!currentMember) {
-        throw new Error('Member not found');
+    if (!currentMember || !currentMember.user || !currentMember.userId) {
+        throw new Error('Member not found or has no associated user');
     }
 
     const member = await prisma.employee.update({
@@ -138,7 +144,7 @@ export async function updateMember(id: string, dto: UpdateMemberDto): Promise<Me
     const { notifyEmployee } = await import('../notification/notification.helper');
 
     // Notify if status changed
-    if (dto.status && dto.status !== currentMember.status) {
+    if (dto.status && dto.status !== currentMember.status && member.userId) {
         await notifyEmployee.statusChanged(member.userId, dto.status);
     }
 
@@ -160,21 +166,32 @@ export async function updateMember(id: string, dto: UpdateMemberDto): Promise<Me
             }
         }
 
+        if (!member.userId) {
+            throw new Error('Member has no associated user');
+        }
+
         await prisma.user.update({
             where: { id: member.userId },
             data: { role: dto.role as Role }
         });
+        if (!member.user) {
+            throw new Error('Member has no associated user');
+        }
         member.user.role = dto.role as Role;
 
         // Notify if role changed
-        if (dto.role !== currentMember.user.role) {
+        if (dto.role !== currentMember.user.role && member.userId) {
             await notifyEmployee.roleChanged(member.userId, dto.role);
         }
     }
 
     // Notify profile update if name changed
-    if (dto.name && dto.name !== currentMember.name) {
+    if (dto.name && dto.name !== currentMember.name && member.userId) {
         await notifyEmployee.profileUpdated(member.userId);
+    }
+
+    if (!member.user || !member.userId) {
+        throw new Error('Member must have an associated user');
     }
 
     return {
@@ -196,7 +213,7 @@ export async function deleteMember(id: string): Promise<void> {
         include: { user: true }
     });
 
-    if (!member) throw new Error('Member not found');
+    if (!member || !member.user) throw new Error('Member not found or has no associated user');
 
     if (member.user.role === Role.HR_ADMIN) {
         const adminCount = await prisma.user.count({
@@ -230,13 +247,9 @@ export async function assignCalendarToMember(memberId: string, calendarId: strin
         throw new Error('Member and Calendar must belong to the same company');
     }
 
-    await prisma.employeeCalendar.upsert({
-        where: { employeeId: memberId },
-        update: { calendarId },
-        create: {
-            employeeId: memberId,
-            calendarId
-        }
+    await prisma.employee.update({
+        where: { id: memberId },
+        data: { calendarId }
     });
 }
 export async function getMemberByUserId(userId: string): Promise<MemberResponseDto | null> {
@@ -245,7 +258,7 @@ export async function getMemberByUserId(userId: string): Promise<MemberResponseD
         include: { user: true }
     });
 
-    if (!member) return null;
+    if (!member || !member.user || !member.userId) return null;
 
     return {
         id: member.id,

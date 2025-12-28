@@ -38,23 +38,22 @@ export async function checkIn(employeeId: string, dto: CheckInDto): Promise<Atte
         data: {
             employeeId,
             date: dateOnly,
-            checkIn: timestamp,
-            attendanceType: AttendanceType.FULL,
-            dayType: dayType
-        },
-        include: {
-            employee: {
-                select: {
-                    userId: true,
-                },
-            },
-        },
+            firstCheckIn: timestamp,
+            status: AttendanceType.PRESENT,
+            totalMinutes: 0
+        }
+    });
+
+    // Get employee to send notification
+    const employee = await prisma.employee.findUnique({
+        where: { id: employeeId },
+        select: { userId: true }
     });
 
     // Create notification for check-in
-    if (attendance.employee?.userId) {
+    if (employee?.userId) {
         const { notifyAttendance } = await import('../notification/notification.helper');
-        await notifyAttendance.checkedIn(attendance.employee.userId, timestamp);
+        await notifyAttendance.checkedIn(employee.userId, timestamp);
     }
 
     return attendance;
@@ -81,35 +80,39 @@ export async function checkOut(employeeId: string, dto: CheckOutDto): Promise<At
         throw new Error('No check-in record found for this day.');
     }
 
-    if (attendance.checkOut) {
+    if (attendance.lastCheckOut) {
         throw new Error('Already checked out.');
     }
+
+    // Calculate total minutes
+    const totalMinutes = attendance.firstCheckIn
+        ? Math.floor((timestamp.getTime() - attendance.firstCheckIn.getTime()) / (1000 * 60))
+        : 0;
 
     // Update checkout
     const updated = await prisma.attendance.update({
         where: { id: attendance.id },
         data: {
-            checkOut: timestamp
-            // Here logic could be added to calculate AttendanceType based on duration
-        },
-        include: {
-            employee: {
-                select: {
-                    userId: true,
-                },
-            },
-        },
+            lastCheckOut: timestamp,
+            totalMinutes
+        }
+    });
+
+    // Get employee to send notification
+    const employee = await prisma.employee.findUnique({
+        where: { id: employeeId },
+        select: { userId: true }
     });
 
     // Calculate hours worked
-    const hoursWorked = (timestamp.getTime() - attendance.checkIn.getTime()) / (1000 * 60 * 60);
+    const hoursWorked = totalMinutes / 60;
 
     // Create notification for check-out
-    if (updated.employee?.userId) {
+    if (employee?.userId && attendance.firstCheckIn) {
         const { notifyAttendance } = await import('../notification/notification.helper');
         await notifyAttendance.checkedOut(
-            updated.employee.userId,
-            attendance.checkIn,
+            employee.userId,
+            attendance.firstCheckIn,
             timestamp,
             hoursWorked
         );

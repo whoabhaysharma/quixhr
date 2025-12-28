@@ -30,7 +30,7 @@ export async function updateWeeklyRule(req: AuthRequest, res: Response): Promise
             }
         }
 
-        await rulesService.updateWeeklyRule(id, dto.dayOfWeek, dto.rule);
+        await rulesService.updateWeeklyRule(id, dto.dayOfWeek, dto.rule, dto.weekNumbers);
         res.json({ success: true, message: 'Weekly rule updated successfully' });
     } catch (error: any) {
         res.status(400).json({ success: false, error: error.message || 'Failed to update weekly rule' });

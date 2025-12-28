@@ -20,19 +20,33 @@ export function generateDefaultRules(calendarId: string) {
 /**
  * Update weekly rule for a specific day
  */
-export async function updateWeeklyRule(calendarId: string, dayOfWeek: number, rule: WeeklyRuleType): Promise<void> {
-    await prisma.calendarWeeklyRule.upsert({
+export async function updateWeeklyRule(calendarId: string, dayOfWeek: number, rule: WeeklyRuleType, weekNumbers?: number[]): Promise<void> {
+    // Find existing rule
+    const existing = await prisma.calendarWeeklyRule.findFirst({
         where: {
-            calendarId_dayOfWeek: {
-                calendarId,
-                dayOfWeek
-            }
-        },
-        update: { rule },
-        create: {
             calendarId,
-            dayOfWeek,
-            rule
+            dayOfWeek
         }
     });
+
+    if (existing) {
+        // Update existing rule
+        await prisma.calendarWeeklyRule.update({
+            where: { id: existing.id },
+            data: {
+                rule,
+                weekNumbers: weekNumbers || existing.weekNumbers || []
+            }
+        });
+    } else {
+        // Create new rule
+        await prisma.calendarWeeklyRule.create({
+            data: {
+                calendarId,
+                dayOfWeek,
+                rule,
+                weekNumbers: weekNumbers || []
+            }
+        });
+    }
 }

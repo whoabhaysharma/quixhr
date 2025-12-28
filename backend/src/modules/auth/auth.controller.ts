@@ -42,9 +42,12 @@ export async function login(req: Request, res: Response): Promise<void> {
             data: result,
         });
     } catch (error: any) {
-        res.status(400).json({
+        const message = error.message || 'Login failed';
+        const status = message === 'Invalid credentials' ? 401 : 400;
+
+        res.status(status).json({
             success: false,
-            error: error.message || 'Login failed',
+            error: message,
         });
     }
 }
@@ -78,6 +81,7 @@ export async function register(req: Request, res: Response): Promise<void> {
             data: result,
         });
     } catch (error: any) {
+
         res.status(400).json({
             success: false,
             error: error.message || 'Registration failed',

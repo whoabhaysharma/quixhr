@@ -30,7 +30,7 @@ export async function getAdminStats(companyId: string): Promise<AdminStatsRespon
 
     // Get today's attendance stats
     const todayAttendance = await prisma.attendance.groupBy({
-        by: ['attendanceType'],
+        by: ['status'],
         where: {
             employee: {
                 companyId,
@@ -41,14 +41,13 @@ export async function getAdminStats(companyId: string): Promise<AdminStatsRespon
             },
         },
         _count: {
-            attendanceType: true,
+            status: true,
         },
     });
 
-    const presentToday = todayAttendance.find(a => a.attendanceType === AttendanceType.FULL)?._count.attendanceType || 0;
-    const halfDayToday = (todayAttendance.find(a => a.attendanceType === AttendanceType.HALF_AM)?._count.attendanceType || 0) +
-        (todayAttendance.find(a => a.attendanceType === AttendanceType.HALF_PM)?._count.attendanceType || 0);
-    const absentToday = todayAttendance.find(a => a.attendanceType === AttendanceType.ABSENT)?._count.attendanceType || 0;
+    const presentToday = todayAttendance.find(a => a.status === AttendanceType.PRESENT)?._count.status || 0;
+    const halfDayToday = todayAttendance.find(a => a.status === AttendanceType.HALF_DAY)?._count.status || 0;
+    const absentToday = todayAttendance.find(a => a.status === AttendanceType.ABSENT)?._count.status || 0;
 
     // Get employees on leave today
     const onLeaveToday = await prisma.leaveRequest.count({
@@ -145,7 +144,7 @@ export async function getEmployeeStats(employeeId: string): Promise<EmployeeStat
     thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
 
     const attendanceRecords = await prisma.attendance.groupBy({
-        by: ['attendanceType'],
+        by: ['status'],
         where: {
             employeeId,
             date: {
@@ -153,14 +152,13 @@ export async function getEmployeeStats(employeeId: string): Promise<EmployeeStat
             },
         },
         _count: {
-            attendanceType: true,
+            status: true,
         },
     });
 
-    const present = attendanceRecords.find(a => a.attendanceType === AttendanceType.FULL)?._count.attendanceType || 0;
-    const halfDay = (attendanceRecords.find(a => a.attendanceType === AttendanceType.HALF_AM)?._count.attendanceType || 0) +
-        (attendanceRecords.find(a => a.attendanceType === AttendanceType.HALF_PM)?._count.attendanceType || 0);
-    const absent = attendanceRecords.find(a => a.attendanceType === AttendanceType.ABSENT)?._count.attendanceType || 0;
+    const present = attendanceRecords.find(a => a.status === AttendanceType.PRESENT)?._count.status || 0;
+    const halfDay = attendanceRecords.find(a => a.status === AttendanceType.HALF_DAY)?._count.status || 0;
+    const absent = attendanceRecords.find(a => a.status === AttendanceType.ABSENT)?._count.status || 0;
 
     // Get leave balance (assuming 20 days annual leave)
     const usedLeaves = await prisma.leaveRequest.count({
@@ -194,9 +192,9 @@ export async function getEmployeeStats(employeeId: string): Promise<EmployeeStat
         },
         select: {
             date: true,
-            attendanceType: true,
-            checkIn: true,
-            checkOut: true,
+            status: true,
+            firstCheckIn: true,
+            lastCheckOut: true,
         },
         orderBy: {
             date: 'desc',
@@ -204,9 +202,9 @@ export async function getEmployeeStats(employeeId: string): Promise<EmployeeStat
         take: 7,
     }).then(records => records.map(r => ({
         date: r.date,
-        type: r.attendanceType,
-        checkIn: r.checkIn,
-        checkOut: r.checkOut || undefined,
+        type: r.status,
+        checkIn: r.firstCheckIn || undefined,
+        checkOut: r.lastCheckOut || undefined,
     })));
 
     // Get upcoming holidays - TODO: Implement when holiday model is available

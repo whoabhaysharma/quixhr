@@ -48,15 +48,30 @@ export async function resolveDay(employeeId: string, date: Date): Promise<DayRes
     const dayOfWeek = date.getDay();
     const weeklyRule = calendar.weeklyRules.find((r: { dayOfWeek: number }) => r.dayOfWeek === dayOfWeek);
 
-    const rule = weeklyRule ? weeklyRule.rule : WeeklyRuleType.WORKING;
+    if (weeklyRule) {
+        // Check if this rule applies to the current week number
+        if (weeklyRule.weekNumbers && weeklyRule.weekNumbers.length > 0) {
+            const currentWeek = getWeekOfMonth(date);
+            if (!weeklyRule.weekNumbers.includes(currentWeek)) {
+                // Determine what to do if the rule DOES NOT apply.
+                // If the specific rule (e.g. OFF) doesn't apply, it typically defaults to the opposite or a standard working day.
+                // For "Alternate Saturdays OFF", the rule is OFF for weeks [1, 3], so for weeks [2, 4] it is WORKING.
+                // So if we found a rule but it doesn't match the week, we treat it as WORKING.
+                return { dayType: 'WORKING', isWorkingDay: true };
+            }
+        }
 
-    if (rule === WeeklyRuleType.OFF) {
-        return { dayType: 'WEEKLY_OFF', isWorkingDay: false };
+        const rule = weeklyRule.rule;
+
+        if (rule === WeeklyRuleType.OFF) {
+            return { dayType: 'WEEKLY_OFF', isWorkingDay: false };
+        }
+
+        if (rule === WeeklyRuleType.HALF_DAY) {
+            return { dayType: 'WORKING', isWorkingDay: true }; // You might want to distinguish HALF_DAY in IsWorkingDay if needed, but typically it is a working day.
+        }
     }
 
-    if (rule === WeeklyRuleType.HALF_DAY) {
-        return { dayType: 'WORKING', isWorkingDay: true };
-    }
-
+    // Default if no rule found
     return { dayType: 'WORKING', isWorkingDay: true };
 }

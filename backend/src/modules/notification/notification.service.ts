@@ -25,7 +25,16 @@ export async function getUserNotifications(
         skip: offset,
     });
 
-    return notifications;
+    return notifications.map(n => ({
+        id: n.id,
+        userId: n.userId,
+        type: 'INFO', // Default type since not in schema
+        title: n.title,
+        message: n.message,
+        actionUrl: null,
+        isRead: n.isRead,
+        createdAt: n.createdAt
+    }));
 }
 
 /**
@@ -79,12 +88,22 @@ export async function createNotification(dto: CreateNotificationDto): Promise<No
 
     const notification = await prisma.notification.create({
         data: {
-            ...dto,
-            expiresAt,
+            userId: dto.userId,
+            title: dto.title,
+            message: dto.message,
         } as any,
     });
 
-    return notification;
+    return {
+        id: notification.id,
+        userId: notification.userId,
+        type: 'INFO', // Default type since not in schema
+        title: notification.title,
+        message: notification.message,
+        actionUrl: null,
+        isRead: notification.isRead,
+        createdAt: notification.createdAt
+    };
 }
 
 /**

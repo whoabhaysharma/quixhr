@@ -77,7 +77,10 @@ export async function updateCompany(id: string, dto: UpdateCompanyDto, updatedBy
     });
 
     // Notify all HR admins about company settings update
-    const adminUserIds = company.employees.map(emp => emp.userId);
+    const adminUserIds = company.employees
+        .map(emp => emp.userId)
+        .filter((id): id is string => id !== null);
+
     if (adminUserIds.length > 0) {
         const { notifyCompany } = await import('../notification/notification.helper');
         await notifyCompany.settingsUpdated(adminUserIds, updatedByName || 'Admin');

@@ -65,12 +65,7 @@ export async function applyLeave(userId: string, dto: CreateLeaveDto) {
 
     let pendingDays = 0;
     for (const req of pendingRequests) {
-        if (req.duration === 'FULL') {
-            const diff = Math.abs(req.endDate.getTime() - req.startDate.getTime());
-            pendingDays += Math.ceil(diff / (1000 * 60 * 60 * 24)) + 1;
-        } else {
-            pendingDays += 0.5;
-        }
+        pendingDays += req.totalDays;
     }
 
     if ((balance.used + pendingDays + requestedDays) > balance.allocated) {
@@ -98,10 +93,11 @@ export async function applyLeave(userId: string, dto: CreateLeaveDto) {
             employeeId: user.employee.id,
             startDate,
             endDate,
-            duration: dto.duration,
+            totalDays: requestedDays,
             type: dto.type,
             status: 'PENDING',
             reason: dto.reason,
+            dayDetails: { duration: dto.duration }, // Store duration context in JSON if needed
         },
         include: { employee: true }
     });
@@ -221,14 +217,46 @@ export async function updateLeaveStatus(leaveId: string, status: LeaveStatus, ad
         data: { status },
     });
 
+    // Update Leave Balance logic
+    const leaveYear = leave.startDate.getFullYear();
+
+    // If approving
+    if (status === 'APPROVED' && leave.status !== 'APPROVED') {
+        await prisma.leaveBalance.updateMany({
+            where: {
+                employeeId: leave.employeeId,
+                type: leave.type,
+                year: leaveYear
+            },
+            data: {
+                used: { increment: leave.totalDays }
+            }
+        });
+    }
+    // If reverting approval (e.g. Approved -> Rejected or Pending)
+    else if (leave.status === 'APPROVED' && status !== 'APPROVED') {
+        await prisma.leaveBalance.updateMany({
+            where: {
+                employeeId: leave.employeeId,
+                type: leave.type,
+                year: leaveYear
+            },
+            data: {
+                used: { decrement: leave.totalDays }
+            }
+        });
+    }
+
     // Notify Employee
-    await createNotification({
-        userId: leave.employee.user.id,
-        title: `Leave ${status === 'APPROVED' ? 'Approved' : 'Rejected'}`,
-        message: `Your leave request for ${new Date(leave.startDate).toDateString()} has been ${status.toLowerCase()}.`,
-        type: status === 'APPROVED' ? 'SUCCESS' : 'ERROR',
-        actionUrl: '/dashboard',
-    });
+    if (leave.employee.user?.id) {
+        await createNotification({
+            userId: leave.employee.user.id,
+            title: `Leave ${status === 'APPROVED' ? 'Approved' : 'Rejected'}`,
+            message: `Your leave request for ${new Date(leave.startDate).toDateString()} has been ${status.toLowerCase()}.`,
+            type: status === 'APPROVED' ? 'SUCCESS' : 'ERROR',
+            actionUrl: '/dashboard',
+        });
+    }
 
     return updatedLeave;
 }
@@ -245,7 +273,7 @@ export async function cancelLeave(leaveId: string, userId: string) {
     if (!leave) throw new Error('Leave request not found');
 
     // Verify ownership
-    if (leave.employee.user.id !== userId) {
+    if (!leave.employee.user?.id || leave.employee.user.id !== userId) {
         throw new Error('Unauthorized');
     }
 

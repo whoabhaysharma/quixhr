@@ -201,7 +201,7 @@ export async function acceptInvitation(dto: AcceptInvitationDto): Promise<{ user
 export async function getCompanyInvitations(companyId: string) {
     return prisma.invitation.findMany({
         where: { companyId },
-        orderBy: { createdAt: 'desc' },
+        orderBy: { expiresAt: 'desc' },
         include: {
             inviter: {
                 select: {

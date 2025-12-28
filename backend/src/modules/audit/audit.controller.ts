@@ -18,11 +18,19 @@ export const getAuditLogsHandler = async (req: Request, res: Response) => {
 
         const result = await getAuditLogs(query);
 
-        res.json(result);
+        res.json({
+            success: true,
+            data: result.logs,
+            pagination: {
+                total: result.total,
+                limit: query.limit,
+                offset: query.offset
+            }
+        });
     } catch (error) {
         console.error('Error fetching audit logs:', error);
         if (error instanceof z.ZodError) {
-            res.status(400).json({ message: 'Invalid query parameters', errors: (error as z.ZodError).errors });
+            res.status(400).json({ message: 'Invalid query parameters', errors: error.issues });
         } else {
             res.status(500).json({ message: 'Failed to fetch audit logs' });
         }
