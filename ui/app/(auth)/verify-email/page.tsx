@@ -5,45 +5,59 @@ import { useSearchParams } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { CheckCircle2, XCircle, Loader2 } from "lucide-react"
 import Link from "next/link"
-import { useVerifyEmail } from "@/lib/hooks/useAuth"
+import { toast } from "sonner"
+import api from "@/lib/api"
 
 function VerifyEmailContent() {
     const searchParams = useSearchParams()
     const token = searchParams.get("token")
 
-    const [status, setStatus] = useState<"loading" | "success" | "error">("loading")
-    const verifyEmailMutation = useVerifyEmail()
+    const [status, setStatus] = useState<'loading' | 'success' | 'error'>('loading')
+    const [errorMessage, setErrorMessage] = useState('')
     const hasVerified = useRef(false)
 
     useEffect(() => {
-        // Prevent duplicate verification calls (handles React Strict Mode)
-        if (hasVerified.current || !token) {
-            if (!token) setStatus("error")
+        if (!token) {
+            setStatus('error')
+            setErrorMessage('Invalid verification link. No token provided.')
             return
         }
 
-        // Mark as verified immediately to prevent duplicate calls
+        // Prevent duplicate calls (React Strict Mode runs effects twice in dev)
+        if (hasVerified.current) {
+            return
+        }
         hasVerified.current = true
 
-        // Trigger verification
-        verifyEmailMutation.mutate(token, {
-            onSuccess: () => {
-                setStatus("success")
-            },
-            onError: () => {
-                setStatus("error")
-                // Reset on error so user can retry if needed
-                hasVerified.current = false
-            },
-        })
-    }, [token, verifyEmailMutation])
+        // Call API directly
+        const verifyEmail = async () => {
+            try {
+                const response = await api.get(`/auth/verify-email/${token}`)
+                if (response.data.success) {
+                    setStatus('success')
+                    toast.success(response.data.data.message || 'Email verified successfully!')
+                } else {
+                    setStatus('error')
+                    setErrorMessage(response.data.error || 'Verification failed')
+                    toast.error(response.data.error || 'Email verification failed')
+                }
+            } catch (error: any) {
+                setStatus('error')
+                const errMsg = error.response?.data?.error || 'The verification link is invalid or has expired.'
+                setErrorMessage(errMsg)
+                toast.error(errMsg)
+            }
+        }
+
+        verifyEmail()
+    }, [token])
 
     return (
         <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 p-4">
             <div className="w-full max-w-md">
                 <div className="bg-white rounded-2xl shadow-2xl p-8">
                     <div className="text-center">
-                        {status === "loading" && (
+                        {status === 'loading' && (
                             <>
                                 <div className="w-16 h-16 bg-indigo-100 rounded-full flex items-center justify-center mx-auto mb-4">
                                     <Loader2 className="w-8 h-8 text-indigo-600 animate-spin" />
@@ -57,7 +71,7 @@ function VerifyEmailContent() {
                             </>
                         )}
 
-                        {status === "success" && (
+                        {status === 'success' && (
                             <>
                                 <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
                                     <CheckCircle2 className="w-8 h-8 text-green-600" />
@@ -76,7 +90,7 @@ function VerifyEmailContent() {
                             </>
                         )}
 
-                        {status === "error" && (
+                        {status === 'error' && (
                             <>
                                 <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
                                     <XCircle className="w-8 h-8 text-red-600" />
@@ -85,9 +99,7 @@ function VerifyEmailContent() {
                                     Verification Failed
                                 </h1>
                                 <p className="text-slate-600 mb-6">
-                                    {!token
-                                        ? "Invalid verification link. No token provided."
-                                        : "The verification link is invalid or has expired. Please try registering again."}
+                                    {errorMessage}
                                 </p>
                                 <div className="flex flex-col gap-3">
                                     <Link href="/login">

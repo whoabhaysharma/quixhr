@@ -35,6 +35,7 @@ function JoinForm() {
     const [isValidating, setIsValidating] = useState(true)
     const [error, setError] = useState<string | null>(null)
     const [isSubmitting, setIsSubmitting] = useState(false)
+    const [isSuccess, setIsSuccess] = useState(false)
 
     const { register, handleSubmit, formState: { errors } } = useForm<JoinFormData>({
         resolver: zodResolver(joinSchema)
@@ -71,8 +72,7 @@ function JoinForm() {
                 name: data.name,
                 password: data.password
             })
-            toast.success("Account created successfully!")
-            router.push("/login?registered=true")
+            setIsSuccess(true)
         } catch (err: any) {
             toast.error(err.response?.data?.error || "Failed to create account")
         } finally {
@@ -102,6 +102,36 @@ function JoinForm() {
                 <CardFooter className="flex justify-center">
                     <Button variant="outline" asChild>
                         <Link href="/login">Return to Login</Link>
+                    </Button>
+                </CardFooter>
+            </Card>
+        )
+    }
+
+    if (isSuccess) {
+        return (
+            <Card className="w-full max-w-md border-emerald-100 shadow-xl">
+                <CardHeader className="text-center">
+                    <div className="w-16 h-16 bg-emerald-50 rounded-full flex items-center justify-center mx-auto mb-4">
+                        <CheckCircle2 className="w-8 h-8 text-emerald-600" />
+                    </div>
+                    <CardTitle className="text-2xl text-emerald-600">Account Created Successfully!</CardTitle>
+                    <CardDescription className="text-base mt-2">
+                        Your account has been created and your email has been verified. You can now log in to access your dashboard.
+                    </CardDescription>
+                </CardHeader>
+                <CardContent>
+                    <div className="p-4 bg-slate-50 border border-slate-200 rounded-lg">
+                        <p className="text-sm text-slate-600 mb-1">Email:</p>
+                        <p className="text-sm font-medium text-slate-900">{invitation?.email}</p>
+                    </div>
+                </CardContent>
+                <CardFooter className="flex justify-center">
+                    <Button
+                        className="w-full bg-indigo-600 hover:bg-indigo-700"
+                        asChild
+                    >
+                        <Link href="/login">Go to Login</Link>
                     </Button>
                 </CardFooter>
             </Card>

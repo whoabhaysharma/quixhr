@@ -105,11 +105,23 @@ export function useResetPassword() {
 
 export function useVerifyEmail() {
     return useMutation({
-        mutationFn: (token: string) => authService.verifyEmail(token),
+        mutationFn: async (token: string) => {
+            console.log('useVerifyEmail: Starting API call for token:', token)
+            try {
+                const result = await authService.verifyEmail(token)
+                console.log('useVerifyEmail: API call succeeded:', result)
+                return result
+            } catch (error) {
+                console.error('useVerifyEmail: API call failed:', error)
+                throw error
+            }
+        },
         onSuccess: (data) => {
+            console.log('useVerifyEmail: onSuccess called with data:', data)
             toast.success(data.data?.message || 'Email verified successfully');
         },
         onError: (error: any) => {
+            console.error('useVerifyEmail: onError called with error:', error)
             toast.error(error.response?.data?.error || 'Email verification failed');
         },
     })
