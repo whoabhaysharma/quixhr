@@ -10,6 +10,11 @@ import { AppError } from './utils/appError';
 
 // Route Imports
 import authRoutes from './modules/auth/auth.routes';
+import employeeRoutes from './modules/employee/employee.routes';
+import companyRoutes from './modules/company/company.routes';
+import userRoutes from './modules/user/user.routes';
+import attendanceRoutes from './modules/attendance/attendance.routes';
+import leaveRoutes from './modules/leave/leave.routes';
 import { apiLimiter } from './utils/rateLImiter';
 
 const app = express();
@@ -54,6 +59,11 @@ app.use('/api', apiLimiter);
 
 // Versioned Routes
 app.use('/api/v1/auth', authRoutes);
+app.use('/api/v1/employees', employeeRoutes);
+app.use('/api/v1/company', companyRoutes);
+app.use('/api/v1/users', userRoutes);
+app.use('/api/v1/attendance', attendanceRoutes);
+app.use('/api/v1/leaves', leaveRoutes);
 
 // ==========================================
 // 3. ERROR HANDLING
