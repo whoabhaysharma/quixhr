@@ -1,63 +1,70 @@
 import express from 'express';
-import cors from 'cors';
 import helmet from 'helmet';
+import cors from 'cors';
 import morgan from 'morgan';
-import { apiRateLimit } from './shared/middleware';
+import compression from 'compression';
+import hpp from 'hpp';
 
-// Import routes
+import { globalErrorHandler } from './shared/middleware/errorMiddleware';
+import { AppError } from './utils/appError';
+
+// Route Imports
 import authRoutes from './modules/auth/auth.routes';
-import companyRoutes from './modules/company/company.routes';
-import memberRoutes from './modules/member/member.routes';
-import calendarRoutes from './modules/calendar/calendar.routes';
-import attendanceRoutes from './modules/attendance/attendance.routes';
-import notificationRoutes from './modules/notification/notification.controller';
-import dashboardRoutes from './modules/dashboard/dashboard.controller';
-import auditRoutes from './modules/audit/audit.routes';
-import invitationRoutes from './modules/invitation/invitation.routes';
-import leaveRoutes from './modules/leave/leave.routes';
+import { apiLimiter } from './utils/rateLImiter';
 
 const app = express();
 
-// Security middleware
+// ==========================================
+// 1. GLOBAL MIDDLEWARES
+// ==========================================
+
+// Security Headers
 app.use(helmet());
-app.use(cors());
+
+// CORS - Restricted to your frontend in production
+app.use(cors({
+  origin: process.env.FRONTEND_URL || '*',
+  credentials: true
+}));
+
+// Performance
+app.use(compression());
 
 // Logging
-app.use(morgan('dev'));
+if (process.env.NODE_ENV === 'development') {
+  app.use(morgan('dev'));
+}
 
-// Body parsing
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
+// Body Parsing & Security
+app.use(express.json({ limit: '10kb' })); // Protection against large payloads
+app.use(express.urlencoded({ extended: true, limit: '10kb' }));
+app.use(hpp()); // Prevent Parameter Pollution
 
-// Global rate limiting (1000 requests per hour)
-app.use('/api/v1', apiRateLimit);
+// ==========================================
+// 2. ROUTES
+// ==========================================
 
-// Routes
-app.use('/api/v1/auth', authRoutes);
-app.use('/api/v1/companies', companyRoutes);
-app.use('/api/v1/members', memberRoutes);
-app.use('/api/v1/calendars', calendarRoutes);
-app.use('/api/v1/attendance', attendanceRoutes);
-app.use('/api/v1/notifications', notificationRoutes);
-app.use('/api/v1/dashboard', dashboardRoutes);
-app.use('/api/v1/audit', auditRoutes);
-app.use('/api/v1/invitations', invitationRoutes);
-app.use('/api/v1/leaves', leaveRoutes);
-
-// Health check
+// Health Check (Always before rate limiting to avoid false negatives)
 app.get('/health', (req, res) => {
-  res.json({ status: 'ok', timestamp: new Date().toISOString() });
+  res.status(200).json({ status: 'up', timestamp: new Date().toISOString() });
 });
 
-// 404 handler
-app.use((req, res) => {
-  res.status(404).json({ error: 'Not found' });
+// Apply Global Rate Limiting
+app.use('/api', apiLimiter);
+
+// Versioned Routes
+app.use('/api/v1/auth', authRoutes);
+
+// ==========================================
+// 3. ERROR HANDLING
+// ==========================================
+
+// Handle Undefined Routes
+app.all('*', (req, res, next) => {
+  next(new AppError(`Can't find ${req.originalUrl} on this server!`, 404));
 });
 
-// Error handler
-app.use((err: any, req: express.Request, res: express.Response, next: express.NextFunction) => {
-  console.error(err);
-  res.status(500).json({ error: 'Internal server error' });
-});
+// Global Error Middleware (The one we built earlier)
+app.use(globalErrorHandler);
 
 export default app;

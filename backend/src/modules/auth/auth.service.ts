@@ -1,95 +1,88 @@
-import { PrismaClient, Role } from '@prisma/client';
-import bcrypt from 'bcryptjs';
+import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
-import {
-    LoginDto,
-    RegisterDto,
-    ForgotPasswordDto,
-    ResetPasswordDto,
-    AuthResponseDto,
-} from './auth.types';
-import { queueLoginAlert, queueWelcomeEmail, queueVerificationEmail, queuePasswordResetEmail } from '../notification/notification.producer';
-import { config } from '../../config';
-import { generateVerificationToken, storeVerificationToken, verifyToken } from './email-verification.service';
-
-const prisma = new PrismaClient();
-
-// JWT Configuration
-const JWT_SECRET = config.jwt.secret;
-const JWT_EXPIRES_IN = config.jwt.expiresIn;
+import crypto from 'crypto';
+import { Role } from '@prisma/client';
+import { AppError } from '@/utils/appError';
+import prisma from '@/utils/prisma';
 
 /**
- * Generate JWT token
+ * Utility to generate JWT
  */
-function generateToken(payload: {
-    id: string;
-    email: string;
-    role: string;
-    employeeId?: string;
-    companyId?: string;
-}): string {
-    return jwt.sign(payload, JWT_SECRET, {
-        expiresIn: JWT_EXPIRES_IN as any,
-    });
-}
+const signToken = (userId: string, role: Role, companyId: string) => {
+    return jwt.sign(
+        { userId, role, companyId },
+        process.env.JWT_SECRET as string,
+        { expiresIn: (process.env.JWT_EXPIRES_IN || '24h') as any }
+    );
+};
 
 /**
- * Login user
+ * 1. REGISTER COMPANY (Atomic Transaction)
  */
-export async function login(dto: LoginDto, ipAddress?: string): Promise<AuthResponseDto> {
-    // Find user
-    const user = await prisma.user.findUnique({
-        where: { email: dto.email },
-        include: {
-            employee: {
-                select: {
-                    id: true,
-                    name: true,
-                    companyId: true,
-                },
-            },
-        },
-    });
+export const registerCompany = async (data: any) => {
+    const { email, password, companyName, firstName, lastName } = data;
 
-    if (!user) {
-        throw new Error('Invalid credentials');
-    }
+    // Check if user already exists
+    const existingUser = await prisma.user.findUnique({ where: { email } });
+    if (existingUser) throw new AppError('Email already registered', 400);
 
-    // Verify password
-    const isValidPassword = await bcrypt.compare(dto.password, user.password);
-    if (!isValidPassword) {
-        throw new Error('Invalid credentials');
-    }
+    const hashedPassword = await bcrypt.hash(password, 12);
 
-    // Check if email is verified
-    if (!user.emailVerified) {
-        throw new Error('Please verify your email address before logging in. Check your inbox for the verification link.');
-    }
-
-    // Generate token
-    const token = generateToken({
-        id: user.id,
-        email: user.email,
-        role: user.role,
-        employeeId: user.employee?.id,
-        companyId: user.employee?.companyId,
-    });
-
-    // Queue login alert email and create notification
-    if (user.employee) {
-        await queueLoginAlert(
-            user.email,
-            user.employee.name,
-            ipAddress || 'Unknown'
-        ).catch(err => {
-            console.error('Failed to queue login alert:', err);
-            // Don't fail login if email fails
+    // Execute as a single transaction
+    return await prisma.$transaction(async (tx) => {
+        // A. Create Company
+        const company = await tx.company.create({
+            data: { name: companyName },
         });
 
-        // Create in-app notification for login alert
-        const { notifyAuth } = await import('../notification/notification.helper');
-        await notifyAuth.loginAlert(user.id, ipAddress || 'Unknown');
+        // B. Create User (ORG_ADMIN is the owner role)
+        const user = await tx.user.create({
+            data: {
+                email,
+                password: hashedPassword,
+                role: Role.ORG_ADMIN,
+            },
+        });
+
+        // C. Create Employee Profile linked to User and Company
+        const employee = await tx.employee.create({
+            data: {
+                userId: user.id,
+                companyId: company.id,
+                firstName: firstName || 'Admin',
+                lastName: lastName || 'User',
+                status: 'ACTIVE',
+                joiningDate: new Date(),
+            },
+        });
+
+        const token = signToken(user.id, user.role, company.id);
+
+        return {
+            token,
+            user: { id: user.id, email: user.email, role: user.role, companyId: company.id },
+            company: { id: company.id, name: company.name },
+        };
+    });
+};
+
+/**
+ * 2. LOGIN
+ */
+export const login = async (data: any) => {
+    const { email, password } = data;
+
+    const user = await prisma.user.findUnique({
+        where: { email },
+        include: { employee: true },
+    });
+
+    if (!user || !(await bcrypt.compare(password, user.password))) {
+        throw new AppError('Invalid email or password', 401);
     }
+
+    const companyId = user.employee?.companyId || '';
+    const token = signToken(user.id, user.role, companyId);
 
     return {
         token,
@@ -97,166 +90,157 @@ export async function login(dto: LoginDto, ipAddress?: string): Promise<AuthResp
             id: user.id,
             email: user.email,
             role: user.role,
-            employee: user.employee || undefined,
+            companyId
         },
     };
-}
+};
 
 /**
- * Register new user with company
+ * 3. ACCEPT INVITATION (Onboarding Employees)
  */
-export async function register(dto: RegisterDto): Promise<{ message: string; userId: string }> {
-    // Check if user exists
-    const existingUser = await prisma.user.findUnique({
-        where: { email: dto.email },
+export const acceptInvitation = async (data: any) => {
+    const { token, password, firstName, lastName } = data;
+
+    // Find valid invitation
+    const invitation = await prisma.invitation.findUnique({
+        where: { token },
     });
 
-    if (existingUser) {
-        throw new Error('User already exists');
+    if (!invitation || invitation.status !== 'PENDING') {
+        throw new AppError('Invalid or expired invitation link', 400);
     }
 
-    // Hash password
-    const hashedPassword = await bcrypt.hash(dto.password, 10);
+    if (invitation.expiresAt < new Date()) {
+        throw new AppError('Invitation has expired', 400);
+    }
 
-    // Create user, company, and employee in transaction
-    const result = await prisma.$transaction(async (tx) => {
-        // Create user first (to be the owner)
+    // Check if user already exists (edge case)
+    const existingUser = await prisma.user.findUnique({ where: { email: invitation.email } });
+    if (existingUser) {
+        throw new AppError('User with this email already exists', 400);
+    }
+
+    const hashedPassword = await bcrypt.hash(password, 12);
+
+    // Atomic Transaction
+    return await prisma.$transaction(async (tx) => {
+        // A. Create User
         const user = await tx.user.create({
             data: {
-                email: dto.email,
+                email: invitation.email,
                 password: hashedPassword,
-                role: Role.HR_ADMIN, // First user is HR admin (owner)
-                emailVerified: false,
+                role: invitation.role,
+                isEmailVerified: true, // Verified by clicking email link
             },
         });
 
-        // Create company with ownerId
-        const company = await tx.company.create({
-            data: {
-                name: dto.companyName,
-                timezone: 'UTC',
-            },
-        });
-
-        // Create employee
-        const employee = await tx.employee.create({
+        // B. Create Employee
+        await tx.employee.create({
             data: {
                 userId: user.id,
-                companyId: company.id,
-                name: dto.name,
+                companyId: invitation.companyId,
+                firstName,
+                lastName,
                 status: 'ACTIVE',
+                joiningDate: new Date(),
             },
         });
 
-        return { user, employee, company };
-    });
-
-    // Generate verification token and store in Redis
-    const verificationToken = generateVerificationToken();
-    console.log(`[Registration] Generated verification token for user ${result.user.id}`);
-    console.log(`[Registration] Token (first 10 chars): ${verificationToken.substring(0, 10)}...`);
-
-    await storeVerificationToken(verificationToken, result.user.id);
-    console.log(`[Registration] Token stored in Redis`);
-
-    // Queue verification email
-    await queueVerificationEmail(result.user.email, dto.name, verificationToken).catch(err => {
-        console.error('Failed to queue verification email:', err);
-    });
-    console.log(`[Registration] Verification email queued for ${result.user.email}`);
-
-    return {
-        message: 'Registration successful! Please check your email to verify your account.',
-        userId: result.user.id,
-    };
-}
-
-/**
- * Forgot password - generate reset token
- */
-export async function forgotPassword(dto: ForgotPasswordDto): Promise<{ message: string }> {
-    const user = await prisma.user.findUnique({
-        where: { email: dto.email },
-    });
-
-    if (!user) {
-        // Don't reveal if user exists
-        return { message: 'If the email exists, a reset link has been sent' };
-    }
-
-    if (!user.emailVerified) {
-        throw new Error('Please verify your email address before resetting your password');
-    }
-
-    // Generate reset token (valid for 1 hour)
-    const resetToken = jwt.sign(
-        { id: user.id, purpose: 'password_reset' },
-        JWT_SECRET,
-        { expiresIn: '1h' }
-    );
-
-    // Send password reset email
-    await queuePasswordResetEmail(user.email, resetToken).catch(err => {
-        console.error('Failed to queue password reset email:', err);
-    });
-
-    return {
-        message: 'If the email exists, a reset link has been sent',
-    };
-}
-
-/**
- * Reset password with token
- */
-export async function resetPassword(dto: ResetPasswordDto): Promise<{ message: string }> {
-    try {
-        // Verify token
-        const decoded = jwt.verify(dto.token, JWT_SECRET) as any;
-
-        if (decoded.purpose !== 'password_reset') {
-            throw new Error('Invalid token');
-        }
-
-        // Check if user exists and is verified
-        const user = await prisma.user.findUnique({
-            where: { id: decoded.id }
+        // C. Update Invitation Status
+        await tx.invitation.update({
+            where: { id: invitation.id },
+            data: { status: 'ACCEPTED' },
         });
 
-        if (!user) {
-            throw new Error('User not found');
-        }
+        const token = signToken(user.id, user.role, invitation.companyId);
 
-        if (!user.emailVerified) {
-            throw new Error('Email not verified. Please verify your email before resetting password.');
-        }
-
-        // Hash new password
-        const hashedPassword = await bcrypt.hash(dto.newPassword, 10);
-
-        // Update password
-        await prisma.user.update({
-            where: { id: decoded.id },
-            data: { password: hashedPassword },
-        });
-
-        // Create in-app notification for password reset
-        const { notifyAuth } = await import('../notification/notification.helper');
-        await notifyAuth.passwordReset(decoded.id);
-
-        return { message: 'Password reset successful' };
-    } catch (error: any) {
-        // Pass through specific errors, otherwise generic invalid token
-        if (error.message.includes('Email not verified') || error.message.includes('User not found')) {
-            throw error;
-        }
-        throw new Error('Invalid or expired token');
-    }
-}
+        return {
+            token,
+            user: {
+                id: user.id,
+                email: user.email,
+                role: user.role,
+                companyId: invitation.companyId
+            },
+        };
+    });
+};
 
 /**
- * Get current user
+ * 4. FORGOT PASSWORD
  */
-export async function getCurrentUser(userId: string) {
+export const forgotPassword = async (email: string) => {
+    const user = await prisma.user.findUnique({ where: { email } });
+    if (!user) return;
+
+    // Rate limiting (2 min)
+    if (user.lastPasswordResetRequest && (Date.now() - user.lastPasswordResetRequest.getTime() < 120000)) {
+        throw new AppError('Please wait before requesting again', 429);
+    }
+
+    const resetToken = crypto.randomBytes(32).toString('hex');
+    const hashedToken = crypto.createHash('sha256').update(resetToken).digest('hex');
+
+    await prisma.user.update({
+        where: { id: user.id },
+        data: {
+            passwordResetToken: hashedToken,
+            passwordResetExpires: new Date(Date.now() + 10 * 60 * 1000), // 10 min
+            lastPasswordResetRequest: new Date(),
+        },
+    });
+
+    console.log(`>>> RESET TOKEN FOR ${email}: ${resetToken}`);
+    // await sendEmail(...)
+};
+
+/**
+ * 5. RESET PASSWORD
+ */
+export const resetPassword = async (token: string, newPass: string) => {
+    const hashedToken = crypto.createHash('sha256').update(token).digest('hex');
+
+    const user = await prisma.user.findFirst({
+        where: {
+            passwordResetToken: hashedToken,
+            passwordResetExpires: { gt: new Date() },
+        },
+    });
+
+    if (!user) throw new AppError('Token is invalid or has expired', 400);
+
+    const hashedPassword = await bcrypt.hash(newPass, 12);
+
+    await prisma.user.update({
+        where: { id: user.id },
+        data: {
+            password: hashedPassword,
+            passwordResetToken: null,
+            passwordResetExpires: null,
+        },
+    });
+};
+
+/**
+ * 6. UPDATE PASSWORD (LOGGED IN)
+ */
+export const updatePassword = async (userId: string, currentPass: string, newPass: string) => {
+    const user = await prisma.user.findUnique({ where: { id: userId } });
+    if (!user || !(await bcrypt.compare(currentPass, user.password))) {
+        throw new AppError('Current password is incorrect', 401);
+    }
+
+    const hashedPassword = await bcrypt.hash(newPass, 12);
+    await prisma.user.update({
+        where: { id: userId },
+        data: { password: hashedPassword },
+    });
+};
+
+/**
+ * 7. GET USER BY ID
+ */
+export const getUserById = async (userId: string) => {
     const user = await prisma.user.findUnique({
         where: { id: userId },
         select: {
@@ -265,64 +249,14 @@ export async function getCurrentUser(userId: string) {
             role: true,
             employee: {
                 select: {
-                    id: true,
-                    name: true,
-                    companyId: true,
-                    status: true,
+                    firstName: true,
+                    lastName: true,
+                    company: { select: { name: true, id: true } },
                 },
             },
         },
     });
 
-    if (!user) {
-        throw new Error('User not found');
-    }
-
+    if (!user) throw new AppError('User no longer exists', 404);
     return user;
-}
-
-/**
- * Verify email with token
- */
-export async function verifyEmail(token: string): Promise<{ message: string }> {
-    // Verify token and get user ID from Redis
-    const userId = await verifyToken(token);
-
-    if (!userId) {
-        throw new Error('Invalid or expired verification token');
-    }
-
-    // Update user email verified status
-    const user = await prisma.user.update({
-        where: { id: userId },
-        data: { emailVerified: true },
-        include: {
-            employee: true,
-        },
-    });
-
-    // Send welcome email now that email is verified
-    if (user.employee) {
-        await queueWelcomeEmail(user.email, user.employee.name).catch(err => {
-            console.error('Failed to queue welcome email:', err);
-        });
-
-        // Create in-app notification for email verification
-        const { notifyAuth } = await import('../notification/notification.helper');
-        await notifyAuth.emailVerified(userId, user.employee.name);
-    }
-
-    return {
-        message: 'Email verified successfully! You can now log in.',
-    };
-}
-
-// Export service object for backward compatibility
-export const authService = {
-    login,
-    register,
-    forgotPassword,
-    resetPassword,
-    getCurrentUser,
-    verifyEmail,
 };

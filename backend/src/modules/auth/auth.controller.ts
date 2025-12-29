@@ -1,192 +1,78 @@
 import { Request, Response } from 'express';
-import { authService } from './auth.service';
-import { logAction } from '../audit/audit.service';
-import {
-    loginSchema,
-    registerSchema,
-    forgotPasswordSchema,
-    resetPasswordSchema,
-} from './auth.types';
-import { AuthRequest } from '../../shared/middleware';
+import * as AuthService from './auth.service';
+import { catchAsync } from '@/utils/catchAsync';
+import { sendResponse } from '@/utils/sendResponse';
 
 /**
- * POST /auth/login
+ * @desc    Register a new Company and Admin User
+ * @route   POST /api/v1/auth/register
  */
-export async function login(req: Request, res: Response): Promise<void> {
-    try {
-        // Validate request body
-        const dto = loginSchema.parse(req.body);
+export const register = catchAsync(async (req: Request, res: Response) => {
+    const result = await AuthService.registerCompany(req.body);
 
-        // Get IP address
-        const ipAddress = req.ip || req.socket.remoteAddress || 'Unknown';
-
-        // Login
-        const result = await authService.login(dto, ipAddress);
-
-        // Audit Log
-        const userId = result.user?.id || 'unknown'; // Ensure we have an ID
-        if (result.user?.id) {
-            await logAction({
-                userId: result.user.id,
-                action: 'USER_LOGIN',
-                resource: 'Usage',
-                resourceId: result.user.id, // Logging against the user themselves
-                ipAddress,
-                userAgent: req.headers['user-agent'],
-                details: { email: dto.email }
-            });
-        }
-
-        res.json({
-            success: true,
-            data: result,
-        });
-    } catch (error: any) {
-        const message = error.message || 'Login failed';
-        const status = message === 'Invalid credentials' ? 401 : 400;
-
-        res.status(status).json({
-            success: false,
-            error: message,
-        });
-    }
-}
+    sendResponse(res, 201, result, 'Company and Admin account created successfully');
+});
 
 /**
- * POST /auth/register
+ * @desc    Authenticate User & Get Token
+ * @route   POST /api/v1/auth/login
  */
-export async function register(req: Request, res: Response): Promise<void> {
-    try {
-        // Validate request body
-        const dto = registerSchema.parse(req.body);
+export const login = catchAsync(async (req: Request, res: Response) => {
+    const result = await AuthService.login(req.body);
 
-        // Register
-        const result = await authService.register(dto);
-
-        // Audit Log
-        if (result.userId) {
-            await logAction({
-                userId: result.userId,
-                action: 'USER_REGISTER',
-                resource: 'User',
-                resourceId: result.userId,
-                ipAddress: req.ip || req.socket.remoteAddress || 'Unknown',
-                userAgent: req.headers['user-agent'],
-                details: { email: dto.email }
-            });
-        }
-
-        res.status(201).json({
-            success: true,
-            data: result,
-        });
-    } catch (error: any) {
-
-        res.status(400).json({
-            success: false,
-            error: error.message || 'Registration failed',
-        });
-    }
-}
+    sendResponse(res, 200, result, 'Logged in successfully');
+});
 
 /**
- * POST /auth/forgot-password
+ * @desc    Accept Invitation (Employee Onboarding)
+ * @route   POST /api/v1/auth/accept-invitation
  */
-export async function forgotPassword(req: Request, res: Response): Promise<void> {
-    try {
-        // Validate request body
-        const dto = forgotPasswordSchema.parse(req.body);
+export const acceptInvitation = catchAsync(async (req: Request, res: Response) => {
+    const result = await AuthService.acceptInvitation(req.body);
 
-        // Generate reset token
-        const result = await authService.forgotPassword(dto);
-
-        res.json({
-            success: true,
-            data: result,
-        });
-    } catch (error: any) {
-        res.status(400).json({
-            success: false,
-            error: error.message || 'Failed to process request',
-        });
-    }
-}
+    sendResponse(res, 200, result, 'Account created successfully');
+});
 
 /**
- * POST /auth/reset-password
+ * @desc    Initiate Password Reset (Forgot Password)
+ * @route   POST /api/v1/auth/forgot-password
  */
-export async function resetPassword(req: Request, res: Response): Promise<void> {
-    try {
-        // Validate request body
-        const dto = resetPasswordSchema.parse(req.body);
+export const forgotPassword = catchAsync(async (req: Request, res: Response) => {
+    await AuthService.forgotPassword(req.body.email);
 
-        // Reset password
-        const result = await authService.resetPassword(dto);
-
-        res.json({
-            success: true,
-            data: result,
-        });
-    } catch (error: any) {
-        res.status(400).json({
-            success: false,
-            error: error.message || 'Password reset failed',
-        });
-    }
-}
+    sendResponse(res, 200, null, 'If an account exists with that email, a reset link has been sent.');
+});
 
 /**
- * GET /auth/me
+ * @desc    Reset Password using Token
+ * @route   POST /api/v1/auth/reset-password
  */
-export async function getCurrentUser(req: AuthRequest, res: Response): Promise<void> {
-    try {
-        if (!req.user) {
-            res.status(401).json({
-                success: false,
-                error: 'Not authenticated',
-            });
-            return;
-        }
+export const resetPassword = catchAsync(async (req: Request, res: Response) => {
+    const { token, password } = req.body;
+    await AuthService.resetPassword(token, password);
 
-        const user = await authService.getCurrentUser(req.user.id);
-
-        res.json({
-            success: true,
-            data: user,
-        });
-    } catch (error: any) {
-        res.status(400).json({
-            success: false,
-            error: error.message || 'Failed to fetch user',
-        });
-    }
-}
+    sendResponse(res, 200, null, 'Password has been reset successfully. Please login with your new password.');
+});
 
 /**
- * GET /auth/verify-email/:token
+ * @desc    Update Password (while logged in)
+ * @route   PATCH /api/v1/auth/update-password
  */
-export async function verifyEmailController(req: Request, res: Response): Promise<void> {
-    try {
-        const { token } = req.params;
+export const updatePassword = catchAsync(async (req: Request, res: Response) => {
+    const userId = req.user?.userId;
+    const { currentPassword, newPassword } = req.body;
 
-        if (!token) {
-            res.status(400).json({
-                success: false,
-                error: 'Verification token is required',
-            });
-            return;
-        }
+    await AuthService.updatePassword(userId as string, currentPassword, newPassword);
 
-        const result = await authService.verifyEmail(token);
+    sendResponse(res, 200, null, 'Password updated successfully');
+});
 
-        res.json({
-            success: true,
-            data: result,
-        });
-    } catch (error: any) {
-        res.status(400).json({
-            success: false,
-            error: error.message || 'Email verification failed',
-        });
-    }
-}
+/**
+ * @desc    Get Current Logged-in User Info
+ * @route   GET /api/v1/auth/me
+ */
+export const getMe = catchAsync(async (req: Request, res: Response) => {
+    const user = await AuthService.getUserById(req.user?.userId as string);
+
+    sendResponse(res, 200, { user });
+});

@@ -1,17 +1,80 @@
 import { Router } from 'express';
-import { login, register, forgotPassword, resetPassword, getCurrentUser, verifyEmailController } from './auth.controller';
-import { authMiddleware, authRateLimit } from '../../shared/middleware';
+import * as AuthController from './auth.controller';
+import * as AuthSchema from './auth.schema';
+import * as AuthMiddleware from './auth.middleware';
+import validate from '@/shared/middleware/validateResource';
 
 const router = Router();
 
-// Public routes - with strict rate limiting for auth endpoints
-router.post('/login', authRateLimit, login);
-router.post('/register', authRateLimit, register);
-router.post('/forgot-password', authRateLimit, forgotPassword);
-router.post('/reset-password', authRateLimit, resetPassword);
-router.get('/verify-email/:token', verifyEmailController);
+/**
+ * @description  User Registration (Company + Admin User)
+ * @access       Public
+ */
+router.post(
+    '/register',
+    validate(AuthSchema.registerSchema),
+    AuthController.register
+);
 
-// Protected routes
-router.get('/me', authMiddleware, getCurrentUser);
+/**
+ * @description  Standard Login
+ * @access       Public
+ */
+router.post(
+    '/login',
+    validate(AuthSchema.loginSchema),
+    AuthController.login
+);
+
+/**
+ * @description  Accept Invitation (Employee)
+ * @access       Public (Token is in body)
+ */
+router.post(
+    '/accept-invitation',
+    validate(AuthSchema.acceptInvitationSchema),
+    AuthController.acceptInvitation
+);
+
+/**
+ * @description  Forgot Password (Sends reset link via email)
+ * @access       Public
+ */
+router.post(
+    '/forgot-password',
+    validate(AuthSchema.forgotPasswordSchema),
+    AuthController.forgotPassword
+);
+
+/**
+ * @description  Reset Password (Verifies token and sets new password)
+ * @access       Public
+ */
+router.post(
+    '/reset-password',
+    validate(AuthSchema.resetPasswordSchema),
+    AuthController.resetPassword
+);
+
+/**
+ * @description  Get Current User Profile
+ * @access       Private (Requires valid JWT)
+ */
+router.get(
+    '/me',
+    AuthMiddleware.protect,
+    AuthController.getMe
+);
+
+/**
+ * @description  Update Password (While logged in)
+ * @access       Private
+ */
+router.patch(
+    '/update-password',
+    AuthMiddleware.protect,
+    validate(AuthSchema.updatePasswordSchema),
+    AuthController.updatePassword
+);
 
 export default router;

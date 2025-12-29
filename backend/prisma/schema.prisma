@@ -7,205 +7,330 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-///////////////////////
-// ENUMS
-///////////////////////
+// ==========================================
+// 1. GLOBAL ENUMS
+// ==========================================
 
 enum Role {
   SUPER_ADMIN
+  ORG_ADMIN
   HR_ADMIN
   MANAGER
   EMPLOYEE
 }
 
-// CHANGE: Updated to HALF_DAY instead of ALTERNATE
+enum PaymentProvider {
+  RAZORPAY
+  STRIPE
+  MANUAL         // For Cash/Bank Transfer overrides
+}
+
+enum PaymentStatus {
+  PENDING
+  SUCCESS
+  FAILED
+  REFUNDED
+}
+
+enum SubscriptionStatus {
+  ACTIVE
+  EXPIRED
+  GRACE_PERIOD
+}
+
+enum RuleStrategy {
+  CYCLIC          // Every X weeks (1, 2, 3...)
+  POSITIONAL      // Specific occurrences (1st, 3rd, Last)
+}
+
 enum WeeklyRuleType {
   WORKING
   OFF
   HALF_DAY
 }
 
-// CHANGE: Updated for new attendance model
-enum AttendanceType {
+enum AttendanceStatus {
   PRESENT
   ABSENT
   HALF_DAY
-  LATE
+  ON_LEAVE
+  HOLIDAY
 }
 
 enum LeaveStatus {
   PENDING
   APPROVED
   REJECTED
-  CANCELLED  // CHANGE: Added CANCELLED status
+  CANCELLED
+}
+
+enum LedgerEvent {
+  ACCRUAL
+  CONSUMPTION
+  ADJUSTMENT
+  IMPORT
+  EXPIRY
 }
 
 enum LeaveType {
   ANNUAL
   SICK
   CASUAL
-  UNPAID
   MATERNITY
   PATERNITY
+  UNPAID
   OTHER
 }
 
-///////////////////////
-// AUTH & USERS
-///////////////////////
+// ==========================================
+// 2. PREPAID BILLING (MANUAL PAY)
+// ==========================================
 
-model User {
-  id            String    @id @default(uuid())
-  email         String    @unique
-  password      String
-  role          Role
+model Plan {
+  id               String   @id @default(uuid())
+  name             String   // "Starter", "Pro"
   
-  employee      Employee? // Relation to employee profile
+  maxEmployees     Int
+  priceMonthly     Float
+  priceYearly      Float
+
+  isActive         Boolean  @default(true)
   
-  notifications Notification[]
-  auditLogs     AuditLog[]
-  emailVerified Boolean   @default(false)
-  createdAt     DateTime  @default(now())
-  
-  sentInvitations Invitation[]
+  // No "External IDs" needed because we calculate price manually
+  subscriptions    Subscription[]
 }
+
+model Subscription {
+  id               String             @id @default(uuid())
+  companyId        String             @unique
+  planId           String
+  
+  status           SubscriptionStatus
+  
+  // CORE FIELD: The date access expires.
+  // Logic: When user pays, validUntil = validUntil + 30 days
+  validUntil       DateTime
+  
+  lastPaymentDate  DateTime?
+  createdAt        DateTime           @default(now())
+  updatedAt        DateTime           @updatedAt
+
+  company          Company            @relation(fields: [companyId], references: [id])
+  plan             Plan               @relation(fields: [planId], references: [id])
+  payments         Payment[]
+}
+
+model Payment {
+  id                String          @id @default(uuid())
+  subscriptionId    String
+  
+  amount            Float
+  currency          String          @default("INR")
+  status            PaymentStatus
+  provider          PaymentProvider 
+  
+  // RAZORPAY STANDARD ORDER FLOW
+  // 1. You create an order -> store order_id here
+  providerOrderId   String          @unique 
+  
+  // 2. User pays -> store payment_id here
+  providerPaymentId String?         
+  
+  // Metadata (e.g., "Manual Renewal - 1 Year")
+  notes             String?         
+  
+  createdAt         DateTime        @default(now())
+  subscription      Subscription    @relation(fields: [subscriptionId], references: [id])
+}
+
+// ==========================================
+// 3. ORGANIZATION & USERS
+// ==========================================
 
 model Company {
-  id        String     @id @default(uuid())
-  name      String
-  timezone  String     // e.g. "Asia/Kolkata"
+  id               String       @id @default(uuid())
+  name             String
   
-  employees Employee[]
-  calendars Calendar[]
-  invitations Invitation[]
+  // Settings
+  timezone         String       @default("Asia/Kolkata")
+  currency         String       @default("INR")
+  dateFormat       String       @default("DD/MM/YYYY")
+  logoUrl          String?
+  
+  // Simple link to their membership record
+  subscription     Subscription?
+  
+  employees        Employee[]
+  calendars        Calendar[]
+  leaveGrades      LeaveGrade[]
+  invitations      Invitation[]
+
+  createdAt        DateTime     @default(now())
 }
 
-///////////////////////
-// EMPLOYEE (CORE)
-///////////////////////
+model Invitation {
+  id        String   @id @default(uuid())
+  companyId String
+  email     String
+  role      Role
+  
+  token     String   @unique
+  expiresAt DateTime
+  status    String   @default("PENDING")
+
+  company   Company  @relation(fields: [companyId], references: [id])
+}
+
+model User {
+  id              String         @id @default(uuid())
+  email           String         @unique
+  password        String
+  role            Role
+  
+  isEmailVerified Boolean        @default(false)
+  
+  passwordResetToken       String?   @unique
+  passwordResetExpires     DateTime?
+  lastPasswordResetRequest DateTime?
+  
+  employee        Employee?
+  notifications   Notification[]
+  auditLogs       AuditLog[]
+}
+
+// ==========================================
+// 4. EMPLOYEE CORE
+// ==========================================
 
 model Employee {
-  id          String    @id @default(uuid())
-  userId      String?   @unique 
-  companyId   String
-  
-  // CHANGE: Direct relation to Calendar (Much simpler than a pivot table)
-  calendarId  String?   
-  
-  name        String
-  status      String    // ACTIVE, INACTIVE, PROBATION
-  createdAt   DateTime  @default(now())
+  id           String    @id @default(uuid())
+  companyId    String
+  userId       String?   @unique
 
-  user        User?     @relation(fields: [userId], references: [id])
-  company     Company   @relation(fields: [companyId], references: [id])
-  calendar    Calendar? @relation(fields: [calendarId], references: [id])
+  // 1. Schedule Config
+  calendarId   String?
+  // 2. Policy Config
+  leaveGradeId String?
 
-  attendance    Attendance[]
-  leaves        LeaveRequest[]
-  leaveBalances LeaveBalance[]
+  firstName    String
+  lastName     String
+  code         String?   // "EMP-001"
+  status       String    // ACTIVE, INACTIVE, PROBATION
+  joiningDate  DateTime
+  
+  user         User?       @relation(fields: [userId], references: [id])
+  company      Company     @relation(fields: [companyId], references: [id])
+  calendar     Calendar?   @relation(fields: [calendarId], references: [id])
+  leaveGrade   LeaveGrade? @relation(fields: [leaveGradeId], references: [id])
+
+  attendance       Attendance[]
+  leaveRequests    LeaveRequest[]
+  leaveAllocations LeaveAllocation[]
+  leaveLedger      LeaveLedger[]
 }
 
-///////////////////////
-// CALENDAR & POLICIES
-///////////////////////
+// ==========================================
+// 5. WORK ENGINE (CALENDARS)
+// ==========================================
 
 model Calendar {
-  id            String   @id @default(uuid())
-  companyId     String
-  name          String   // e.g. "General Shift", "Night Shift"
-  
-  // CHANGE: Use Int (Minutes from midnight) for easy comparison
-  // 09:00 AM = 540, 06:00 PM = 1080
-  dayStartTime  Int      
-  dayEndTime    Int      
-  
-  createdAt     DateTime @default(now())
-  company       Company  @relation(fields: [companyId], references: [id])
+  id           String             @id @default(uuid())
+  companyId    String
+  name         String             // "General Shift"
 
-  // Relations
-  employees     Employee[]
-  weeklyRules   CalendarWeeklyRule[]
-  holidays      CalendarHoliday[]
-  leavePolicies LeavePolicy[] // CHANGE: Added to define allowed leaves for this calendar
+  dayStartTime Int                // Minutes from midnight
+  dayEndTime   Int
+
+  weeklyRules  CalendarWeeklyRule[]
+  holidays     CalendarHoliday[]
+  employees    Employee[]
+
+  company      Company            @relation(fields: [companyId], references: [id])
 }
 
 model CalendarWeeklyRule {
-  id          String         @id @default(uuid())
-  calendarId  String
-  dayOfWeek   Int            // 0 = Sunday ... 6 = Saturday
-  rule        WeeklyRuleType
+  id            String         @id @default(uuid())
+  calendarId    String
+  dayOfWeek     Int            // 0-6
   
-  // CHANGE: Added to handle "Alternate Saturdays" logic
-  // e.g. [1, 3, 5] means this rule applies to 1st, 3rd, 5th week of month
-  weekNumbers Int[]          
+  type          WeeklyRuleType
+  strategy      RuleStrategy 
   
-  calendar    Calendar       @relation(fields: [calendarId], references: [id])
+  // Strategy A: Cyclic (Every X weeks)
+  interval      Int?           @default(1)
+  referenceDate DateTime?
+
+  // Strategy B: Positional (2nd & 4th)
+  positions     Int[]          // [2, 4] or [-1]
+
+  calendar      Calendar       @relation(fields: [calendarId], references: [id])
 }
 
 model CalendarHoliday {
   id          String   @id @default(uuid())
   calendarId  String
-  startDate   DateTime
-  endDate     DateTime
+  date        DateTime @db.Date
   name        String
-  
+  isOptional  Boolean  @default(false)
+
   calendar    Calendar @relation(fields: [calendarId], references: [id])
-  
-  @@index([calendarId, startDate])
+  @@unique([calendarId, date])
 }
 
-// CHANGE: New Model to define "What leaves people on this calendar get"
+// ==========================================
+// 6. LEAVE ENGINE (GRADES & LEDGER)
+// ==========================================
+
+model LeaveGrade {
+  id          String        @id @default(uuid())
+  companyId   String
+  name        String        // "Full Time Staff"
+  
+  policies    LeavePolicy[]
+  employees   Employee[]
+  company     Company       @relation(fields: [companyId], references: [id])
+}
+
 model LeavePolicy {
-  id              String    @id @default(uuid())
-  calendarId      String
-  leaveType       LeaveType
+  id             String     @id @default(uuid())
+  leaveGradeId   String
+  leaveType      LeaveType
   
-  annualAllowance Float     // e.g. 12.0
-  canCarryForward Boolean   @default(false)
-  maxCarryOver    Float     @default(0)
-  
-  calendar        Calendar  @relation(fields: [calendarId], references: [id])
-  
-  @@unique([calendarId, leaveType])
+  totalDays      Float
+  carryForward   Boolean    @default(false)
+  maxCarryAmount Float      @default(0)
+
+  grade          LeaveGrade @relation(fields: [leaveGradeId], references: [id])
+  @@unique([leaveGradeId, leaveType])
 }
 
-///////////////////////
-// ATTENDANCE (Optimized)
-///////////////////////
+// The Wallet (Balance Cache)
+model LeaveAllocation {
+  id          String    @id @default(uuid())
+  employeeId  String
+  year        Int
+  leaveType   LeaveType
+  
+  allocated   Float     @default(0)
+  used        Float     @default(0)
 
-model Attendance {
-  id             String         @id @default(uuid())
+  employee    Employee  @relation(fields: [employeeId], references: [id])
+  @@unique([employeeId, year, leaveType])
+}
+
+// The Ledger (Audit History)
+model LeaveLedger {
+  id             String      @id @default(uuid())
   employeeId     String
-  date           DateTime       @db.Date // Store just the date part
+  createdAt      DateTime    @default(now())
   
-  // CHANGE: Summary fields for fast Reporting
-  firstCheckIn   DateTime?
-  lastCheckOut   DateTime?
-  totalMinutes   Int            @default(0) // CHANGE: Pre-calculate total work duration
-  
-  status         AttendanceType
-  
-  logs           AttendanceLog[] // Relation to raw punches
-  employee       Employee        @relation(fields: [employeeId], references: [id])
+  event          LedgerEvent
+  amount         Float       // +1.0 or -1.0
+  remarks        String?
+  leaveRequestId String?
 
-  @@unique([employeeId, date])
-  @@index([date])
+  employee       Employee    @relation(fields: [employeeId], references: [id])
 }
-
-// CHANGE: New Model for raw punch data (Audit trail)
-model AttendanceLog {
-  id           String     @id @default(uuid())
-  attendanceId String
-  punchTime    DateTime
-  type         String     // "IN" or "OUT"
-  source       String?    // "WEB", "MOBILE", "BIOMETRIC"
-  
-  attendance   Attendance @relation(fields: [attendanceId], references: [id])
-}
-
-///////////////////////
-// LEAVES (Optimized)
-///////////////////////
 
 model LeaveRequest {
   id          String      @id @default(uuid())
@@ -213,53 +338,74 @@ model LeaveRequest {
   
   startDate   DateTime
   endDate     DateTime
+  daysTaken   Float
   
-  // CHANGE: Store cost immediately to avoid complex runtime math
-  totalDays   Float       // e.g. 2.5
-  
-  // CHANGE: Store complex day info here. 
-  // e.g. { "2024-02-01": "HALF_AM", "2024-02-02": "FULL" }
-  dayDetails  Json?       
-  
+  type        LeaveType
   status      LeaveStatus
-  type        LeaveType   
   reason      String?
   
+  // JSON metadata for complex half-day logic
+  dayDetails  Json?       
+  
+  approvedBy  String?
   createdAt   DateTime    @default(now())
+
   employee    Employee    @relation(fields: [employeeId], references: [id])
-
-  @@index([employeeId, startDate, endDate])
-  @@index([status])
 }
 
-model LeaveBalance {
-  id          String    @id @default(uuid())
-  employeeId  String
-  type        LeaveType
+// ==========================================
+// 7. ATTENDANCE ENGINE
+// ==========================================
+
+model Attendance {
+  id           String           @id @default(uuid())
+  employeeId   String
+  date         DateTime         @db.Date
   
-  allocated   Float     // Copied from LeavePolicy when calendar is assigned
-  used        Float     @default(0)
-  year        Int       
+  status       AttendanceStatus
   
-  employee    Employee  @relation(fields: [employeeId], references: [id])
+  // Independent Flags
+  isLate       Boolean          @default(false)
+  isEarlyOut   Boolean          @default(false)
   
-  @@unique([employeeId, type, year])
+  // Time Data
+  checkIn      DateTime?
+  checkOut     DateTime?
+  workMinutes  Int              @default(0)
+  overtimeMins Int              @default(0)
+
+  logs         AttendanceLog[]
+  employee     Employee         @relation(fields: [employeeId], references: [id])
+
+  @@unique([employeeId, date])
+  @@index([date])
 }
 
-///////////////////////
-// LOGS & SYSTEM
-///////////////////////
+model AttendanceLog {
+  id           String     @id @default(uuid())
+  attendanceId String
+  
+  timestamp    DateTime
+  type         String     // "IN" or "OUT"
+  method       String?    // "BIOMETRIC", "WEB", "MOBILE"
+  gpsCoords    Json?      
+
+  attendance   Attendance @relation(fields: [attendanceId], references: [id])
+}
+
+// ==========================================
+// 8. SYSTEM LOGS
+// ==========================================
 
 model AuditLog {
   id         String   @id @default(uuid())
   userId     String
-  action     String
-  resource   String
+  action     String   // "DELETE_EMPLOYEE"
+  resource   String   // "Employee"
   resourceId String
   details    Json?
   ipAddress  String?
   createdAt  DateTime @default(now())
-
   user       User     @relation(fields: [userId], references: [id])
 }
 
@@ -270,22 +416,5 @@ model Notification {
   message   String
   isRead    Boolean  @default(false)
   createdAt DateTime @default(now())
-  
   user      User     @relation(fields: [userId], references: [id])
-  
-  @@index([userId, isRead])
-}
-
-model Invitation {
-  id         String   @id @default(uuid())
-  email      String
-  role       Role
-  companyId  String
-  token      String   @unique
-  expiresAt  DateTime
-  invitedBy  String
-  status     String   @default("PENDING") 
-  
-  company    Company  @relation(fields: [companyId], references: [id])
-  inviter    User     @relation(fields: [invitedBy], references: [id])
 }
