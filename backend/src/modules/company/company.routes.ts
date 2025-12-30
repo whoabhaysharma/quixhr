@@ -2,73 +2,47 @@ import { Router } from 'express';
 import * as CompanyController from './company.controller';
 import * as CompanySchema from './company.schema';
 import { protect, restrictTo } from '@/modules/auth/auth.middleware';
-import { resolveTenant } from '@/shared/middleware/tenantContext';
 import validate from '@/shared/middleware/validateResource';
 import { Role } from '@prisma/client';
 
 const router = Router();
 
-// All routes require authentication and tenant resolution
+// All routes require authentication
 router.use(protect);
-router.use(resolveTenant);
 
 /**
- * @description  Get company settings (Timezone, Currency, Logo, Date Format)
- * @route        GET /api/v1/company/settings
- * @access       Org Admin
+ * @route   GET /api/v1/companies/:companyId
+ * @desc    Get company profile (name, logo, timezone)
+ * @access  Authenticated users of the company
  */
 router.get(
-    '/settings',
-    restrictTo(Role.ORG_ADMIN, Role.SUPER_ADMIN),
-    CompanyController.getSettings
+    '/:companyId',
+    validate(CompanySchema.getCompanySchema),
+    CompanyController.getCompanyProfile
 );
 
 /**
- * @description  Update company settings (e.g., Change Timezone)
- * @route        PATCH /api/v1/company/settings
- * @access       Org Admin
+ * @route   PATCH /api/v1/companies/:companyId
+ * @desc    Update settings (logo, currency, timezone)
+ * @access  Org Admin
  */
 router.patch(
-    '/settings',
+    '/:companyId',
     restrictTo(Role.ORG_ADMIN, Role.SUPER_ADMIN),
-    validate(CompanySchema.updateSettingsSchema),
-    CompanyController.updateSettings
+    validate(CompanySchema.updateCompanySchema),
+    CompanyController.updateCompanySettings
 );
 
 /**
- * @description  Invite a new user (Email + Role)
- * @route        POST /api/v1/company/invite
- * @access       HR Admin
- */
-router.post(
-    '/invite',
-    restrictTo(Role.HR_ADMIN, Role.ORG_ADMIN, Role.SUPER_ADMIN),
-    validate(CompanySchema.inviteUserSchema),
-    CompanyController.inviteUser
-);
-
-/**
- * @description  List pending invitations
- * @route        GET /api/v1/company/invites
- * @access       HR Admin
+ * @route   GET /api/v1/companies/:companyId/dashboard
+ * @desc    Stats API. Get headcount, today's attendance stats, pending leaves
+ * @access  HR Admin, Org Admin
  */
 router.get(
-    '/invites',
+    '/:companyId/dashboard',
     restrictTo(Role.HR_ADMIN, Role.ORG_ADMIN, Role.SUPER_ADMIN),
-    validate(CompanySchema.listInvitesSchema),
-    CompanyController.listInvites
-);
-
-/**
- * @description  Revoke an invitation
- * @route        DELETE /api/v1/company/invites/:id
- * @access       HR Admin
- */
-router.delete(
-    '/invites/:id',
-    restrictTo(Role.HR_ADMIN, Role.ORG_ADMIN, Role.SUPER_ADMIN),
-    validate(CompanySchema.revokeInviteSchema),
-    CompanyController.revokeInvite
+    validate(CompanySchema.getDashboardSchema),
+    CompanyController.getDashboardStats
 );
 
 export default router;

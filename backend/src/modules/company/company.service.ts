@@ -1,13 +1,13 @@
 import prisma from '@/utils/prisma';
 import { AppError } from '@/utils/appError';
-import { CompanySettingsDTO, InviteUserDTO, UpdateUserRoleDTO, InvitationFilters } from './company.types';
+import { UpdateCompanyDTO, DashboardStats, UpdateUserRoleDTO } from './company.types';
+import { startOfDay, endOfDay } from 'date-fns';
 import { Role } from '@prisma/client';
-import crypto from 'crypto';
 
 /**
- * Get company settings
+ * Get company profile
  */
-export const getCompanySettings = async (companyId: string) => {
+export const getCompanyProfile = async (companyId: string) => {
     const company = await prisma.company.findUnique({
         where: { id: companyId },
         select: {
@@ -21,7 +21,9 @@ export const getCompanySettings = async (companyId: string) => {
         },
     });
 
-    if (!company) throw new AppError('Company not found', 404);
+    if (!company) {
+        throw new AppError('Company not found', 404);
+    }
 
     return company;
 };
@@ -29,20 +31,22 @@ export const getCompanySettings = async (companyId: string) => {
 /**
  * Update company settings
  */
-export const updateCompanySettings = async (companyId: string, data: CompanySettingsDTO) => {
+export const updateCompanySettings = async (companyId: string, data: UpdateCompanyDTO) => {
     const company = await prisma.company.findUnique({
         where: { id: companyId },
     });
 
-    if (!company) throw new AppError('Company not found', 404);
+    if (!company) {
+        throw new AppError('Company not found', 404);
+    }
 
     const updated = await prisma.company.update({
         where: { id: companyId },
         data: {
-            timezone: data.timezone,
-            currency: data.currency,
-            dateFormat: data.dateFormat,
             logoUrl: data.logoUrl,
+            currency: data.currency,
+            timezone: data.timezone,
+            dateFormat: data.dateFormat,
         },
         select: {
             id: true,
@@ -58,130 +62,93 @@ export const updateCompanySettings = async (companyId: string, data: CompanySett
 };
 
 /**
- * Invite a new user
+ * Get dashboard statistics
  */
-export const inviteUser = async (companyId: string, inviterRole: Role, data: InviteUserDTO) => {
-    // Import role hierarchy check
-    const { canInviteRole } = await import('@/utils/roleHierarchy');
+export const getDashboardStats = async (companyId: string): Promise<DashboardStats> => {
+    const today = new Date();
+    const startOfToday = startOfDay(today);
+    const endOfToday = endOfDay(today);
 
-    // Check if inviter can invite this role
-    if (!canInviteRole(inviterRole, data.role as Role)) {
-        throw new AppError(
-            `You cannot invite users with role ${data.role}. You can only invite roles equal to or lower than your own.`,
-            403
-        );
-    }
+    // Get headcount
+    const [totalEmployees, activeEmployees, inactiveEmployees] = await Promise.all([
+        prisma.employee.count({
+            where: { companyId },
+        }),
+        prisma.employee.count({
+            where: { companyId, status: 'ACTIVE' },
+        }),
+        prisma.employee.count({
+            where: { companyId, status: { not: 'ACTIVE' } },
+        }),
+    ]);
 
-    // Check if user already exists
-    const existingUser = await prisma.user.findUnique({
-        where: { email: data.email },
-    });
-
-    if (existingUser) {
-        throw new AppError('User with this email already exists', 400);
-    }
-
-    // Check if there's already a pending invitation
-    const existingInvite = await prisma.invitation.findFirst({
+    // Get today's attendance stats
+    const todayAttendance = await prisma.attendance.findMany({
         where: {
-            email: data.email,
-            companyId,
-            status: 'PENDING',
+            employee: { companyId },
+            date: {
+                gte: startOfToday,
+                lte: endOfToday,
+            },
+        },
+        select: {
+            status: true,
         },
     });
 
-    if (existingInvite) {
-        throw new AppError('An invitation for this email is already pending', 400);
-    }
+    const attendanceStats = {
+        present: todayAttendance.filter((a) => a.status === 'PRESENT').length,
+        absent: todayAttendance.filter((a) => a.status === 'ABSENT').length,
+        onLeave: todayAttendance.filter((a) => a.status === 'ON_LEAVE').length,
+        notMarked: activeEmployees - todayAttendance.length,
+    };
 
-    // Generate unique token
-    const token = crypto.randomBytes(32).toString('hex');
-    const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000); // 7 days
-
-    const invitation = await prisma.invitation.create({
-        data: {
-            companyId,
-            email: data.email,
-            role: data.role as Role,
-            token,
-            expiresAt,
+    // Get pending leave requests
+    const pendingLeaveRequests = await prisma.leaveRequest.findMany({
+        where: {
+            employee: { companyId },
             status: 'PENDING',
         },
-        include: {
-            company: {
+        select: {
+            id: true,
+            startDate: true,
+            endDate: true,
+            daysTaken: true,
+            type: true,
+            employee: {
                 select: {
-                    id: true,
-                    name: true,
+                    firstName: true,
+                    lastName: true,
                 },
             },
         },
-    });
-
-    // TODO: Send invitation email
-    console.log(`>>> INVITATION TOKEN FOR ${data.email}: ${token}`);
-    console.log(`>>> Invitation link: ${process.env.FRONTEND_URL}/join?token=${token}`);
-
-    return invitation;
-};
-
-/**
- * List invitations
- */
-export const listInvitations = async (companyId: string, filters: InvitationFilters) => {
-    const where: any = { companyId };
-
-    if (filters.status) {
-        where.status = filters.status;
-    }
-
-    const invitations = await prisma.invitation.findMany({
-        where,
         orderBy: {
-            expiresAt: 'desc',
+            createdAt: 'desc',
         },
-        select: {
-            id: true,
-            email: true,
-            role: true,
-            status: true,
-            expiresAt: true,
-        },
+        take: 10, // Limit to 10 most recent
     });
 
-    return invitations;
-};
-
-/**
- * Revoke an invitation
- */
-export const revokeInvitation = async (invitationId: string, companyId: string) => {
-    const invitation = await prisma.invitation.findFirst({
-        where: {
-            id: invitationId,
-            companyId,
+    const stats: DashboardStats = {
+        headcount: {
+            total: totalEmployees,
+            active: activeEmployees,
+            inactive: inactiveEmployees,
         },
-    });
-
-    if (!invitation) {
-        throw new AppError('Invitation not found', 404);
-    }
-
-    if (invitation.status !== 'PENDING') {
-        throw new AppError('Only pending invitations can be revoked', 400);
-    }
-
-    const updated = await prisma.invitation.update({
-        where: { id: invitationId },
-        data: { status: 'REVOKED' },
-        select: {
-            id: true,
-            email: true,
-            role: true,
-            status: true,
+        todayAttendance: attendanceStats,
+        pendingLeaves: {
+            count: pendingLeaveRequests.length,
+            requests: pendingLeaveRequests.map((req) => ({
+                id: req.id,
+                employeeName: `${req.employee.firstName} ${req.employee.lastName}`,
+                leaveType: req.type,
+                startDate: req.startDate,
+                endDate: req.endDate,
+                daysTaken: req.daysTaken,
+            })),
         },
-    });
+    };
 
-    return updated;
+    return stats;
 };
 
 /**
@@ -226,7 +193,12 @@ export const listUsers = async (companyId: string, roleFilter?: Role) => {
 /**
  * Update user role (Promote/Demote)
  */
-export const updateUserRole = async (userId: string, companyId: string, updaterRole: Role, data: UpdateUserRoleDTO) => {
+export const updateUserRole = async (
+    userId: string,
+    companyId: string,
+    updaterRole: Role,
+    data: UpdateUserRoleDTO
+) => {
     // Import role hierarchy check
     const { canModifyRole } = await import('@/utils/roleHierarchy');
 
@@ -255,7 +227,7 @@ export const updateUserRole = async (userId: string, companyId: string, updaterR
     // Check if updater can modify this user's role
     if (!canModifyRole(updaterRole, user.role, data.role as Role)) {
         throw new AppError(
-            'You cannot modify this user\'s role. You can only modify roles lower than your own and assign roles equal to or lower than your own.',
+            "You cannot modify this user's role. You can only modify roles lower than your own and assign roles equal to or lower than your own.",
             403
         );
     }
@@ -279,3 +251,4 @@ export const updateUserRole = async (userId: string, companyId: string, updaterR
 
     return updated;
 };
+

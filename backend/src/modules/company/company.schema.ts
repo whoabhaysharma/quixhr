@@ -1,39 +1,27 @@
 import { z } from 'zod';
 import { Role } from '@prisma/client';
 
-export const getSettingsSchema = z.object({
-    // No body/params needed - uses req.targetCompanyId
-});
-
-export const updateSettingsSchema = z.object({
-    body: z.object({
-        timezone: z.string().optional(),
-        currency: z.string().length(3).optional(), // ISO 4217 currency codes (USD, EUR, INR)
-        dateFormat: z.string().optional(),
-        logoUrl: z.string().url().optional(),
-    }).refine((data) => Object.keys(data).length > 0, {
-        message: 'At least one field must be provided',
-    }),
-});
-
-export const inviteUserSchema = z.object({
-    body: z.object({
-        email: z.string().email('Invalid email address'),
-        role: z.nativeEnum(Role, {
-            message: 'Invalid role',
-        }),
-    }),
-});
-
-export const listInvitesSchema = z.object({
-    query: z.object({
-        status: z.enum(['PENDING', 'ACCEPTED', 'EXPIRED', 'REVOKED']).optional(),
-    }).optional(),
-});
-
-export const revokeInviteSchema = z.object({
+export const getCompanySchema = z.object({
     params: z.object({
-        id: z.string().uuid('Invalid invitation ID'),
+        companyId: z.string().uuid('Invalid company ID'),
+    }),
+});
+
+export const updateCompanySchema = z.object({
+    params: z.object({
+        companyId: z.string().uuid('Invalid company ID'),
+    }),
+    body: z.object({
+        logoUrl: z.string().url('Invalid logo URL').optional(),
+        currency: z.string().min(3).max(3, 'Currency must be 3-letter code (e.g., USD, INR)').optional(),
+        timezone: z.string().optional(),
+        dateFormat: z.string().optional(),
+    }),
+});
+
+export const getDashboardSchema = z.object({
+    params: z.object({
+        companyId: z.string().uuid('Invalid company ID'),
     }),
 });
 
@@ -48,8 +36,7 @@ export const updateUserRoleSchema = z.object({
         id: z.string().uuid('Invalid user ID'),
     }),
     body: z.object({
-        role: z.nativeEnum(Role, {
-            message: 'Invalid role',
-        }),
+        role: z.nativeEnum(Role, { message: 'Invalid role' }),
     }),
 });
+
