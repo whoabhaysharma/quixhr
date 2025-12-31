@@ -4,11 +4,11 @@ import * as CompanyController from './company.controller';
 import { updateCompanySchema } from './company.schema';
 
 // Import Sub-Routers for "Nested Creation/Listing"
-import employeeRoutes from '@/modules/employee/employee.routes';
-import calendarRoutes from '@/modules/calendar/calendar.routes';
-import leaveRoutes from '@/modules/leave/leave.routes';
-import invitationRoutes from '@/modules/invitation/invitation.routes';
-import leaveGradeRoutes from '@/modules/leave-grade/leave-grade.routes';
+import employeeRoutes from '@/modules/employees/employees.routes';
+import calendarRoutes from '@/modules/calendars/calendars.routes';
+import leaveRoutes from '@/modules/leaves/leaves.routes';
+import invitationRoutes from '@/modules/invitations/invitations.routes';
+import leaveGradeRoutes from '@/modules/leave-grades/leave-grades.routes';
 import { protect, resolveTenant, restrictTo, validate } from '@/shared/middleware';
 
 const router = Router();
