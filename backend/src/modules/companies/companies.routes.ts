@@ -1,16 +1,16 @@
 import { Router } from 'express';
+import { Role } from '@prisma/client';
 import * as CompanyController from './company.controller';
-import { protect, restrictTo } from '@/shared/middleware/auth.middleware';
-import { resolveTenant } from '@/shared/middlewares/tenant.middleware';
-import validate from '@/common/middlewares/validate.middleware';
-import { updateCompanySchema } from './company.schema'; // Assumed to exist based on schema
+import validate from '@/shared/middleware/validate-resource.middleware';
+import { updateCompanySchema } from './company.schema';
 
 // Import Sub-Routers for "Nested Creation/Listing"
 import employeeRoutes from '@/modules/employee/employee.routes';
 import calendarRoutes from '@/modules/calendar/calendar.routes';
 import leaveRoutes from '@/modules/leave/leave.routes';
 import invitationRoutes from '@/modules/invitation/invitation.routes';
-import leaveGradeRoutes from '@/modules/leave-grade/leave-grade.routes'; // New module for Grades
+import leaveGradeRoutes from '@/modules/leave-grade/leave-grade.routes';
+import { protect, resolveTenant, restrictTo } from '@/shared/middleware';
 
 const router = Router();
 
@@ -49,7 +49,7 @@ router.use('/:companyId/leave-grades', resolveTenant, leaveGradeRoutes);
 router.get(
   '/:companyId',
   resolveTenant,
-  restrictTo('ORG_ADMIN', 'HR_ADMIN', 'SUPER_ADMIN'),
+  restrictTo(Role.ORG_ADMIN, Role.HR_ADMIN, Role.SUPER_ADMIN),
   CompanyController.getCompany
 );
 
@@ -61,7 +61,7 @@ router.get(
 router.patch(
   '/:companyId',
   resolveTenant,
-  restrictTo('ORG_ADMIN', 'SUPER_ADMIN'),
+  restrictTo(Role.ORG_ADMIN, Role.SUPER_ADMIN),
   validate(updateCompanySchema),
   CompanyController.updateCompany
 );
@@ -74,7 +74,7 @@ router.patch(
 router.get(
   '/:companyId/dashboard',
   resolveTenant,
-  restrictTo('ORG_ADMIN', 'HR_ADMIN', 'SUPER_ADMIN'),
+  restrictTo(Role.ORG_ADMIN, Role.HR_ADMIN, Role.SUPER_ADMIN),
   CompanyController.getDashboardStats
 );
 
@@ -86,7 +86,7 @@ router.get(
 router.get(
   '/:companyId/audit-logs',
   resolveTenant,
-  restrictTo('ORG_ADMIN', 'SUPER_ADMIN'),
+  restrictTo(Role.ORG_ADMIN, Role.SUPER_ADMIN),
   CompanyController.getCompanyAuditLogs
 );
 
@@ -102,7 +102,7 @@ router.get(
 router.post(
   '/:companyId/billing/upgrade',
   resolveTenant,
-  restrictTo('ORG_ADMIN', 'SUPER_ADMIN'),
+  restrictTo(Role.ORG_ADMIN, Role.SUPER_ADMIN),
   CompanyController.initiateUpgrade
 );
 
@@ -114,7 +114,7 @@ router.post(
 router.get(
   '/:companyId/billing/invoices',
   resolveTenant,
-  restrictTo('ORG_ADMIN', 'SUPER_ADMIN'),
+  restrictTo(Role.ORG_ADMIN, Role.SUPER_ADMIN),
   CompanyController.getBillingHistory
 );
 
