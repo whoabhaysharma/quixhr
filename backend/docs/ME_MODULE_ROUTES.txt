@@ -1,0 +1,135 @@
+╔════════════════════════════════════════════════════════════════════════════════════════════════╗
+║                          ME MODULE - ROUTE STRUCTURE                                          ║
+║                         All routes: /api/v1/me (Protected)                                    ║
+╚════════════════════════════════════════════════════════════════════════════════════════════════╝
+
+┌─ PROFILE MANAGEMENT ───────────────────────────────────────────────────────────────────────────┐
+│                                                                                                │
+│  GET    /                    Get my complete profile (user + employee + company)              │
+│  PATCH  /                    Update my profile (email, verification status)                   │
+│  DELETE /                    Delete my account and all related data                          │
+│                                                                                                │
+└────────────────────────────────────────────────────────────────────────────────────────────────┘
+
+┌─ LEAVE MANAGEMENT ─────────────────────────────────────────────────────────────────────────────┐
+│                                                                                                │
+│  LEAVES                                                                                        │
+│  ├─ GET    /leaves/policies          Get my leave policies (by grade)                        │
+│  ├─ GET    /leaves/balance           Get my leave balance (allocated, used, remaining)       │
+│  ├─ GET    /leaves/ledger            Get my leave transaction history (pagination)           │
+│  ├─ GET    /leaves/requests          Get my leave requests with status filtering             │
+│  └─ POST   /leaves/requests          Submit a new leave request                              │
+│                                                                                                │
+└────────────────────────────────────────────────────────────────────────────────────────────────┘
+
+┌─ ATTENDANCE MANAGEMENT ────────────────────────────────────────────────────────────────────────┐
+│                                                                                                │
+│  ATTENDANCE                                                                                    │
+│  ├─ GET    /attendance               Get my attendance records (pagination)                  │
+│  ├─ POST   /attendance/check-in      Check in for today (with GPS optional)                 │
+│  └─ POST   /attendance/check-out     Check out for today (with GPS optional)                │
+│                                                                                                │
+└────────────────────────────────────────────────────────────────────────────────────────────────┘
+
+┌─ NOTIFICATIONS ────────────────────────────────────────────────────────────────────────────────┐
+│                                                                                                │
+│  NOTIFICATIONS                                                                                 │
+│  ├─ GET    /notifications             Get my notifications (pagination)                      │
+│  └─ PATCH  /notifications/:id         Mark a notification as read                           │
+│                                                                                                │
+└────────────────────────────────────────────────────────────────────────────────────────────────┘
+
+┌─ AUDIT LOGS ───────────────────────────────────────────────────────────────────────────────────┐
+│                                                                                                │
+│  AUDIT                                                                                         │
+│  └─ GET    /audit-logs               Get my activity history (with action/resource filter)  │
+│                                                                                                │
+└────────────────────────────────────────────────────────────────────────────────────────────────┘
+
+
+╔════════════════════════════════════════════════════════════════════════════════════════════════╗
+║                              QUERY PARAMETERS SUMMARY                                         ║
+╚════════════════════════════════════════════════════════════════════════════════════════════════╝
+
+GET /leaves/balance
+  • year: number (optional, defaults to current year)
+
+GET /leaves/ledger
+  • page: number (optional, default: 1)
+  • limit: number (optional, default: 20)
+
+GET /leaves/requests
+  • status: PENDING|APPROVED|REJECTED|CANCELLED (optional)
+  • page: number (optional, default: 1)
+  • limit: number (optional, default: 20)
+
+GET /attendance
+  • page: number (optional, default: 1)
+  • limit: number (optional, default: 20)
+
+GET /notifications
+  • page: number (optional, default: 1)
+  • limit: number (optional, default: 10)
+
+GET /audit-logs
+  • action: string (optional, e.g., "LOGIN", "DELETE")
+  • resource: string (optional, e.g., "User", "LeaveRequest")
+  • page: number (optional, default: 1)
+  • limit: number (optional, default: 10)
+
+
+╔════════════════════════════════════════════════════════════════════════════════════════════════╗
+║                              REQUEST BODY SCHEMAS                                            ║
+╚════════════════════════════════════════════════════════════════════════════════════════════════╝
+
+PATCH /
+{
+  "email": "string (optional)",
+  "isEmailVerified": "boolean (optional)"
+}
+
+DELETE /
+{
+  "password": "string (required)"
+}
+
+POST /leaves/requests
+{
+  "startDate": "ISO8601 string (required)",
+  "endDate": "ISO8601 string (required)",
+  "type": "LeaveType enum (required)",
+  "reason": "string (optional)",
+  "dayDetails": "object (optional)"
+}
+
+POST /attendance/check-in
+{
+  "method": "string (optional, e.g., 'WEB', 'MOBILE', 'BIOMETRIC')",
+  "gpsCoords": {
+    "latitude": "number (optional)",
+    "longitude": "number (optional)"
+  }
+}
+
+POST /attendance/check-out
+{
+  "method": "string (optional, e.g., 'WEB', 'MOBILE', 'BIOMETRIC')",
+  "gpsCoords": {
+    "latitude": "number (optional)",
+    "longitude": "number (optional)"
+  }
+}
+
+
+╔════════════════════════════════════════════════════════════════════════════════════════════════╗
+║                          TOTAL ENDPOINTS SUMMARY                                             ║
+╚════════════════════════════════════════════════════════════════════════════════════════════════╝
+
+  Profile:           3 endpoints  (GET, PATCH, DELETE)
+  Leaves:            5 endpoints  (GET policies, GET balance, GET ledger, GET requests, POST)
+  Attendance:        3 endpoints  (GET records, POST check-in, POST check-out)
+  Notifications:     2 endpoints  (GET, PATCH)
+  Audit Logs:        1 endpoint   (GET)
+  ─────────────────────────────────────────────────────────────────────────────────────────────
+  TOTAL:            14 endpoints
+

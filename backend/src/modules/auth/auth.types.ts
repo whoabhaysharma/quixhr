@@ -1,15 +1,18 @@
 import { Role } from '@prisma/client';
 
+// =========================================================================
+// JWT TOKEN PAYLOAD
+// =========================================================================
+/**
+ * Internal type for JWT token payload
+ * Contains user identification and authorization data
+ */
 export interface TokenPayload {
-    userId: string;
-    role: Role;
-    companyId?: string;
-}
-
-declare global {
-    namespace Express {
-        interface Request {
-            user?: TokenPayload;
-        }
-    }
+  userId: string;
+  email: string;
+  role: Role;
+  employeeId?: string;
+  companyId?: string;
+  iat?: number;
+  exp?: number;
 }

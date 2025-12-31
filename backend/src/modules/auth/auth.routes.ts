@@ -1,80 +1,139 @@
 import { Router } from 'express';
 import * as AuthController from './auth.controller';
-import * as AuthSchema from './auth.schema';
-import * as AuthMiddleware from './auth.middleware';
-import validate from '@/shared/middleware/validateResource';
+import validate from '@/common/middlewares/validate.middleware';
+import { protect } from '@/shared/middleware/auth.middleware';
+import {
+    registerSchema,
+    loginSchema,
+    forgotPasswordSchema,
+    resetPasswordSchema,
+    verifyEmailSchema,
+    joinCompanySchema,
+    changePasswordSchema,
+} from './auth.schema';
 
 const router = Router();
 
+// =========================================================================
+// PUBLIC AUTHENTICATION ROUTES
+// =========================================================================
+
 /**
- * @description  User Registration (Company + Admin User)
- * @access       Public
+ * @route   POST /api/v1/auth/register
+ * @desc    Onboard a new Company + Super Admin + Subscription
+ * @access  Public
  */
 router.post(
     '/register',
-    validate(AuthSchema.registerSchema),
+    validate(registerSchema),
     AuthController.register
 );
 
 /**
- * @description  Standard Login
- * @access       Public
+ * @route   POST /api/v1/auth/login
+ * @desc    Authenticate user & return Access/Refresh Tokens
+ * @access  Public
  */
 router.post(
     '/login',
-    validate(AuthSchema.loginSchema),
+    validate(loginSchema),
     AuthController.login
 );
 
 /**
- * @description  Accept Invitation (Employee)
- * @access       Public (Token is in body)
+ * @route   POST /api/v1/auth/refresh-token
+ * @desc    Get a new Access Token using a valid Refresh Token
+ * @access  Public (Validates Refresh Token inside controller)
  */
 router.post(
-    '/accept-invitation',
-    validate(AuthSchema.acceptInvitationSchema),
-    AuthController.acceptInvitation
+    '/refresh-token',
+    AuthController.refreshToken
 );
 
 /**
- * @description  Forgot Password (Sends reset link via email)
- * @access       Public
+ * @route   POST /api/v1/auth/forgot-password
+ * @desc    Trigger email with password reset link
+ * @access  Public
  */
 router.post(
     '/forgot-password',
-    validate(AuthSchema.forgotPasswordSchema),
+    validate(forgotPasswordSchema),
     AuthController.forgotPassword
 );
 
 /**
- * @description  Reset Password (Verifies token and sets new password)
- * @access       Public
+ * @route   POST /api/v1/auth/reset-password
+ * @desc    Set new password using the token received in email
+ * @access  Public
  */
 router.post(
     '/reset-password',
-    validate(AuthSchema.resetPasswordSchema),
+    validate(resetPasswordSchema),
     AuthController.resetPassword
 );
 
 /**
- * @description  Get Current User Profile
- * @access       Private (Requires valid JWT)
+ * @route   POST /api/v1/auth/verify-email
+ * @desc    Verify email address using token
+ * @access  Public
+ * @body    {
+ *   token: string
+ * }
  */
-router.get(
-    '/me',
-    AuthMiddleware.protect,
-    AuthController.getMe
+router.post(
+    '/verify-email',
+    validate(verifyEmailSchema),
+    AuthController.verifyEmail
 );
 
 /**
- * @description  Update Password (While logged in)
- * @access       Private
+ * @route   POST /api/v1/auth/join-company
+ * @desc    Accept company invitation and create user account
+ * @access  Public
+ * @body    {
+ *   token: string,
+ *   password: string,
+ *   confirmPassword: string,
+ *   firstName: string,
+ *   lastName: string
+ * }
  */
-router.patch(
-    '/update-password',
-    AuthMiddleware.protect,
-    validate(AuthSchema.updatePasswordSchema),
-    AuthController.updatePassword
+router.post(
+    '/join-company',
+    validate(joinCompanySchema),
+    AuthController.joinCompany
+);
+
+// =========================================================================
+// PROTECTED AUTH ROUTES
+// =========================================================================
+
+/**
+ * @route   POST /api/v1/auth/logout
+ * @desc    Invalidate Refresh Token / Clear Cookies
+ * @access  Protected
+ */
+router.post(
+    '/logout',
+    protect,
+    AuthController.logout
+);
+
+/**
+ * @route   POST /api/v1/auth/change-password
+ * @desc    Change user password (authenticated user only)
+ * @access  Protected
+ * @body    {
+ *   currentPassword: string,
+ *   newPassword: string,
+ *   confirmPassword: string
+ * }
+ */
+router.post(
+    '/change-password',
+    protect,
+    validate(changePasswordSchema),
+    AuthController.changePassword
 );
 
 export default router;
