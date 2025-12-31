@@ -1,9 +1,10 @@
 import { Request, Response, NextFunction } from 'express';
 import jwt from 'jsonwebtoken';
-import { Role } from '@prisma/client';
 import { TokenPayload } from '@/modules/auth/auth.types';
 
-// Extend Express Request to include user and targetCompanyId
+// ============================================================================
+// TYPE DECLARATIONS
+// ============================================================================
 declare global {
     namespace Express {
         interface Request {
@@ -13,54 +14,123 @@ declare global {
     }
 }
 
+// ============================================================================
+// CONSTANTS
+// ============================================================================
+const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key';
+
+const ERROR_MESSAGES = {
+    NO_TOKEN: 'Please log in to access this resource',
+    INVALID_TOKEN: 'Invalid or expired token',
+    EXPIRED_TOKEN: 'Token has expired',
+    NOT_AUTHENTICATED: 'User not authenticated',
+    INSUFFICIENT_PERMISSIONS: 'You do not have permission to perform this action',
+};
+
+const HTTP_STATUS = {
+    UNAUTHORIZED: 401,
+    FORBIDDEN: 403,
+};
+
+// ============================================================================
+// HELPER FUNCTIONS
+// ============================================================================
+
 /**
- * Protect route - Verify JWT token and attach user to request
- * Extracts the token from Authorization header and validates it
+ * Extract JWT token from Authorization header
+ * @param authHeader - Authorization header value
+ * @returns JWT token or undefined
  */
-export const protect = (req: Request, res: Response, next: NextFunction) => {
-    let token;
-
-    // Get token from Authorization header
-    if (req.headers.authorization && req.headers.authorization.startsWith('Bearer')) {
-        token = req.headers.authorization.split(' ')[1];
+function extractToken(authHeader: string | undefined): string | undefined {
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+        return undefined;
     }
+    return authHeader.split(' ')[1];
+}
 
-    if (!token) {
-        return res.status(401).json({ message: 'Please log in to access this resource' });
-    }
-
+/**
+ * Verify and decode JWT token
+ * @param token - JWT token to verify
+ * @returns Decoded token payload
+ * @throws Error if token is invalid or expired
+ */
+function verifyToken(token: string): TokenPayload {
     try {
-        // Verify JWT token
-        const secret = process.env.JWT_SECRET || 'your-secret-key';
-        const decoded = jwt.verify(token, secret) as TokenPayload;
-        
-        // Attach decoded user info to request
+        return jwt.verify(token, JWT_SECRET) as TokenPayload;
+    } catch (error: any) {
+        if (error.name === 'TokenExpiredError') {
+            throw new Error(ERROR_MESSAGES.EXPIRED_TOKEN);
+        }
+        throw new Error(ERROR_MESSAGES.INVALID_TOKEN);
+    }
+}
+
+// ============================================================================
+// MIDDLEWARE EXPORTS
+// ============================================================================
+
+/**
+ * Protect Middleware
+ * 
+ * Verifies JWT token from Authorization header and attaches decoded user to request.
+ * Must be placed before routes that require authentication.
+ * 
+ * @example
+ * router.use(protect); // Protect all routes
+ * router.get('/profile', protect, getProfile); // Protect single route
+ */
+export const protect = (req: Request, res: Response, next: NextFunction): void => {
+    try {
+        const token = extractToken(req.headers.authorization);
+
+        if (!token) {
+            res.status(HTTP_STATUS.UNAUTHORIZED).json({
+                status: 'error',
+                message: ERROR_MESSAGES.NO_TOKEN,
+            });
+            return;
+        }
+
+        const decoded = verifyToken(token);
         req.user = decoded;
         next();
     } catch (error: any) {
-        if (error.name === 'TokenExpiredError') {
-            return res.status(401).json({ message: 'Token has expired' });
-        }
-        return res.status(401).json({ message: 'Invalid or expired token' });
+        res.status(HTTP_STATUS.UNAUTHORIZED).json({
+            status: 'error',
+            message: error.message || ERROR_MESSAGES.INVALID_TOKEN,
+        });
     }
 };
 
 /**
- * Restrict route access by user roles
- * Usage: restrictTo('ORG_ADMIN', 'HR_ADMIN', 'SUPER_ADMIN')
+ * Restrict To Middleware
+ * 
+ * Role-based access control (RBAC) middleware.
+ * Checks if the authenticated user's role is included in the allowed roles.
+ * 
+ * @param allowedRoles - Roles that are permitted to access the route
+ * @returns Middleware function
+ * 
+ * @example
+ * router.patch('/:id', protect, restrictTo('ADMIN', 'HR_ADMIN'), updateUser);
  */
 export const restrictTo = (...allowedRoles: string[]) => {
-    return (req: Request, res: Response, next: NextFunction) => {
+    return (req: Request, res: Response, next: NextFunction): void => {
         if (!req.user) {
-            return res.status(401).json({ message: 'User not authenticated' });
+            res.status(HTTP_STATUS.UNAUTHORIZED).json({
+                status: 'error',
+                message: ERROR_MESSAGES.NOT_AUTHENTICATED,
+            });
+            return;
         }
 
-        // Check if user's role is in the allowed roles
         const userRole = req.user.role as string;
         if (!allowedRoles.includes(userRole)) {
-            return res.status(403).json({
-                message: 'You do not have permission to perform this action'
+            res.status(HTTP_STATUS.FORBIDDEN).json({
+                status: 'error',
+                message: ERROR_MESSAGES.INSUFFICIENT_PERMISSIONS,
             });
+            return;
         }
 
         next();

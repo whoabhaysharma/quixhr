@@ -2,36 +2,9 @@ import { Request, Response, NextFunction } from 'express';
 import { Role } from '@prisma/client';
 import { TokenPayload } from '@/modules/auth/auth.types';
 
-/**
- * Resolve Tenant - Determine which company's data should be accessed
- * Injects 'targetCompanyId' into the request object for data isolation
- * 
- * Rules:
- * - SUPER_ADMIN: Can access any company via query param (?companyId=xxx)
- * - Others: Strictly limited to their own company from JWT
- * 
- * Usage: router.use(resolveTenant, handler);
- */
-export const resolveTenant = (req: Request, res: Response, next: NextFunction) => {
-    const user = req.user; // Attached by 'protect' middleware
-
-    if (!user) {
-        return res.status(401).json({ message: 'Authentication required' });
-    }
-
-    // SUPER_ADMIN can impersonate other companies via query param
-    if (user.role === Role.SUPER_ADMIN) {
-        const queryCompanyId = req.query.companyId as string;
-        // Lock to query company if provided, otherwise undefined (global view)
-        req.targetCompanyId = queryCompanyId || undefined;
-    } else {
-        // For everyone else, strictly enforce their own company from JWT
-        req.targetCompanyId = user.companyId;
-    }
-
-    next();
-};
-
+// ============================================================================
+// TYPE DECLARATIONS
+// ============================================================================
 declare global {
     namespace Express {
         interface Request {
@@ -40,3 +13,59 @@ declare global {
         }
     }
 }
+
+// ============================================================================
+// CONSTANTS
+// ============================================================================
+const HTTP_STATUS = {
+    UNAUTHORIZED: 401,
+};
+
+const ERROR_MESSAGES = {
+    AUTHENTICATION_REQUIRED: 'Authentication required',
+};
+
+// ============================================================================
+// MIDDLEWARE EXPORTS
+// ============================================================================
+
+/**
+ * Resolve Tenant Middleware
+ * 
+ * Multi-tenant data isolation middleware. Determines which company's data
+ * should be accessed based on user role and request parameters.
+ * 
+ * Behavior:
+ * - SUPER_ADMIN: Can access any company via ?companyId=xxx query param,
+ *   or view all companies if no param provided
+ * - Others: Strictly limited to their own company from JWT token
+ * 
+ * Attaches 'targetCompanyId' to request object for downstream handlers.
+ * Must be preceded by 'protect' middleware to ensure user is authenticated.
+ * 
+ * @example
+ * router.use(protect, resolveTenant); // All routes have tenant context
+ * router.get('/:companyId/employees', protect, resolveTenant, getEmployees);
+ */
+export const resolveTenant = (req: Request, res: Response, next: NextFunction): void => {
+    const user = req.user;
+
+    if (!user) {
+        res.status(HTTP_STATUS.UNAUTHORIZED).json({
+            status: 'error',
+            message: ERROR_MESSAGES.AUTHENTICATION_REQUIRED,
+        });
+        return;
+    }
+
+    // SUPER_ADMIN: Allow company impersonation via query param
+    if (user.role === Role.SUPER_ADMIN) {
+        const queryCompanyId = req.query.companyId as string | undefined;
+        req.targetCompanyId = queryCompanyId;
+    } else {
+        // Regular users: Strictly limited to their own company
+        req.targetCompanyId = user.companyId;
+    }
+
+    next();
+};

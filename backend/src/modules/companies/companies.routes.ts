@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import * as CompanyController from './company.controller';
 import { protect, restrictTo } from '@/shared/middleware/auth.middleware';
-import { resolveTenant } from '@/common/middlewares/tenant.middleware';
+import { resolveTenant } from '@/shared/middlewares/tenant.middleware';
 import validate from '@/common/middlewares/validate.middleware';
 import { updateCompanySchema } from './company.schema'; // Assumed to exist based on schema
 

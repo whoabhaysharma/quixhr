@@ -5,7 +5,7 @@ import morgan from 'morgan';
 import compression from 'compression';
 import hpp from 'hpp';
 
-import { globalErrorHandler } from './shared/middleware/errorMiddleware';
+import { globalErrorHandler } from './shared/middleware';
 import { AppError } from './utils/appError';
 
 // Route Imports
