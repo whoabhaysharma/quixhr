@@ -1,6 +1,7 @@
 import { Router } from 'express';
-import { protect } from '@/shared/middleware/auth.middleware';
-import validate from '@/common/middlewares/validate.middleware';
+import { Role } from '@prisma/client';
+import { protect, restrictTo } from '@/shared/middleware';
+import validate from '@/shared/middleware/validate-resource.middleware';
 import {
   getCalendars,
   getCalendarById,
@@ -23,6 +24,8 @@ import {
   updateWeeklyRuleSchema,
   createHolidaySchema,
   updateHolidaySchema,
+  calendarQuerySchema,
+  holidayQuerySchema,
 } from './calendars.schema';
 
 const router = Router();
@@ -37,38 +40,57 @@ router.use(protect);
 /**
  * @route   GET /api/v1/calendars
  * @desc    Get all calendars for user's company
- * @access  Protected (SUPER_ADMIN only)
+ * @access  SUPER_ADMIN only
  * @query   ?page=1&limit=20&name=searchTerm
  */
-router.get('/', getCalendars);
+router.get(
+  '/', 
+  restrictTo(Role.SUPER_ADMIN), 
+  validate(calendarQuerySchema), 
+  getCalendars
+);
 
 /**
  * @route   GET /api/v1/calendars/:calendarId
  * @desc    Get calendar details by ID
- * @access  Protected (All authenticated users if they know ID, scoped to company)
+ * @access  All authenticated users (scoped to company)
  */
 router.get('/:calendarId', getCalendarById);
 
 /**
  * @route   POST /api/v1/calendars
  * @desc    Create a new calendar
- * @access  Protected (SUPER_ADMIN only) - Use nested API for tenant-scoped creation
+ * @access  SUPER_ADMIN only
  */
-router.post('/', validate(createCalendarSchema), createCalendar);
+router.post(
+  '/', 
+  restrictTo(Role.SUPER_ADMIN), 
+  validate(createCalendarSchema), 
+  createCalendar
+);
 
 /**
  * @route   PATCH /api/v1/calendars/:calendarId
  * @desc    Update calendar
- * @access  Protected (SUPER_ADMIN only) - Use nested API for tenant-scoped updates
+ * @access  SUPER_ADMIN only
  */
-router.patch('/:calendarId', validate(updateCalendarSchema), updateCalendar);
+router.patch(
+  '/:calendarId', 
+  restrictTo(Role.SUPER_ADMIN), 
+  validate(updateCalendarSchema), 
+  updateCalendar
+);
 
 /**
  * @route   DELETE /api/v1/calendars/:calendarId
  * @desc    Delete calendar
- * @access  Protected (SUPER_ADMIN only) - Use nested API for tenant-scoped deletions
+ * @access  SUPER_ADMIN only
  */
-router.delete('/:calendarId', deleteCalendar);
+router.delete(
+  '/:calendarId', 
+  restrictTo(Role.SUPER_ADMIN), 
+  deleteCalendar
+);
 
 // =========================================================================
 // WEEKLY RULES ROUTES (Tenant-Scoped Authorization)
@@ -77,30 +99,44 @@ router.delete('/:calendarId', deleteCalendar);
 /**
  * @route   GET /api/v1/calendars/:calendarId/weekly-rules
  * @desc    Get all weekly rules for a calendar
- * @access  Protected (All authenticated users if they know calendar ID, scoped to company)
+ * @access  All authenticated users (scoped to company)
  */
 router.get('/:calendarId/weekly-rules', getWeeklyRules);
 
 /**
  * @route   POST /api/v1/calendars/:calendarId/weekly-rules
  * @desc    Create a new weekly rule for calendar
- * @access  Protected (SUPER_ADMIN only) - Use nested API for tenant-scoped creation
+ * @access  SUPER_ADMIN only
  */
-router.post('/:calendarId/weekly-rules', validate(createWeeklyRuleSchema), createWeeklyRule);
+router.post(
+  '/:calendarId/weekly-rules', 
+  restrictTo(Role.SUPER_ADMIN), 
+  validate(createWeeklyRuleSchema), 
+  createWeeklyRule
+);
 
 /**
  * @route   PATCH /api/v1/calendars/:calendarId/weekly-rules/:ruleId
  * @desc    Update a weekly rule
- * @access  Protected (SUPER_ADMIN only) - Use nested API for tenant-scoped updates
+ * @access  SUPER_ADMIN only
  */
-router.patch('/:calendarId/weekly-rules/:ruleId', validate(updateWeeklyRuleSchema), updateWeeklyRule);
+router.patch(
+  '/:calendarId/weekly-rules/:ruleId', 
+  restrictTo(Role.SUPER_ADMIN), 
+  validate(updateWeeklyRuleSchema), 
+  updateWeeklyRule
+);
 
 /**
  * @route   DELETE /api/v1/calendars/:calendarId/weekly-rules/:ruleId
  * @desc    Delete a weekly rule
- * @access  Protected (SUPER_ADMIN only) - Use nested API for tenant-scoped deletions
+ * @access  SUPER_ADMIN only
  */
-router.delete('/:calendarId/weekly-rules/:ruleId', deleteWeeklyRule);
+router.delete(
+  '/:calendarId/weekly-rules/:ruleId', 
+  restrictTo(Role.SUPER_ADMIN), 
+  deleteWeeklyRule
+);
 
 // =========================================================================
 // HOLIDAY ROUTES (Tenant-Scoped Authorization)
@@ -109,30 +145,48 @@ router.delete('/:calendarId/weekly-rules/:ruleId', deleteWeeklyRule);
 /**
  * @route   GET /api/v1/calendars/:calendarId/holidays
  * @desc    Get all holidays for a calendar
- * @access  Protected (All authenticated users if they know calendar ID, scoped to company)
+ * @access  All authenticated users (scoped to company)
  * @query   ?year=2025
  */
-router.get('/:calendarId/holidays', getHolidays);
+router.get(
+  '/:calendarId/holidays', 
+  validate(holidayQuerySchema), 
+  getHolidays
+);
 
 /**
  * @route   POST /api/v1/calendars/:calendarId/holidays
  * @desc    Create a new holiday for calendar
- * @access  Protected (SUPER_ADMIN only) - Use nested API for tenant-scoped creation
+ * @access  SUPER_ADMIN only
  */
-router.post('/:calendarId/holidays', validate(createHolidaySchema), createHoliday);
+router.post(
+  '/:calendarId/holidays', 
+  restrictTo(Role.SUPER_ADMIN), 
+  validate(createHolidaySchema), 
+  createHoliday
+);
 
 /**
  * @route   PATCH /api/v1/calendars/:calendarId/holidays/:holidayId
  * @desc    Update a holiday
- * @access  Protected (SUPER_ADMIN only) - Use nested API for tenant-scoped updates
+ * @access  SUPER_ADMIN only
  */
-router.patch('/:calendarId/holidays/:holidayId', validate(updateHolidaySchema), updateHoliday);
+router.patch(
+  '/:calendarId/holidays/:holidayId', 
+  restrictTo(Role.SUPER_ADMIN), 
+  validate(updateHolidaySchema), 
+  updateHoliday
+);
 
 /**
  * @route   DELETE /api/v1/calendars/:calendarId/holidays/:holidayId
  * @desc    Delete a holiday
- * @access  Protected (SUPER_ADMIN only) - Use nested API for tenant-scoped deletions
+ * @access  SUPER_ADMIN only
  */
-router.delete('/:calendarId/holidays/:holidayId', deleteHoliday);
+router.delete(
+  '/:calendarId/holidays/:holidayId', 
+  restrictTo(Role.SUPER_ADMIN), 
+  deleteHoliday
+);
 
 export default router;

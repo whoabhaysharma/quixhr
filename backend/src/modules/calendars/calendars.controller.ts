@@ -1,9 +1,9 @@
 import { Request, Response, NextFunction } from 'express';
-import { prisma } from '@/utils/prisma';
-import { AppError } from '@/utils/appError';
 import { catchAsync } from '@/utils/catchAsync';
 import { sendResponse } from '@/utils/sendResponse';
-import { AuthContext, EmployeeContext } from './calendars.types';
+import { CalendarService } from './calendars.service';
+import { AuthContext } from './calendars.types';
+import { AppError } from '@/utils/appError';
 import {
   CalendarResponseDto,
   CalendarDetailsResponseDto,
@@ -12,12 +12,6 @@ import {
   CalendarsListResponseDto,
   WeeklyRulesListResponseDto,
   HolidaysListResponseDto,
-  CreateCalendarRequestDto,
-  UpdateCalendarRequestDto,
-  CreateWeeklyRuleRequestDto,
-  UpdateWeeklyRuleRequestDto,
-  CreateHolidayRequestDto,
-  UpdateHolidayRequestDto,
 } from './calendars.schema';
 
 // =========================================================================
@@ -35,75 +29,6 @@ const getAuthContext = (req: Request): AuthContext => {
   return user as AuthContext;
 };
 
-/**
- * Get employee context for company validation
- */
-const getEmployeeContext = async (userId: string): Promise<EmployeeContext> => {
-  const user = await prisma.user.findUnique({
-    where: { id: userId },
-    include: {
-      employee: {
-        include: {
-          company: true,
-        },
-      },
-    },
-  });
-
-  if (!user?.employee) {
-    throw new AppError('Employee profile not found', 404);
-  }
-
-  return {
-    id: user.employee.id,
-    companyId: user.employee.companyId,
-    userId: user.id,
-    role: user.role,
-  };
-};
-
-/**
- * Check if user is SUPER_ADMIN (for flat API list access and modifications)
- */
-const requireSuperAdminPermissions = (role: string) => {
-  if (role !== 'SUPER_ADMIN') {
-    throw new AppError('Insufficient permissions. Super Admin access required.', 403);
-  }
-};
-
-/**
- * Check if user can view individual calendar by ID (all authenticated users)
- */
-const canViewCalendarById = (role: string): boolean => {
-  return ['SUPER_ADMIN', 'ORG_ADMIN', 'HR_ADMIN', 'MANAGER', 'EMPLOYEE'].includes(role);
-};
-
-/**
- * Check if user can view calendar lists (SUPER_ADMIN only for flat APIs)
- */
-const canViewCalendarList = (role: string): boolean => {
-  return role === 'SUPER_ADMIN';
-};
-
-/**
- * Validate calendar belongs to user's company
- */
-const validateCalendarAccess = async (calendarId: string, companyId: string) => {
-  const calendar = await prisma.calendar.findUnique({
-    where: { id: calendarId },
-  });
-
-  if (!calendar) {
-    throw new AppError('Calendar not found', 404);
-  }
-
-  if (calendar.companyId !== companyId) {
-    throw new AppError('Access denied. Calendar belongs to different company.', 403);
-  }
-
-  return calendar;
-};
-
 // =========================================================================
 // CALENDAR ENDPOINTS
 // =========================================================================
@@ -116,60 +41,30 @@ const validateCalendarAccess = async (calendarId: string, companyId: string) => 
 export const getCalendars = catchAsync(
   async (req: Request, res: Response, next: NextFunction) => {
     const authContext = getAuthContext(req);
-    const employee = await getEmployeeContext(authContext.userId);
-
-    // Only SUPER_ADMIN can view calendar lists via flat API
-    if (!canViewCalendarList(authContext.role)) {
-      return next(new AppError('Insufficient permissions. Use company-specific endpoints for calendar management.', 403));
-    }
-
+    
     const page = parseInt(req.query.page as string) || 1;
     const limit = parseInt(req.query.limit as string) || 20;
     const name = (req.query.name as string) || undefined;
-    const skip = (page - 1) * limit;
 
-    const whereClause: any = {
-      companyId: employee.companyId,
+    const result = await CalendarService.getCalendars({
+      authContext,
+      page,
+      limit,
+      name,
+    });
+
+    const responseData: CalendarsListResponseDto = {
+      success: true,
+      message: 'Calendars retrieved successfully',
+      data: {
+        calendars: result.calendars,
+        pagination: result.pagination,
+      },
     };
 
-    if (name) {
-      whereClause.name = {
-        contains: name,
-        mode: 'insensitive',
-      };
-    }
-
-    const [calendars, total] = await Promise.all([
-      prisma.calendar.findMany({
-        where: whereClause,
-        skip,
-        take: limit,
-        orderBy: { name: 'asc' },
-        include: {
-          _count: {
-            select: { employees: true },
-          },
-        },
-      }),
-      prisma.calendar.count({ where: whereClause }),
-    ]);
-
-    const response: CalendarsListResponseDto = {
-      calendars: calendars.map((calendar) => ({
-        id: calendar.id,
-        companyId: calendar.companyId,
-        name: calendar.name,
-        dayStartTime: calendar.dayStartTime,
-        dayEndTime: calendar.dayEndTime,
-        employeeCount: calendar._count.employees,
-      })),
-      total,
-    };
-
-    sendResponse(res, 200, response, 'Calendars retrieved successfully');
+    sendResponse(res, 200, responseData);
   }
 );
-
 /**
  * @desc    Get calendar details by ID
  * @route   GET /api/v1/calendars/:calendarId
@@ -178,58 +73,20 @@ export const getCalendars = catchAsync(
 export const getCalendarById = catchAsync(
   async (req: Request, res: Response, next: NextFunction) => {
     const authContext = getAuthContext(req);
-    const employee = await getEmployeeContext(authContext.userId);
     const { calendarId } = req.params;
 
-    // All authenticated users can view calendar details if they know the ID
-    if (!canViewCalendarById(authContext.role)) {
-      return next(new AppError('Insufficient permissions to view calendar details', 403));
-    }
-
-    const calendar = await validateCalendarAccess(calendarId, employee.companyId);
-
-    const calendarWithDetails = await prisma.calendar.findUnique({
-      where: { id: calendarId },
-      include: {
-        weeklyRules: {
-          orderBy: { dayOfWeek: 'asc' },
-        },
-        holidays: {
-          orderBy: { date: 'asc' },
-        },
-        _count: {
-          select: { employees: true },
-        },
-      },
+    const calendar = await CalendarService.getCalendarById({
+      authContext,
+      calendarId,
     });
 
-    const response: CalendarDetailsResponseDto = {
-      id: calendarWithDetails!.id,
-      companyId: calendarWithDetails!.companyId,
-      name: calendarWithDetails!.name,
-      dayStartTime: calendarWithDetails!.dayStartTime,
-      dayEndTime: calendarWithDetails!.dayEndTime,
-      weeklyRules: calendarWithDetails!.weeklyRules.map((rule) => ({
-        id: rule.id,
-        calendarId: rule.calendarId,
-        dayOfWeek: rule.dayOfWeek,
-        type: rule.type,
-        strategy: rule.strategy,
-        interval: rule.interval || undefined,
-        referenceDate: rule.referenceDate || undefined,
-        positions: rule.positions.length > 0 ? rule.positions : undefined,
-      })),
-      holidays: calendarWithDetails!.holidays.map((holiday) => ({
-        id: holiday.id,
-        calendarId: holiday.calendarId,
-        date: holiday.date,
-        name: holiday.name,
-        isOptional: holiday.isOptional,
-      })),
-      employeeCount: calendarWithDetails!._count.employees,
+    const responseData: CalendarDetailsResponseDto = {
+      success: true,
+      message: 'Calendar details retrieved successfully',
+      data: calendar,
     };
 
-    sendResponse(res, 200, response, 'Calendar details retrieved successfully');
+    sendResponse(res, 200, responseData);
   }
 );
 
@@ -241,42 +98,19 @@ export const getCalendarById = catchAsync(
 export const createCalendar = catchAsync(
   async (req: Request, res: Response, next: NextFunction) => {
     const authContext = getAuthContext(req);
-    const employee = await getEmployeeContext(authContext.userId);
-    requireSuperAdminPermissions(authContext.role);
-
-    const createData: CreateCalendarRequestDto = req.body;
-
-    // Check if calendar name already exists in company
-    const existingCalendar = await prisma.calendar.findFirst({
-      where: {
-        companyId: employee.companyId,
-        name: createData.name,
-      },
+    
+    const calendar = await CalendarService.createCalendar({
+      authContext,
+      data: req.body,
     });
 
-    if (existingCalendar) {
-      return next(new AppError('Calendar with this name already exists', 400));
-    }
-
-    const calendar = await prisma.calendar.create({
-      data: {
-        companyId: employee.companyId,
-        name: createData.name,
-        dayStartTime: createData.dayStartTime,
-        dayEndTime: createData.dayEndTime,
-      },
-    });
-
-    const response: CalendarResponseDto = {
-      id: calendar.id,
-      companyId: calendar.companyId,
-      name: calendar.name,
-      dayStartTime: calendar.dayStartTime,
-      dayEndTime: calendar.dayEndTime,
-      employeeCount: 0,
+    const responseData: CalendarResponseDto = {
+      success: true,
+      message: 'Calendar created successfully',
+      data: calendar,
     };
 
-    sendResponse(res, 201, response, 'Calendar created successfully');
+    sendResponse(res, 201, responseData);
   }
 );
 
@@ -288,52 +122,23 @@ export const createCalendar = catchAsync(
 export const updateCalendar = catchAsync(
   async (req: Request, res: Response, next: NextFunction) => {
     const authContext = getAuthContext(req);
-    const employee = await getEmployeeContext(authContext.userId);
-    requireSuperAdminPermissions(authContext.role);
-
     const { calendarId } = req.params;
-    const updateData: UpdateCalendarRequestDto = req.body;
 
-    await validateCalendarAccess(calendarId, employee.companyId);
-
-    // Check if new name conflicts
-    if (updateData.name) {
-      const existingCalendar = await prisma.calendar.findFirst({
-        where: {
-          companyId: employee.companyId,
-          name: updateData.name,
-          id: { not: calendarId },
-        },
-      });
-
-      if (existingCalendar) {
-        return next(new AppError('Calendar with this name already exists', 400));
-      }
-    }
-
-    const updatedCalendar = await prisma.calendar.update({
-      where: { id: calendarId },
-      data: updateData,
-      include: {
-        _count: {
-          select: { employees: true },
-        },
-      },
+    const calendar = await CalendarService.updateCalendar({
+      authContext,
+      calendarId,
+      data: req.body,
     });
 
-    const response: CalendarResponseDto = {
-      id: updatedCalendar.id,
-      companyId: updatedCalendar.companyId,
-      name: updatedCalendar.name,
-      dayStartTime: updatedCalendar.dayStartTime,
-      dayEndTime: updatedCalendar.dayEndTime,
-      employeeCount: updatedCalendar._count.employees,
+    const responseData: CalendarResponseDto = {
+      success: true,
+      message: 'Calendar updated successfully',
+      data: calendar,
     };
 
-    sendResponse(res, 200, response, 'Calendar updated successfully');
+    sendResponse(res, 200, responseData);
   }
 );
-
 /**
  * @desc    Delete calendar
  * @route   DELETE /api/v1/calendars/:calendarId
@@ -342,27 +147,20 @@ export const updateCalendar = catchAsync(
 export const deleteCalendar = catchAsync(
   async (req: Request, res: Response, next: NextFunction) => {
     const authContext = getAuthContext(req);
-    const employee = await getEmployeeContext(authContext.userId);
-    requireSuperAdminPermissions(authContext.role);
-
     const { calendarId } = req.params;
 
-    await validateCalendarAccess(calendarId, employee.companyId);
-
-    // Check if calendar is assigned to any employees
-    const employeeCount = await prisma.employee.count({
-      where: { calendarId },
+    await CalendarService.deleteCalendar({
+      authContext,
+      calendarId,
     });
 
-    if (employeeCount > 0) {
-      return next(new AppError('Cannot delete calendar. It is assigned to employees.', 400));
-    }
+    const responseData = {
+      success: true,
+      message: 'Calendar deleted successfully',
+      data: null,
+    };
 
-    await prisma.calendar.delete({
-      where: { id: calendarId },
-    });
-
-    sendResponse(res, 200, { message: 'Calendar deleted successfully' }, 'Calendar deleted successfully');
+    sendResponse(res, 200, responseData);
   }
 );
 
@@ -378,36 +176,23 @@ export const deleteCalendar = catchAsync(
 export const getWeeklyRules = catchAsync(
   async (req: Request, res: Response, next: NextFunction) => {
     const authContext = getAuthContext(req);
-    const employee = await getEmployeeContext(authContext.userId);
     const { calendarId } = req.params;
 
-    // All authenticated users can view weekly rules if they know the calendar ID
-    if (!canViewCalendarById(authContext.role)) {
-      return next(new AppError('Insufficient permissions to view weekly rules', 403));
-    }
-
-    await validateCalendarAccess(calendarId, employee.companyId);
-
-    const rules = await prisma.calendarWeeklyRule.findMany({
-      where: { calendarId },
-      orderBy: { dayOfWeek: 'asc' },
+    const rules = await CalendarService.getWeeklyRules({
+      authContext,
+      calendarId,
     });
 
-    const response: WeeklyRulesListResponseDto = {
-      rules: rules.map((rule) => ({
-        id: rule.id,
-        calendarId: rule.calendarId,
-        dayOfWeek: rule.dayOfWeek,
-        type: rule.type,
-        strategy: rule.strategy,
-        interval: rule.interval || undefined,
-        referenceDate: rule.referenceDate || undefined,
-        positions: rule.positions.length > 0 ? rule.positions : undefined,
-      })),
-      total: rules.length,
+    const responseData: WeeklyRulesListResponseDto = {
+      success: true,
+      message: 'Weekly rules retrieved successfully',
+      data: {
+        rules,
+        total: rules.length,
+      },
     };
 
-    sendResponse(res, 200, response, 'Weekly rules retrieved successfully');
+    sendResponse(res, 200, responseData);
   }
 );
 
@@ -419,50 +204,21 @@ export const getWeeklyRules = catchAsync(
 export const createWeeklyRule = catchAsync(
   async (req: Request, res: Response, next: NextFunction) => {
     const authContext = getAuthContext(req);
-    const employee = await getEmployeeContext(authContext.userId);
-    requireSuperAdminPermissions(authContext.role);
-
     const { calendarId } = req.params;
-    const createData: CreateWeeklyRuleRequestDto = req.body;
 
-    await validateCalendarAccess(calendarId, employee.companyId);
-
-    // Check for duplicate day rules
-    const existingRule = await prisma.calendarWeeklyRule.findFirst({
-      where: {
-        calendarId,
-        dayOfWeek: createData.dayOfWeek,
-      },
+    const rule = await CalendarService.createWeeklyRule({
+      authContext,
+      calendarId,
+      data: req.body,
     });
 
-    if (existingRule) {
-      return next(new AppError(`Weekly rule for day ${createData.dayOfWeek} already exists`, 400));
-    }
-
-    const rule = await prisma.calendarWeeklyRule.create({
-      data: {
-        calendarId,
-        dayOfWeek: createData.dayOfWeek,
-        type: createData.type,
-        strategy: createData.strategy,
-        interval: createData.interval,
-        referenceDate: createData.referenceDate ? new Date(createData.referenceDate) : undefined,
-        positions: createData.positions || [],
-      },
-    });
-
-    const response: WeeklyRuleResponseDto = {
-      id: rule.id,
-      calendarId: rule.calendarId,
-      dayOfWeek: rule.dayOfWeek,
-      type: rule.type,
-      strategy: rule.strategy,
-      interval: rule.interval || undefined,
-      referenceDate: rule.referenceDate || undefined,
-      positions: rule.positions.length > 0 ? rule.positions : undefined,
+    const responseData: WeeklyRuleResponseDto = {
+      success: true,
+      message: 'Weekly rule created successfully',
+      data: rule,
     };
 
-    sendResponse(res, 201, response, 'Weekly rule created successfully');
+    sendResponse(res, 201, responseData);
   }
 );
 
@@ -474,56 +230,22 @@ export const createWeeklyRule = catchAsync(
 export const updateWeeklyRule = catchAsync(
   async (req: Request, res: Response, next: NextFunction) => {
     const authContext = getAuthContext(req);
-    const employee = await getEmployeeContext(authContext.userId);
-    requireSuperAdminPermissions(authContext.role);
-
     const { calendarId, ruleId } = req.params;
-    const updateData: UpdateWeeklyRuleRequestDto = req.body;
 
-    await validateCalendarAccess(calendarId, employee.companyId);
-
-    const rule = await prisma.calendarWeeklyRule.findUnique({
-      where: { id: ruleId },
+    const rule = await CalendarService.updateWeeklyRule({
+      authContext,
+      calendarId,
+      ruleId,
+      data: req.body,
     });
 
-    if (!rule || rule.calendarId !== calendarId) {
-      return next(new AppError('Weekly rule not found', 404));
-    }
-
-    // Check for duplicate day if updating dayOfWeek
-    if (updateData.dayOfWeek !== undefined && updateData.dayOfWeek !== rule.dayOfWeek) {
-      const existingRule = await prisma.calendarWeeklyRule.findFirst({
-        where: {
-          calendarId,
-          dayOfWeek: updateData.dayOfWeek,
-        },
-      });
-
-      if (existingRule) {
-        return next(new AppError(`Weekly rule for day ${updateData.dayOfWeek} already exists`, 400));
-      }
-    }
-
-    const updatedRule = await prisma.calendarWeeklyRule.update({
-      where: { id: ruleId },
-      data: {
-        ...updateData,
-        referenceDate: updateData.referenceDate ? new Date(updateData.referenceDate) : undefined,
-      },
-    });
-
-    const response: WeeklyRuleResponseDto = {
-      id: updatedRule.id,
-      calendarId: updatedRule.calendarId,
-      dayOfWeek: updatedRule.dayOfWeek,
-      type: updatedRule.type,
-      strategy: updatedRule.strategy,
-      interval: updatedRule.interval || undefined,
-      referenceDate: updatedRule.referenceDate || undefined,
-      positions: updatedRule.positions.length > 0 ? updatedRule.positions : undefined,
+    const responseData: WeeklyRuleResponseDto = {
+      success: true,
+      message: 'Weekly rule updated successfully',
+      data: rule,
     };
 
-    sendResponse(res, 200, response, 'Weekly rule updated successfully');
+    sendResponse(res, 200, responseData);
   }
 );
 
@@ -535,26 +257,21 @@ export const updateWeeklyRule = catchAsync(
 export const deleteWeeklyRule = catchAsync(
   async (req: Request, res: Response, next: NextFunction) => {
     const authContext = getAuthContext(req);
-    const employee = await getEmployeeContext(authContext.userId);
-    requireSuperAdminPermissions(authContext.role);
-
     const { calendarId, ruleId } = req.params;
 
-    await validateCalendarAccess(calendarId, employee.companyId);
-
-    const rule = await prisma.calendarWeeklyRule.findUnique({
-      where: { id: ruleId },
+    await CalendarService.deleteWeeklyRule({
+      authContext,
+      calendarId,
+      ruleId,
     });
 
-    if (!rule || rule.calendarId !== calendarId) {
-      return next(new AppError('Weekly rule not found', 404));
-    }
+    const responseData = {
+      success: true,
+      message: 'Weekly rule deleted successfully',
+      data: null,
+    };
 
-    await prisma.calendarWeeklyRule.delete({
-      where: { id: ruleId },
-    });
-
-    sendResponse(res, 200, { message: 'Weekly rule deleted successfully' }, 'Weekly rule deleted successfully');
+    sendResponse(res, 200, responseData);
   }
 );
 
@@ -570,44 +287,25 @@ export const deleteWeeklyRule = catchAsync(
 export const getHolidays = catchAsync(
   async (req: Request, res: Response, next: NextFunction) => {
     const authContext = getAuthContext(req);
-    const employee = await getEmployeeContext(authContext.userId);
     const { calendarId } = req.params;
-
-    // All authenticated users can view holidays if they know the calendar ID
-    if (!canViewCalendarById(authContext.role)) {
-      return next(new AppError('Insufficient permissions to view holidays', 403));
-    }
-
-    await validateCalendarAccess(calendarId, employee.companyId);
-
     const year = parseInt(req.query.year as string) || new Date().getFullYear();
 
-    const startDate = new Date(year, 0, 1);
-    const endDate = new Date(year, 11, 31);
-
-    const holidays = await prisma.calendarHoliday.findMany({
-      where: {
-        calendarId,
-        date: {
-          gte: startDate,
-          lte: endDate,
-        },
-      },
-      orderBy: { date: 'asc' },
+    const holidays = await CalendarService.getHolidays({
+      authContext,
+      calendarId,
+      year,
     });
 
-    const response: HolidaysListResponseDto = {
-      holidays: holidays.map((holiday) => ({
-        id: holiday.id,
-        calendarId: holiday.calendarId,
-        date: holiday.date,
-        name: holiday.name,
-        isOptional: holiday.isOptional,
-      })),
-      total: holidays.length,
+    const responseData: HolidaysListResponseDto = {
+      success: true,
+      message: 'Holidays retrieved successfully',
+      data: {
+        holidays,
+        total: holidays.length,
+      },
     };
 
-    sendResponse(res, 200, response, 'Holidays retrieved successfully');
+    sendResponse(res, 200, responseData);
   }
 );
 
@@ -619,49 +317,21 @@ export const getHolidays = catchAsync(
 export const createHoliday = catchAsync(
   async (req: Request, res: Response, next: NextFunction) => {
     const authContext = getAuthContext(req);
-    const employee = await getEmployeeContext(authContext.userId);
-    requireSuperAdminPermissions(authContext.role);
-
     const { calendarId } = req.params;
-    const createData: CreateHolidayRequestDto = req.body;
 
-    await validateCalendarAccess(calendarId, employee.companyId);
-
-    const holidayDate = new Date(createData.date);
-    holidayDate.setHours(0, 0, 0, 0);
-
-    // Check for duplicate holiday on same date
-    const existingHoliday = await prisma.calendarHoliday.findUnique({
-      where: {
-        calendarId_date: {
-          calendarId,
-          date: holidayDate,
-        },
-      },
+    const holiday = await CalendarService.createHoliday({
+      authContext,
+      calendarId,
+      data: req.body,
     });
 
-    if (existingHoliday) {
-      return next(new AppError('Holiday already exists on this date', 400));
-    }
-
-    const holiday = await prisma.calendarHoliday.create({
-      data: {
-        calendarId,
-        date: holidayDate,
-        name: createData.name,
-        isOptional: createData.isOptional || false,
-      },
-    });
-
-    const response: HolidayResponseDto = {
-      id: holiday.id,
-      calendarId: holiday.calendarId,
-      date: holiday.date,
-      name: holiday.name,
-      isOptional: holiday.isOptional,
+    const responseData: HolidayResponseDto = {
+      success: true,
+      message: 'Holiday created successfully',
+      data: holiday,
     };
 
-    sendResponse(res, 201, response, 'Holiday created successfully');
+    sendResponse(res, 201, responseData);
   }
 );
 
@@ -673,36 +343,22 @@ export const createHoliday = catchAsync(
 export const updateHoliday = catchAsync(
   async (req: Request, res: Response, next: NextFunction) => {
     const authContext = getAuthContext(req);
-    const employee = await getEmployeeContext(authContext.userId);
-    requireSuperAdminPermissions(authContext.role);
-
     const { calendarId, holidayId } = req.params;
-    const updateData: UpdateHolidayRequestDto = req.body;
 
-    await validateCalendarAccess(calendarId, employee.companyId);
-
-    const holiday = await prisma.calendarHoliday.findUnique({
-      where: { id: holidayId },
+    const holiday = await CalendarService.updateHoliday({
+      authContext,
+      calendarId,
+      holidayId,
+      data: req.body,
     });
 
-    if (!holiday || holiday.calendarId !== calendarId) {
-      return next(new AppError('Holiday not found', 404));
-    }
-
-    const updatedHoliday = await prisma.calendarHoliday.update({
-      where: { id: holidayId },
-      data: updateData,
-    });
-
-    const response: HolidayResponseDto = {
-      id: updatedHoliday.id,
-      calendarId: updatedHoliday.calendarId,
-      date: updatedHoliday.date,
-      name: updatedHoliday.name,
-      isOptional: updatedHoliday.isOptional,
+    const responseData: HolidayResponseDto = {
+      success: true,
+      message: 'Holiday updated successfully',
+      data: holiday,
     };
 
-    sendResponse(res, 200, response, 'Holiday updated successfully');
+    sendResponse(res, 200, responseData);
   }
 );
 
@@ -714,25 +370,20 @@ export const updateHoliday = catchAsync(
 export const deleteHoliday = catchAsync(
   async (req: Request, res: Response, next: NextFunction) => {
     const authContext = getAuthContext(req);
-    const employee = await getEmployeeContext(authContext.userId);
-    requireSuperAdminPermissions(authContext.role);
-
     const { calendarId, holidayId } = req.params;
 
-    await validateCalendarAccess(calendarId, employee.companyId);
-
-    const holiday = await prisma.calendarHoliday.findUnique({
-      where: { id: holidayId },
+    await CalendarService.deleteHoliday({
+      authContext,
+      calendarId,
+      holidayId,
     });
 
-    if (!holiday || holiday.calendarId !== calendarId) {
-      return next(new AppError('Holiday not found', 404));
-    }
+    const responseData = {
+      success: true,
+      message: 'Holiday deleted successfully',
+      data: null,
+    };
 
-    await prisma.calendarHoliday.delete({
-      where: { id: holidayId },
-    });
-
-    sendResponse(res, 200, { message: 'Holiday deleted successfully' }, 'Holiday deleted successfully');
+    sendResponse(res, 200, responseData);
   }
 );

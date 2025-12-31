@@ -1,7 +1,6 @@
 import { Router } from 'express';
 import { Role } from '@prisma/client';
 import * as CompanyController from './company.controller';
-import validate from '@/shared/middleware/validate-resource.middleware';
 import { updateCompanySchema } from './company.schema';
 
 // Import Sub-Routers for "Nested Creation/Listing"
@@ -10,7 +9,7 @@ import calendarRoutes from '@/modules/calendar/calendar.routes';
 import leaveRoutes from '@/modules/leave/leave.routes';
 import invitationRoutes from '@/modules/invitation/invitation.routes';
 import leaveGradeRoutes from '@/modules/leave-grade/leave-grade.routes';
-import { protect, resolveTenant, restrictTo } from '@/shared/middleware';
+import { protect, resolveTenant, restrictTo, validate } from '@/shared/middleware';
 
 const router = Router();
 

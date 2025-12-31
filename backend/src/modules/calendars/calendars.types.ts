@@ -1,18 +1,16 @@
 import { Role } from '@prisma/client';
+import { TokenPayload } from '@/modules/auth/auth.types';
 
-// =========================================================================
+// ============================================================================
 // INTERNAL TYPES (NOT for API responses)
-// =========================================================================
+// ============================================================================
 
 /**
  * Authenticated user context extracted from JWT token
+ * Uses the same TokenPayload as the auth module for consistency
  */
-export interface AuthContext {
-  userId: string;
-  email: string;
-  role: Role;
-  employeeId?: string;
-  companyId?: string;
+export interface AuthContext extends TokenPayload {
+  // Inherits all properties from TokenPayload
 }
 
 /**
