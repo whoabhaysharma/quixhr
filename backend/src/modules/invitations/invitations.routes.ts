@@ -14,9 +14,35 @@ import { restrictTo, validate } from '@/shared/middleware';
 const router = Router();
 
 // =========================================================================
-// INVITATION ROUTES
+// PUBLIC INVITATION ROUTES
 // =========================================================================
-// All routes here are already protected and have resolved tenant context
+
+/**
+ * @route   GET /api/v1/invitations/:token
+ * @desc    Get invitation details by token (validate before accepting)
+ * @access  Public
+ */
+router.get(
+  '/:token',
+  validate(getInvitationSchema),
+  InvitationController.getInvitationByToken
+);
+
+/**
+ * @route   POST /api/v1/invitations/accept
+ * @desc    Accept an invitation and create user account
+ * @access  Public
+ */
+router.post(
+  '/accept',
+  validate(acceptInvitationSchema),
+  InvitationController.acceptInvitation
+);
+
+// =========================================================================
+// PROTECTED INVITATION ROUTES
+// =========================================================================
+// All routes below require authentication and have resolved tenant context
 // from the parent companies router
 
 /**

@@ -16,7 +16,6 @@ import {
   ForgotPasswordRequestDto,
   ResetPasswordRequestDto,
   VerifyEmailRequestDto,
-  JoinCompanyRequestDto,
   ChangePasswordRequestDto,
 } from './auth.schema';
 
@@ -28,9 +27,10 @@ import {
  * Generate JWT token
  */
 const generateToken = (payload: TokenPayload, expiresIn: string = '7d'): string => {
-  return jwt.sign(payload, process.env.JWT_SECRET || 'your-secret-key', {
+  const secret = process.env.JWT_SECRET || 'your-secret-key';
+  return jwt.sign(payload, secret, {
     expiresIn,
-  });
+  } as any);
 };
 
 /**
@@ -197,7 +197,7 @@ export const register = catchAsync(
       user: buildUserResponse(userWithEmployee),
     };
 
-    sendResponse(res, 201, 'Company and user registered successfully', response);
+    sendResponse(res, 201, response, 'Company and user registered successfully');
   }
 );
 
@@ -231,8 +231,8 @@ export const login = catchAsync(
       userId: user.id,
       email: user.email,
       role: user.role,
-      employeeId: user.employee?.[0]?.id,
-      companyId: user.employee?.[0]?.companyId,
+      employeeId: user.employee?.id,
+      companyId: user.employee?.companyId,
     };
 
     const accessToken = generateToken(tokenPayload, '1h');
@@ -241,10 +241,10 @@ export const login = catchAsync(
     const response: AuthResponseDto = {
       accessToken,
       refreshToken,
-      user: buildUserResponse({ ...user, employee: user.employee?.[0] }),
+      user: buildUserResponse({ ...user, employee: user.employee || undefined }),
     };
 
-    sendResponse(res, 200, 'User logged in successfully', response);
+    sendResponse(res, 200, response, 'User logged in successfully');
   }
 );
 
@@ -280,8 +280,8 @@ export const refreshToken = catchAsync(
         userId: user.id,
         email: user.email,
         role: user.role,
-        employeeId: user.employee?.[0]?.id,
-        companyId: user.employee?.[0]?.companyId,
+        employeeId: user.employee?.id,
+        companyId: user.employee?.companyId,
       };
 
       const accessToken = generateToken(tokenPayload, '1h');
@@ -290,10 +290,10 @@ export const refreshToken = catchAsync(
       const response: AuthResponseDto = {
         accessToken,
         refreshToken: newRefreshToken,
-        user: buildUserResponse({ ...user, employee: user.employee?.[0] }),
+        user: buildUserResponse({ ...user, employee: user.employee || undefined }),
       };
 
-      sendResponse(res, 200, 'Token refreshed successfully', response);
+      sendResponse(res, 200, response, 'Token refreshed successfully');
     } catch (error) {
       return next(new AppError('Invalid refresh token', 401));
     }
@@ -447,106 +447,6 @@ export const verifyEmail = catchAsync(
 );
 
 /**
- * @desc    Join company (accept invitation)
- * @route   POST /api/v1/auth/join-company
- * @access  Public
- */
-export const joinCompany = catchAsync(
-  async (req: Request, res: Response, next: NextFunction) => {
-    const {
-      token,
-      password,
-      firstName,
-      lastName,
-    }: JoinCompanyRequestDto = req.body;
-
-    // Find valid invitation
-    const invitation = await prisma.invitation.findUnique({
-      where: { token },
-      include: { company: true },
-    });
-
-    if (
-      !invitation ||
-      invitation.status !== 'PENDING' ||
-      new Date() > invitation.expiresAt
-    ) {
-      return next(new AppError('Invalid or expired invitation', 400));
-    }
-
-    // Check if user already exists
-    const existingUser = await prisma.user.findUnique({
-      where: { email: invitation.email },
-    });
-
-    if (existingUser) {
-      return next(new AppError('User already exists with this email', 400));
-    }
-
-    // Hash password
-    const hashedPassword = await hashPassword(password);
-
-    // Create user and employee in a transaction
-    const result = await prisma.$transaction(async (tx) => {
-      // Create User
-      const user = await tx.user.create({
-        data: {
-          email: invitation.email,
-          password: hashedPassword,
-          role: invitation.role,
-          isEmailVerified: false,
-        },
-      });
-
-      // Create Employee
-      const employee = await tx.employee.create({
-        data: {
-          companyId: invitation.companyId,
-          userId: user.id,
-          firstName,
-          lastName,
-          status: 'ACTIVE',
-          joiningDate: new Date(),
-        },
-      });
-
-      // Update invitation status
-      await tx.invitation.update({
-        where: { id: invitation.id },
-        data: { status: 'ACCEPTED' },
-      });
-
-      return { user, employee };
-    });
-
-    // Generate tokens
-    const tokenPayload: TokenPayload = {
-      userId: result.user.id,
-      email: result.user.email,
-      role: result.user.role,
-      employeeId: result.employee.id,
-      companyId: result.employee.companyId,
-    };
-
-    const accessToken = generateToken(tokenPayload, '1h');
-    const refreshToken = generateToken(tokenPayload, '7d');
-
-    const userWithEmployee = {
-      ...result.user,
-      employee: result.employee,
-    };
-
-    const response: AuthResponseDto = {
-      accessToken,
-      refreshToken,
-      user: buildUserResponse(userWithEmployee),
-    };
-
-    sendResponse(res, 201, 'User joined company successfully', response);
-  }
-);
-
-/**
  * @desc    Logout user
  * @route   POST /api/v1/auth/logout
  * @access  Protected
@@ -559,7 +459,7 @@ export const logout = catchAsync(
     // 3. Frontend-side token removal
 
     // For now, just return success (token will expire naturally)
-    sendResponse(res, 200, 'User logged out successfully');
+    sendResponse(res, 200, null, 'User logged out successfully');
   }
 );
 
@@ -596,6 +496,6 @@ export const changePassword = catchAsync(
       data: { password: hashedPassword },
     });
 
-    sendResponse(res, 200, 'Password changed successfully');
+    sendResponse(res, 200, null, 'Password changed successfully');
   }
 );

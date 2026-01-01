@@ -8,7 +8,6 @@ import {
     forgotPasswordSchema,
     resetPasswordSchema,
     verifyEmailSchema,
-    joinCompanySchema,
     changePasswordSchema,
 } from './auth.schema';
 
@@ -84,24 +83,6 @@ router.post(
     '/verify-email',
     validate(verifyEmailSchema),
     AuthController.verifyEmail
-);
-
-/**
- * @route   POST /api/v1/auth/join-company
- * @desc    Accept company invitation and create user account
- * @access  Public
- * @body    {
- *   token: string,
- *   password: string,
- *   confirmPassword: string,
- *   firstName: string,
- *   lastName: string
- * }
- */
-router.post(
-    '/join-company',
-    validate(joinCompanySchema),
-    AuthController.joinCompany
 );
 
 // =========================================================================

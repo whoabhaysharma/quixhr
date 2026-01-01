@@ -2,191 +2,130 @@ import { Router } from 'express';
 import { Role } from '@prisma/client';
 import { protect, restrictTo } from '@/shared/middleware';
 import validate from '@/shared/middleware/validate-resource.middleware';
+import * as CalendarController from './calendars.controller';
 import {
-  getCalendars,
-  getCalendarById,
-  createCalendar,
-  updateCalendar,
-  deleteCalendar,
-  getWeeklyRules,
-  createWeeklyRule,
-  updateWeeklyRule,
-  deleteWeeklyRule,
-  getHolidays,
-  createHoliday,
-  updateHoliday,
-  deleteHoliday,
-} from './calendars.controller';
-import {
-  createCalendarSchema,
-  updateCalendarSchema,
-  createWeeklyRuleSchema,
-  updateWeeklyRuleSchema,
-  createHolidaySchema,
-  updateHolidaySchema,
-  calendarQuerySchema,
-  holidayQuerySchema,
+    updateCalendarSchema,
+    createWeeklyRuleSchema,
+    updateWeeklyRuleSchema,
+    createHolidaySchema,
+    updateHolidaySchema,
+    calendarQuerySchema,
+    holidayQuerySchema,
 } from './calendars.schema';
 
 const router = Router();
-
-// Apply authentication middleware to all routes
 router.use(protect);
 
 // =========================================================================
-// CALENDAR ROUTES (Tenant-Scoped Authorization)
+// 1. GLOBAL LIST (Super Admin / Cross-Company)
 // =========================================================================
 
 /**
  * @route   GET /api/v1/calendars
- * @desc    Get all calendars for user's company
- * @access  SUPER_ADMIN only
- * @query   ?page=1&limit=20&name=searchTerm
+ * @desc    Get all calendars (Super Admin view)
  */
 router.get(
-  '/', 
-  restrictTo(Role.SUPER_ADMIN), 
-  validate(calendarQuerySchema), 
-  getCalendars
+    '/',
+    restrictTo(Role.SUPER_ADMIN),
+    validate(calendarQuerySchema),
+    CalendarController.getCalendars
 );
 
-/**
- * @route   GET /api/v1/calendars/:calendarId
- * @desc    Get calendar details by ID
- * @access  All authenticated users (scoped to company)
- */
-router.get('/:calendarId', getCalendarById);
+// =========================================================================
+// 2. SUB-RESOURCES: WEEKLY RULES (Shallow Management)
+// =========================================================================
+// NOTE: We define these BEFORE the generic /:calendarId to avoid collisions.
 
-/**
- * @route   POST /api/v1/calendars
- * @desc    Create a new calendar
- * @access  SUPER_ADMIN only
- */
-router.post(
-  '/', 
-  restrictTo(Role.SUPER_ADMIN), 
-  validate(createCalendarSchema), 
-  createCalendar
-);
-
-/**
- * @route   PATCH /api/v1/calendars/:calendarId
- * @desc    Update calendar
- * @access  SUPER_ADMIN only
- */
+// --- Management (Using unique Rule ID) ---
+// PATCH /api/v1/calendars/weekly-rules/:ruleId
 router.patch(
-  '/:calendarId', 
-  restrictTo(Role.SUPER_ADMIN), 
-  validate(updateCalendarSchema), 
-  updateCalendar
+    '/weekly-rules/:ruleId',
+    restrictTo(Role.SUPER_ADMIN, Role.ORG_ADMIN, Role.HR_ADMIN, Role.MANAGER),
+    validate(updateWeeklyRuleSchema),
+    CalendarController.updateWeeklyRule
 );
 
-/**
- * @route   DELETE /api/v1/calendars/:calendarId
- * @desc    Delete calendar
- * @access  SUPER_ADMIN only
- */
+// DELETE /api/v1/calendars/weekly-rules/:ruleId
 router.delete(
-  '/:calendarId', 
-  restrictTo(Role.SUPER_ADMIN), 
-  deleteCalendar
+    '/weekly-rules/:ruleId',
+    restrictTo(Role.SUPER_ADMIN, Role.ORG_ADMIN, Role.HR_ADMIN, Role.MANAGER),
+    CalendarController.deleteWeeklyRule
 );
 
-// =========================================================================
-// WEEKLY RULES ROUTES (Tenant-Scoped Authorization)
-// =========================================================================
-
-/**
- * @route   GET /api/v1/calendars/:calendarId/weekly-rules
- * @desc    Get all weekly rules for a calendar
- * @access  All authenticated users (scoped to company)
- */
-router.get('/:calendarId/weekly-rules', getWeeklyRules);
-
-/**
- * @route   POST /api/v1/calendars/:calendarId/weekly-rules
- * @desc    Create a new weekly rule for calendar
- * @access  SUPER_ADMIN only
- */
-router.post(
-  '/:calendarId/weekly-rules', 
-  restrictTo(Role.SUPER_ADMIN), 
-  validate(createWeeklyRuleSchema), 
-  createWeeklyRule
-);
-
-/**
- * @route   PATCH /api/v1/calendars/:calendarId/weekly-rules/:ruleId
- * @desc    Update a weekly rule
- * @access  SUPER_ADMIN only
- */
+// --- Holidays Management (Using unique Holiday ID) ---
+// PATCH /api/v1/calendars/holidays/:holidayId
 router.patch(
-  '/:calendarId/weekly-rules/:ruleId', 
-  restrictTo(Role.SUPER_ADMIN), 
-  validate(updateWeeklyRuleSchema), 
-  updateWeeklyRule
+    '/holidays/:holidayId',
+    restrictTo(Role.SUPER_ADMIN, Role.ORG_ADMIN, Role.HR_ADMIN, Role.MANAGER),
+    validate(updateHolidaySchema),
+    CalendarController.updateHoliday
 );
 
-/**
- * @route   DELETE /api/v1/calendars/:calendarId/weekly-rules/:ruleId
- * @desc    Delete a weekly rule
- * @access  SUPER_ADMIN only
- */
+// DELETE /api/v1/calendars/holidays/:holidayId
 router.delete(
-  '/:calendarId/weekly-rules/:ruleId', 
-  restrictTo(Role.SUPER_ADMIN), 
-  deleteWeeklyRule
+    '/holidays/:holidayId',
+    restrictTo(Role.SUPER_ADMIN, Role.ORG_ADMIN, Role.HR_ADMIN, Role.MANAGER),
+    CalendarController.deleteHoliday
 );
 
 // =========================================================================
-// HOLIDAY ROUTES (Tenant-Scoped Authorization)
+// 3. SINGLE CALENDAR & DEEP NESTED LISTS
 // =========================================================================
 
-/**
- * @route   GET /api/v1/calendars/:calendarId/holidays
- * @desc    Get all holidays for a calendar
- * @access  All authenticated users (scoped to company)
- * @query   ?year=2025
- */
+// --- Get/Update/Delete Calendar ---
+// URL: /api/v1/calendars/:calendarId
 router.get(
-  '/:calendarId/holidays', 
-  validate(holidayQuerySchema), 
-  getHolidays
+    '/:calendarId',
+    restrictTo(Role.SUPER_ADMIN, Role.ORG_ADMIN, Role.HR_ADMIN, Role.MANAGER),
+    CalendarController.getCalendarById
 );
 
-/**
- * @route   POST /api/v1/calendars/:calendarId/holidays
- * @desc    Create a new holiday for calendar
- * @access  SUPER_ADMIN only
- */
-router.post(
-  '/:calendarId/holidays', 
-  restrictTo(Role.SUPER_ADMIN), 
-  validate(createHolidaySchema), 
-  createHoliday
-);
-
-/**
- * @route   PATCH /api/v1/calendars/:calendarId/holidays/:holidayId
- * @desc    Update a holiday
- * @access  SUPER_ADMIN only
- */
 router.patch(
-  '/:calendarId/holidays/:holidayId', 
-  restrictTo(Role.SUPER_ADMIN), 
-  validate(updateHolidaySchema), 
-  updateHoliday
+    '/:calendarId',
+    restrictTo(Role.SUPER_ADMIN, Role.ORG_ADMIN, Role.HR_ADMIN, Role.MANAGER),
+    validate(updateCalendarSchema),
+    CalendarController.updateCalendar
 );
 
-/**
- * @route   DELETE /api/v1/calendars/:calendarId/holidays/:holidayId
- * @desc    Delete a holiday
- * @access  SUPER_ADMIN only
- */
 router.delete(
-  '/:calendarId/holidays/:holidayId', 
-  restrictTo(Role.SUPER_ADMIN), 
-  deleteHoliday
+    '/:calendarId',
+    restrictTo(Role.SUPER_ADMIN, Role.ORG_ADMIN, Role.HR_ADMIN, Role.MANAGER),
+    CalendarController.deleteCalendar
+);
+
+// --- Sub-Resource Lists & Creation (Requires Calendar Context) ---
+
+// Weekly Rules
+// GET /api/v1/calendars/:calendarId/weekly-rules
+router.get(
+    '/:calendarId/weekly-rules',
+    restrictTo(Role.SUPER_ADMIN, Role.ORG_ADMIN, Role.HR_ADMIN, Role.MANAGER),
+    CalendarController.getWeeklyRules
+);
+
+// POST /api/v1/calendars/:calendarId/weekly-rules
+router.post(
+    '/:calendarId/weekly-rules',
+    restrictTo(Role.SUPER_ADMIN, Role.ORG_ADMIN, Role.HR_ADMIN), // Usually Admins only
+    validate(createWeeklyRuleSchema),
+    CalendarController.createWeeklyRule
+);
+
+// Holidays
+// GET /api/v1/calendars/:calendarId/holidays
+router.get(
+    '/:calendarId/holidays',
+    restrictTo(Role.SUPER_ADMIN, Role.ORG_ADMIN, Role.HR_ADMIN, Role.MANAGER),
+    validate(holidayQuerySchema),
+    CalendarController.getHolidays
+);
+
+// POST /api/v1/calendars/:calendarId/holidays
+router.post(
+    '/:calendarId/holidays',
+    restrictTo(Role.SUPER_ADMIN, Role.ORG_ADMIN, Role.HR_ADMIN),
+    validate(createHolidaySchema),
+    CalendarController.createHoliday
 );
 
 export default router;

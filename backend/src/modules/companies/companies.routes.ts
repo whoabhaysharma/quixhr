@@ -1,120 +1,105 @@
 import { Router } from 'express';
 import { Role } from '@prisma/client';
 import * as CompanyController from './company.controller';
-import { updateCompanySchema } from './company.schema';
+import { updateCompanySchema, auditLogQuerySchema } from './company.schema';
 
-// Import Sub-Routers for "Nested Creation/Listing"
-import employeeRoutes from '@/modules/employees/employees.routes';
-import calendarRoutes from '@/modules/calendars/calendars.routes';
-import leaveRoutes from '@/modules/leaves/leaves.routes';
-import invitationRoutes from '@/modules/invitations/invitations.routes';
-import leaveGradeRoutes from '@/modules/leave-grades/leave-grades.routes';
+// --- Cross-Module Imports ---
+import * as CalendarController from '../calendars/calendars.controller';
+import { createCalendarSchema, calendarQuerySchema } from '../calendars/calendars.schema';
+
 import { protect, resolveTenant, restrictTo, validate } from '@/shared/middleware';
 
 const router = Router();
 
-// =========================================================================
-// 1. GLOBAL MIDDLEWARE
-// =========================================================================
-// All routes here require login
+// Global Middleware
 router.use(protect);
 
 // =========================================================================
-// 2. MOUNT SUB-ROUTERS (The "Nested" Strategy)
+// 1. NESTED RESOURCE ENTRY POINTS (The "Context" Routes)
 // =========================================================================
-// This enables URLs like: POST /api/v1/companies/:companyId/employees
-// The 'resolveTenant' middleware ensures the user actually belongs to :companyId
+// These routes exist here because they REQUIRE a companyId to function.
 
-router.use('/:companyId/employees', resolveTenant, employeeRoutes);
-router.use('/:companyId/calendars', resolveTenant, calendarRoutes);
-router.use('/:companyId/invitations', resolveTenant, invitationRoutes);
+// --- Calendars (Nested List & Create) ---
+// GET /api/v1/companies/:companyId/calendars
+router.get(
+    '/:companyId/calendars',
+    resolveTenant,
+    restrictTo(Role.SUPER_ADMIN, Role.ORG_ADMIN, Role.HR_ADMIN, Role.MANAGER),
+    validate(calendarQuerySchema),
+    CalendarController.getCalendars
+);
 
-// Leave Routes (For Admin Inbox / Reports context)
-router.use('/:companyId/leaves', resolveTenant, leaveRoutes);
-
-// Leave Grades (Policies)
-router.use('/:companyId/leave-grades', resolveTenant, leaveGradeRoutes);
+// POST /api/v1/companies/:companyId/calendars
+router.post(
+    '/:companyId/calendars',
+    resolveTenant,
+    restrictTo(Role.SUPER_ADMIN, Role.ORG_ADMIN, Role.HR_ADMIN),
+    validate(createCalendarSchema),
+    CalendarController.createCalendar
+);
 
 
 // =========================================================================
-// 3. COMPANY MANAGEMENT (Admin Only)
+// 2. COMPANY MANAGEMENT ROUTES
 // =========================================================================
 
 /**
  * @route   GET /api/v1/companies/:companyId
- * @desc    Get company details (Name, Timezone, Plan status)
- * @access  ORG_ADMIN, HR_ADMIN, SUPER_ADMIN
  */
 router.get(
-  '/:companyId',
-  resolveTenant,
-  restrictTo(Role.ORG_ADMIN, Role.HR_ADMIN, Role.SUPER_ADMIN),
-  CompanyController.getCompany
+    '/:companyId',
+    resolveTenant,
+    restrictTo(Role.ORG_ADMIN, Role.HR_ADMIN, Role.SUPER_ADMIN),
+    CompanyController.getCompany
 );
 
 /**
  * @route   PATCH /api/v1/companies/:companyId
- * @desc    Update settings (Timezone, Currency, Logo)
- * @access  ORG_ADMIN, SUPER_ADMIN (HR usually cannot change these)
  */
 router.patch(
-  '/:companyId',
-  resolveTenant,
-  restrictTo(Role.ORG_ADMIN, Role.SUPER_ADMIN),
-  validate(updateCompanySchema),
-  CompanyController.updateCompany
+    '/:companyId',
+    resolveTenant,
+    restrictTo(Role.ORG_ADMIN, Role.SUPER_ADMIN),
+    validate(updateCompanySchema),
+    CompanyController.updateCompany
 );
 
 /**
  * @route   GET /api/v1/companies/:companyId/dashboard
- * @desc    Get Admin Dashboard Stats (Headcount, Absent today, Pending Leaves)
- * @access  ORG_ADMIN, HR_ADMIN, SUPER_ADMIN
  */
 router.get(
-  '/:companyId/dashboard',
-  resolveTenant,
-  restrictTo(Role.ORG_ADMIN, Role.HR_ADMIN, Role.SUPER_ADMIN),
-  CompanyController.getDashboardStats
+    '/:companyId/dashboard',
+    resolveTenant,
+    restrictTo(Role.ORG_ADMIN, Role.HR_ADMIN, Role.SUPER_ADMIN),
+    CompanyController.getDashboardStats
 );
 
 /**
  * @route   GET /api/v1/companies/:companyId/audit-logs
- * @desc    Get all audit logs for this company (Compliance)
- * @access  ORG_ADMIN, SUPER_ADMIN
  */
 router.get(
-  '/:companyId/audit-logs',
-  resolveTenant,
-  restrictTo(Role.ORG_ADMIN, Role.SUPER_ADMIN),
-  CompanyController.getCompanyAuditLogs
+    '/:companyId/audit-logs',
+    resolveTenant,
+    restrictTo(Role.ORG_ADMIN, Role.SUPER_ADMIN),
+    validate(auditLogQuerySchema),
+    CompanyController.getCompanyAuditLogs
 );
 
 // =========================================================================
-// 4. BILLING & PLANS (Sensitive)
+// 3. BILLING & PLANS
 // =========================================================================
-
-/**
- * @route   POST /api/v1/companies/:companyId/billing/upgrade
- * @desc    Initiate a Plan Upgrade (e.g. generate Razorpay Order)
- * @access  ORG_ADMIN, SUPER_ADMIN
- */
 router.post(
-  '/:companyId/billing/upgrade',
-  resolveTenant,
-  restrictTo(Role.ORG_ADMIN, Role.SUPER_ADMIN),
-  CompanyController.initiateUpgrade
+    '/:companyId/billing/upgrade',
+    resolveTenant,
+    restrictTo(Role.ORG_ADMIN, Role.SUPER_ADMIN),
+    CompanyController.initiateUpgrade
 );
 
-/**
- * @route   GET /api/v1/companies/:companyId/billing/invoices
- * @desc    Get payment history
- * @access  ORG_ADMIN, SUPER_ADMIN
- */
 router.get(
-  '/:companyId/billing/invoices',
-  resolveTenant,
-  restrictTo(Role.ORG_ADMIN, Role.SUPER_ADMIN),
-  CompanyController.getBillingHistory
+    '/:companyId/billing/invoices',
+    resolveTenant,
+    restrictTo(Role.ORG_ADMIN, Role.SUPER_ADMIN),
+    CompanyController.getBillingHistory
 );
 
 export default router;

@@ -41,8 +41,6 @@ export const registerSchema = z.object({
 
 export type RegisterRequestDto = z.infer<typeof registerSchema>;
 
-export type RegisterRequestDto = z.infer<typeof registerSchema>;
-
 /**
  * Login schema
  */
@@ -90,34 +88,6 @@ export const verifyEmailSchema = z.object({
 });
 
 export type VerifyEmailRequestDto = z.infer<typeof verifyEmailSchema>;
-
-/**
- * Join company schema - Accept invitation
- */
-export const joinCompanySchema = z.object({
-  token: z.string().min(1, 'Invitation token is required'),
-  password: z
-    .string()
-    .min(8, 'Password must be at least 8 characters')
-    .regex(/[A-Z]/, 'Password must contain at least one uppercase letter')
-    .regex(/[a-z]/, 'Password must contain at least one lowercase letter')
-    .regex(/[0-9]/, 'Password must contain at least one digit')
-    .regex(/[@$!%*?&#^-]/, 'Password must contain at least one special character'),
-  confirmPassword: z.string(),
-  firstName: z
-    .string()
-    .min(1, 'First name is required')
-    .max(100, 'First name must not exceed 100 characters'),
-  lastName: z
-    .string()
-    .min(1, 'Last name is required')
-    .max(100, 'Last name must not exceed 100 characters'),
-}).refine((data) => data.password === data.confirmPassword, {
-  message: 'Passwords do not match',
-  path: ['confirmPassword'],
-});
-
-export type JoinCompanyRequestDto = z.infer<typeof joinCompanySchema>;
 
 /**
  * Change password schema
