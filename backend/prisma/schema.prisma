@@ -138,7 +138,7 @@ model Payment {
   
   // Metadata (e.g., "Manual Renewal - 1 Year")
   notes             String?         
-  
+
   createdAt         DateTime        @default(now())
   subscription      Subscription    @relation(fields: [subscriptionId], references: [id])
 }

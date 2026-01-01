@@ -94,19 +94,19 @@ export interface EmployeeResponseDto {
     firstName: string;
     lastName: string;
     fullName: string;
-    code?: string;
+    code?: string | null;
     status: string;
     joiningDate: Date;
-    email?: string;
-    role?: Role;
+    email?: string | null;
+    role?: Role | null;
     calendar?: {
       id: string;
       name: string;
-    };
+    } | null;
     leaveGrade?: {
       id: string;
       name: string;
-    };
+    } | null;
   };
 }
 
@@ -122,7 +122,7 @@ export interface EmployeeDetailsResponseDto {
     firstName: string;
     lastName: string;
     fullName: string;
-    code?: string;
+    code?: string | null;
     status: string;
     joiningDate: Date;
     user?: {
@@ -130,13 +130,13 @@ export interface EmployeeDetailsResponseDto {
       email: string;
       role: Role;
       isEmailVerified: boolean;
-    };
+    } | null;
     calendar?: {
       id: string;
       name: string;
       dayStartTime: number;
       dayEndTime: number;
-    };
+    } | null;
     leaveGrade?: {
       id: string;
       name: string;
@@ -145,7 +145,7 @@ export interface EmployeeDetailsResponseDto {
         totalDays: number;
         carryForward: boolean;
       }>;
-    };
+    } | null;
   };
 }
 
@@ -162,19 +162,19 @@ export interface EmployeesListResponseDto {
       firstName: string;
       lastName: string;
       fullName: string;
-      code?: string;
+      code?: string | null;
       status: string;
       joiningDate: Date;
-      email?: string;
-      role?: Role;
+      email?: string | null;
+      role?: Role | null;
       calendar?: {
         id: string;
         name: string;
-      };
+      } | null;
       leaveGrade?: {
         id: string;
         name: string;
-      };
+      } | null;
     }>;
     pagination: {
       total: number;

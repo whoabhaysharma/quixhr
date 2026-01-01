@@ -1,6 +1,6 @@
 import { z } from 'zod';
 
-export const updateCompanySchema = z.object({
+export const updateCompanySchema = {
     body: z.object({
         name: z.string().optional(),
         timezone: z.string().optional(),
@@ -8,11 +8,11 @@ export const updateCompanySchema = z.object({
         dateFormat: z.string().optional(),
         logoUrl: z.string().url().optional(),
     }),
-});
+};
 
-export const auditLogQuerySchema = z.object({
+export const auditLogQuerySchema = {
     query: z.object({
         page: z.string().regex(/^\d+$/).transform(Number).optional(),
         limit: z.string().regex(/^\d+$/).transform(Number).optional(),
     }),
-});
+};

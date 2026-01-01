@@ -18,6 +18,7 @@ import companyRoutes from './modules/companies/companies.routes';
 import employeeRoutes from './modules/employees/employees.routes';
 import calendarRoutes from './modules/calendars/calendars.routes';
 import leaveRoutes from './modules/leaves/leaves.routes';
+import allocationRoutes from './modules/allocations/allocations.routes';
 import userRoutes from './modules/users/users.routes';
 import { apiLimiter } from './utils/rateLImiter';
 
@@ -71,6 +72,7 @@ app.use('/api/v1/companies', companyRoutes);
 app.use('/api/v1/employees', employeeRoutes);
 app.use('/api/v1/calendars', calendarRoutes);
 app.use('/api/v1/leaves', leaveRoutes);
+app.use('/api/v1/allocations', allocationRoutes);
 app.use('/api/v1/users', userRoutes);
 
 // ==========================================

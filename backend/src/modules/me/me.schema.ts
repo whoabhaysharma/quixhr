@@ -8,51 +8,64 @@ import { Role, LeaveType, LeaveStatus, AttendanceStatus } from '@prisma/client';
 /**
  * Update user profile schema
  */
-export const updateUserProfileSchema = z.object({
-  email: z.string().email('Invalid email format').optional(),
-  isEmailVerified: z.boolean().optional(),
-});
+/**
+ * Update user profile schema
+ */
+export const updateUserProfileSchema = {
+  body: z.object({
+    email: z.string().email('Invalid email format').optional(),
+    isEmailVerified: z.boolean().optional(),
+  }),
+};
 
-export type UpdateUserProfileRequestDto = z.infer<typeof updateUserProfileSchema>;
+export type UpdateUserProfileRequestDto = z.infer<typeof updateUserProfileSchema.body>;
 
 /**
  * Check-in schema
  */
-export const checkInSchema = z.object({
-  method: z.string().optional(), // "WEB", "MOBILE", "BIOMETRIC"
-  gpsCoords: z.object({
-    latitude: z.number(),
-    longitude: z.number(),
-  }).optional(),
-});
+export const checkInSchema = {
+  body: z.object({
+    method: z.string().optional(), // "WEB", "MOBILE", "BIOMETRIC"
+    gpsCoords: z.object({
+      latitude: z.number(),
+      longitude: z.number(),
+    }).optional(),
+  }),
+};
 
-export type CheckInRequestDto = z.infer<typeof checkInSchema>;
+export type CheckInRequestDto = z.infer<typeof checkInSchema.body>;
 
 /**
  * Check-out schema
  */
-export const checkOutSchema = z.object({
-  method: z.string().optional(),
-  gpsCoords: z.object({
-    latitude: z.number(),
-    longitude: z.number(),
-  }).optional(),
-});
+export const checkOutSchema = {
+  body: z.object({
+    method: z.string().optional(),
+    gpsCoords: z.object({
+      latitude: z.number(),
+      longitude: z.number(),
+    }).optional(),
+  }),
+};
 
-export type CheckOutRequestDto = z.infer<typeof checkOutSchema>;
+export type CheckOutRequestDto = z.infer<typeof checkOutSchema.body>;
 
 /**
  * Leave request schema
  */
-export const leaveRequestSchema = z.object({
-  startDate: z.string().datetime(),
-  endDate: z.string().datetime(),
-  type: z.nativeEnum(LeaveType),
-  reason: z.string().optional(),
-  dayDetails: z.record(z.string(), z.any()).optional(),
-});
+export const leaveRequestSchema = {
+  body: z.object({
+    startDate: z.string().datetime(),
+    endDate: z.string().datetime(),
+    type: z.nativeEnum(LeaveType),
+    reason: z.string().optional(),
+    dayDetails: z.record(z.string(), z.any()).optional(),
+  }),
+};
 
-export type LeaveRequestRequestDto = z.infer<typeof leaveRequestSchema>;
+export type LeaveRequestRequestDto = z.infer<typeof leaveRequestSchema.body>;
+
+
 
 // =========================================================================
 // RESPONSE DTOs (Manual Interfaces - we trust our own backend)
@@ -66,7 +79,6 @@ export interface UserProfileResponseDto {
   email: string;
   role: Role;
   isEmailVerified: boolean;
-  createdAt: Date;
 }
 
 /**

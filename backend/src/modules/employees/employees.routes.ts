@@ -8,6 +8,10 @@ import {
   getEmployeesSchema,
   deleteEmployeeSchema,
 } from './employees.schema';
+
+import * as LeaveController from '../leaves/leaves.controller';
+import { createLeaveRequestSchema } from '../leaves/leaves.schema';
+
 import { restrictTo, validate } from '@/shared/middleware';
 
 const router = Router();
@@ -78,4 +82,43 @@ router.delete(
   EmployeeController.deleteEmployee
 );
 
+// --- Nested: Leave Requests ---
+
+// POST /api/v1/companies/:companyId/employees/:employeeId/leave-requests
+router.post(
+  '/:employeeId/leave-requests',
+  restrictTo(Role.SUPER_ADMIN, Role.ORG_ADMIN, Role.HR_ADMIN, Role.EMPLOYEE),
+  validate(createLeaveRequestSchema),
+  LeaveController.createLeaveRequest
+);
+
+// GET /api/v1/companies/:companyId/employees/:employeeId/leave-requests
+router.get(
+  '/:employeeId/leave-requests',
+  restrictTo(Role.SUPER_ADMIN, Role.ORG_ADMIN, Role.HR_ADMIN, Role.MANAGER, Role.EMPLOYEE),
+  // validate(leaveRequestQuerySchema),
+  LeaveController.getLeaveRequests
+);
+
+// --- Nested: Leave Allocations ---
+import * as AllocationController from '../allocations/allocations.controller';
+import { createLeaveAllocationSchema, getAllocationsSchema } from '../allocations/allocations.schema';
+
+// GET /api/v1/companies/:companyId/employees/:employeeId/allocations
+router.get(
+  '/:employeeId/allocations',
+  restrictTo(Role.SUPER_ADMIN, Role.ORG_ADMIN, Role.HR_ADMIN, Role.MANAGER),
+  validate(getAllocationsSchema),
+  AllocationController.getEmployeeAllocations
+);
+
+// POST /api/v1/companies/:companyId/employees/:employeeId/allocations
+router.post(
+  '/:employeeId/allocations',
+  restrictTo(Role.SUPER_ADMIN, Role.ORG_ADMIN, Role.HR_ADMIN),
+  validate(createLeaveAllocationSchema),
+  AllocationController.createEmployeeAllocation
+);
+
 export default router;
+

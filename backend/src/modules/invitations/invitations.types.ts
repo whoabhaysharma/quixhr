@@ -1,67 +1,47 @@
 import { Role } from '@prisma/client';
-import { TokenPayload } from '@/modules/auth/auth.types';
 
-// ============================================================================
-// INTERNAL TYPES (NOT for API responses)
-// ============================================================================
+// =========================================================================
+// INTERNAL TYPES
+// =========================================================================
 
 /**
  * Authenticated user context extracted from JWT token
  */
-export interface AuthContext extends TokenPayload {
-  // Inherits all properties from TokenPayload
+export interface AuthContext {
+    userId: string;
+    email: string;
+    role: Role;
+    employeeId?: string;
+    companyId?: string;
 }
 
 /**
  * Pagination query parameters
  */
 export interface PaginationParams {
-  page?: number;
-  limit?: number;
+    page?: number;
+    limit?: number;
+}
+
+/**
+ * Create invitation input
+ */
+export interface CreateInvitationInput {
+    email: string;
+    role: Role;
+}
+
+/**
+ * Update invitation input
+ */
+export interface UpdateInvitationInput {
+    status?: string;
 }
 
 /**
  * Invitation filters
  */
 export interface InvitationFilters extends PaginationParams {
-  email?: string;
-  role?: Role;
-  status?: string;
-}
-
-/**
- * Invitation creation data
- */
-export interface InvitationCreateData {
-  email: string;
-  role: Role;
-  expiresInHours?: number; // Default 72 hours
-}
-
-/**
- * Invitation data from database
- */
-export interface InvitationData {
-  id: string;
-  companyId: string;
-  email: string;
-  role: Role;
-  token: string;
-  expiresAt: Date;
-  status: string;
-  createdAt: Date;
-}
-
-/**
- * Invitation acceptance data
- */
-export interface InvitationAcceptanceData {
-  token: string;
-  firstName: string;
-  lastName: string;
-  password: string;
-  employeeCode?: string;
-  joiningDate?: Date;
-  calendarId?: string;
-  leaveGradeId?: string;
+    status?: string;
+    email?: string;
 }

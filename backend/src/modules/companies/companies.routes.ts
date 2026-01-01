@@ -7,6 +7,9 @@ import { updateCompanySchema, auditLogQuerySchema } from './company.schema';
 import * as CalendarController from '../calendars/calendars.controller';
 import { createCalendarSchema, calendarQuerySchema } from '../calendars/calendars.schema';
 
+import * as LeaveController from '../leaves/leaves.controller';
+import { createLeaveGradeSchema } from '../leaves/leaves.schema';
+
 import { protect, resolveTenant, restrictTo, validate } from '@/shared/middleware';
 
 const router = Router();
@@ -37,6 +40,48 @@ router.post(
     validate(createCalendarSchema),
     CalendarController.createCalendar
 );
+
+// --- Leave Grades (Nested List & Create) ---
+// GET /api/v1/companies/:companyId/leave-grades
+router.get(
+    '/:companyId/leave-grades',
+    resolveTenant,
+    restrictTo(Role.SUPER_ADMIN, Role.ORG_ADMIN, Role.HR_ADMIN, Role.MANAGER),
+    // validate(leaveGradeQuerySchema), // Optional
+    LeaveController.getLeaveGrades
+);
+
+// POST /api/v1/companies/:companyId/leave-grades
+router.post(
+    '/:companyId/leave-grades',
+    resolveTenant,
+    restrictTo(Role.SUPER_ADMIN, Role.ORG_ADMIN, Role.HR_ADMIN),
+    validate(createLeaveGradeSchema),
+    LeaveController.createLeaveGrade
+);
+
+// --- Invitations (Nested List & Create) ---
+import * as InvitationController from '../invitations/invitations.controller';
+import { createInvitationSchema, getInvitationsSchema } from '../invitations/invitations.schema';
+
+// GET /api/v1/companies/:companyId/invitations
+router.get(
+    '/:companyId/invitations',
+    resolveTenant,
+    restrictTo(Role.SUPER_ADMIN, Role.ORG_ADMIN, Role.HR_ADMIN),
+    validate(getInvitationsSchema),
+    InvitationController.getInvitations
+);
+
+// POST /api/v1/companies/:companyId/invitations
+router.post(
+    '/:companyId/invitations',
+    resolveTenant,
+    restrictTo(Role.SUPER_ADMIN, Role.ORG_ADMIN, Role.HR_ADMIN),
+    validate(createInvitationSchema),
+    InvitationController.createInvitation
+);
+
 
 
 // =========================================================================

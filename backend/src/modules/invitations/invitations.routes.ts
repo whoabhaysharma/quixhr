@@ -1,96 +1,75 @@
 import { Router } from 'express';
-import { Role } from '@prisma/client';
 import * as InvitationController from './invitations.controller';
+import { protect } from '@/shared/middleware/auth.middleware';
+import { validate } from '@/shared/middleware';
 import {
-  createInvitationSchema,
-  acceptInvitationSchema,
-  getInvitationSchema,
-  getInvitationsSchema,
-  resendInvitationSchema,
-  cancelInvitationSchema,
+    acceptInvitationSchema,
+    verifyInvitationSchema,
 } from './invitations.schema';
-import { restrictTo, validate } from '@/shared/middleware';
 
 const router = Router();
 
 // =========================================================================
-// PUBLIC INVITATION ROUTES
+// PUBLIC ROUTES (No authentication required)
 // =========================================================================
 
 /**
- * @route   GET /api/v1/invitations/:token
- * @desc    Get invitation details by token (validate before accepting)
+ * @route   GET /api/v1/invitations/verify/:token
+ * @desc    Verify invitation token and get details
  * @access  Public
  */
 router.get(
-  '/:token',
-  validate(getInvitationSchema),
-  InvitationController.getInvitationByToken
+    '/verify/:token',
+    validate(verifyInvitationSchema),
+    InvitationController.verifyInvitation
 );
 
 /**
  * @route   POST /api/v1/invitations/accept
- * @desc    Accept an invitation and create user account
+ * @desc    Accept invitation and create account
  * @access  Public
  */
 router.post(
-  '/accept',
-  validate(acceptInvitationSchema),
-  InvitationController.acceptInvitation
+    '/accept',
+    validate(acceptInvitationSchema),
+    InvitationController.acceptInvitation
 );
 
 // =========================================================================
-// PROTECTED INVITATION ROUTES
+// PROTECTED ROUTES (Authentication required)
 // =========================================================================
-// All routes below require authentication and have resolved tenant context
-// from the parent companies router
 
 /**
- * @route   GET /api/v1/companies/:companyId/invitations
- * @desc    Get all invitations for the company
- * @access  ORG_ADMIN, HR_ADMIN, SUPER_ADMIN
- */
-router.get(
-  '/',
-  restrictTo(Role.ORG_ADMIN, Role.HR_ADMIN, Role.SUPER_ADMIN),
-  validate(getInvitationsSchema),
-  InvitationController.getInvitations
-);
-
-/**
- * @route   POST /api/v1/companies/:companyId/invitations
- * @desc    Create a new invitation
- * @access  ORG_ADMIN, HR_ADMIN, SUPER_ADMIN
- */
-router.post(
-  '/',
-  restrictTo(Role.ORG_ADMIN, Role.HR_ADMIN, Role.SUPER_ADMIN),
-  validate(createInvitationSchema),
-  InvitationController.createInvitation
-);
-
-/**
- * @route   POST /api/v1/companies/:companyId/invitations/:invitationId/resend
+ * @route   POST /api/v1/invitations/:invitationId/resend
  * @desc    Resend an invitation
- * @access  ORG_ADMIN, HR_ADMIN, SUPER_ADMIN
+ * @access  Protected (HR_ADMIN, ORG_ADMIN, SUPER_ADMIN)
  */
 router.post(
-  '/:invitationId/resend',
-  restrictTo(Role.ORG_ADMIN, Role.HR_ADMIN, Role.SUPER_ADMIN),
-  validate(resendInvitationSchema),
-  InvitationController.resendInvitation
+    '/:invitationId/resend',
+    protect,
+    InvitationController.resendInvitation
 );
 
 /**
- * @route   DELETE /api/v1/companies/:companyId/invitations/:invitationId
+ * @route   PATCH /api/v1/invitations/:invitationId/cancel
  * @desc    Cancel an invitation
- * @access  ORG_ADMIN, HR_ADMIN, SUPER_ADMIN
+ * @access  Protected (HR_ADMIN, ORG_ADMIN, SUPER_ADMIN)
+ */
+router.patch(
+    '/:invitationId/cancel',
+    protect,
+    InvitationController.cancelInvitation
+);
+
+/**
+ * @route   DELETE /api/v1/invitations/:invitationId
+ * @desc    Delete an invitation
+ * @access  Protected (HR_ADMIN, ORG_ADMIN, SUPER_ADMIN)
  */
 router.delete(
-  '/:invitationId',
-  restrictTo(Role.ORG_ADMIN, Role.HR_ADMIN, Role.SUPER_ADMIN),
-  validate(cancelInvitationSchema),
-  InvitationController.cancelInvitation
+    '/:invitationId',
+    protect,
+    InvitationController.deleteInvitation
 );
 
 export default router;

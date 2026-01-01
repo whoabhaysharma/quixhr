@@ -1,14 +1,13 @@
 import { Request, Response, NextFunction } from 'express';
 import { catchAsync } from '@/utils/catchAsync';
 import { sendResponse } from '@/utils/sendResponse';
+import { AppError } from '@/utils/appError';
 import { InvitationService } from './invitations.service';
 import { AuthContext } from './invitations.types';
-import { AppError } from '@/utils/appError';
 import {
-  InvitationResponseDto,
-  InvitationsListResponseDto,
-  InvitationDetailsResponseDto,
-  InvitationAcceptanceResponseDto,
+    InvitationsListResponseDto,
+    InvitationResponseDto,
+    InvitationDetailsResponseDto,
 } from './invitations.schema';
 
 // =========================================================================
@@ -19,11 +18,11 @@ import {
  * Get auth context from request
  */
 const getAuthContext = (req: Request): AuthContext => {
-  const user = (req as any).user;
-  if (!user) {
-    throw new AppError('User not authenticated', 401);
-  }
-  return user as AuthContext;
+    const user = (req as any).user;
+    if (!user) {
+        throw new AppError('User not authenticated', 401);
+    }
+    return user as AuthContext;
 };
 
 // =========================================================================
@@ -31,160 +30,224 @@ const getAuthContext = (req: Request): AuthContext => {
 // =========================================================================
 
 /**
- * @desc    Get all invitations for a company
- * @route   GET /api/v1/companies/:companyId/invitations
- * @access  Protected (ORG_ADMIN, HR_ADMIN, SUPER_ADMIN)
- */
-export const getInvitations = catchAsync(
-  async (req: Request, res: Response, next: NextFunction) => {
-    const authContext = getAuthContext(req);
-    const { companyId } = req.params;
-    
-    const page = parseInt(req.query.page as string) || 1;
-    const limit = parseInt(req.query.limit as string) || 20;
-    const email = req.query.email as string;
-    const role = req.query.role as any;
-    const status = req.query.status as string;
-
-    const result = await InvitationService.getInvitations({
-      authContext,
-      companyId,
-      page,
-      limit,
-      email,
-      role,
-      status,
-    });
-
-    const responseData: InvitationsListResponseDto = {
-      success: true,
-      message: 'Invitations retrieved successfully',
-      data: {
-        invitations: result.invitations,
-        pagination: result.pagination,
-      },
-    };
-
-    sendResponse(res, 200, responseData);
-  }
-);
-
-/**
- * @desc    Get invitation details by token (for acceptance page)
- * @route   GET /api/v1/invitations/:token
- * @access  Public
- */
-export const getInvitationByToken = catchAsync(
-  async (req: Request, res: Response, next: NextFunction) => {
-    const { token } = req.params;
-
-    const invitation = await InvitationService.getInvitationByToken({ token });
-
-    const responseData: InvitationDetailsResponseDto = {
-      success: true,
-      message: 'Invitation details retrieved successfully',
-      data: invitation,
-    };
-
-    sendResponse(res, 200, responseData);
-  }
-);
-
-/**
  * @desc    Create a new invitation
  * @route   POST /api/v1/companies/:companyId/invitations
- * @access  Protected (ORG_ADMIN, HR_ADMIN, SUPER_ADMIN)
+ * @access  Protected (HR_ADMIN, ORG_ADMIN, SUPER_ADMIN)
  */
 export const createInvitation = catchAsync(
-  async (req: Request, res: Response, next: NextFunction) => {
-    const authContext = getAuthContext(req);
-    const { companyId } = req.params;
-    
-    const invitation = await InvitationService.createInvitation({
-      authContext,
-      companyId,
-      data: req.body,
-    });
+    async (req: Request, res: Response, next: NextFunction) => {
+        const authContext = getAuthContext(req);
+        const { companyId } = req.params;
 
-    const responseData: InvitationResponseDto = {
-      success: true,
-      message: 'Invitation created and sent successfully',
-      data: invitation,
-    };
+        // Validate company access
+        if (
+            authContext.role !== 'SUPER_ADMIN' &&
+            authContext.companyId !== companyId
+        ) {
+            return next(
+                new AppError('Access denied. You can only invite to your own company.', 403)
+            );
+        }
 
-    sendResponse(res, 201, responseData);
-  }
+        const invitation = await InvitationService.createInvitation(
+            companyId,
+            req.body
+        );
+
+        const responseData = {
+            success: true,
+            message: 'Invitation sent successfully',
+            data: {
+                id: invitation.id,
+                companyId: invitation.companyId,
+                email: invitation.email,
+                role: invitation.role,
+                status: invitation.status,
+                expiresAt: invitation.expiresAt,
+            },
+        };
+
+        sendResponse(res, 201, responseData);
+    }
 );
 
 /**
- * @desc    Accept an invitation
+ * @desc    Get all invitations for a company
+ * @route   GET /api/v1/companies/:companyId/invitations
+ * @access  Protected (HR_ADMIN, ORG_ADMIN, SUPER_ADMIN)
+ */
+export const getInvitations = catchAsync(
+    async (req: Request, res: Response, next: NextFunction) => {
+        const authContext = getAuthContext(req);
+        const { companyId } = req.params;
+
+        // Validate company access
+        if (
+            authContext.role !== 'SUPER_ADMIN' &&
+            authContext.companyId !== companyId
+        ) {
+            return next(
+                new AppError('Access denied. You can only view your company invitations.', 403)
+            );
+        }
+
+        const page = parseInt(req.query.page as string) || 1;
+        const limit = parseInt(req.query.limit as string) || 20;
+        const status = req.query.status as string;
+        const email = req.query.email as string;
+
+        const result = await InvitationService.getInvitations(companyId, {
+            page,
+            limit,
+            status,
+            email,
+        });
+
+        const responseData: InvitationsListResponseDto = {
+            success: true,
+            message: 'Invitations retrieved successfully',
+            data: {
+                invitations: result.invitations,
+                pagination: result.pagination,
+            },
+        };
+
+        sendResponse(res, 200, responseData);
+    }
+);
+
+/**
+ * @desc    Verify invitation token (public)
+ * @route   GET /api/v1/invitations/verify/:token
+ * @access  Public
+ */
+export const verifyInvitation = catchAsync(
+    async (req: Request, res: Response, next: NextFunction) => {
+        const { token } = req.params;
+
+        const details = await InvitationService.verifyInvitationToken(token);
+
+        const responseData: InvitationDetailsResponseDto = {
+            success: true,
+            message: 'Invitation verified successfully',
+            data: details,
+        };
+
+        sendResponse(res, 200, responseData);
+    }
+);
+
+/**
+ * @desc    Accept invitation and create account (public)
  * @route   POST /api/v1/invitations/accept
  * @access  Public
  */
 export const acceptInvitation = catchAsync(
-  async (req: Request, res: Response, next: NextFunction) => {
-    const result = await InvitationService.acceptInvitation({
-      data: req.body,
-    });
+    async (req: Request, res: Response, next: NextFunction) => {
+        const { token, firstName, lastName, password } = req.body;
 
-    const responseData: InvitationAcceptanceResponseDto = {
-      success: true,
-      message: 'Invitation accepted successfully. Welcome aboard!',
-      data: result,
-    };
+        const result = await InvitationService.acceptInvitation(token, {
+            firstName,
+            lastName,
+            password,
+        });
 
-    sendResponse(res, 201, responseData);
-  }
+        const responseData = {
+            success: true,
+            message: 'Invitation accepted successfully. You can now login.',
+            data: {
+                userId: result.user.id,
+                email: result.user.email,
+                employeeId: result.employee.id,
+            },
+        };
+
+        sendResponse(res, 200, responseData);
+    }
 );
 
 /**
- * @desc    Resend an invitation
- * @route   POST /api/v1/companies/:companyId/invitations/:invitationId/resend
- * @access  Protected (ORG_ADMIN, HR_ADMIN, SUPER_ADMIN)
+ * @desc    Resend invitation
+ * @route   POST /api/v1/invitations/:invitationId/resend
+ * @access  Protected (HR_ADMIN, ORG_ADMIN, SUPER_ADMIN)
  */
 export const resendInvitation = catchAsync(
-  async (req: Request, res: Response, next: NextFunction) => {
-    const authContext = getAuthContext(req);
-    const { companyId, invitationId } = req.params;
+    async (req: Request, res: Response, next: NextFunction) => {
+        const authContext = getAuthContext(req);
+        const { invitationId } = req.params;
 
-    const invitation = await InvitationService.resendInvitation({
-      authContext,
-      companyId,
-      invitationId,
-    });
+        // Get invitation to check company access
+        const invitation = await InvitationService.resendInvitation(
+            invitationId,
+            authContext.companyId || '',
+            authContext.role
+        );
 
-    const responseData: InvitationResponseDto = {
-      success: true,
-      message: 'Invitation resent successfully',
-      data: invitation,
-    };
+        const responseData = {
+            success: true,
+            message: 'Invitation resent successfully',
+            data: {
+                id: invitation.id,
+                email: invitation.email,
+                expiresAt: invitation.expiresAt,
+            },
+        };
 
-    sendResponse(res, 200, responseData);
-  }
+        sendResponse(res, 200, responseData);
+    }
 );
 
 /**
- * @desc    Cancel an invitation
- * @route   DELETE /api/v1/companies/:companyId/invitations/:invitationId
- * @access  Protected (ORG_ADMIN, HR_ADMIN, SUPER_ADMIN)
+ * @desc    Cancel invitation
+ * @route   PATCH /api/v1/invitations/:invitationId/cancel
+ * @access  Protected (HR_ADMIN, ORG_ADMIN, SUPER_ADMIN)
  */
 export const cancelInvitation = catchAsync(
-  async (req: Request, res: Response, next: NextFunction) => {
-    const authContext = getAuthContext(req);
-    const { companyId, invitationId } = req.params;
+    async (req: Request, res: Response, next: NextFunction) => {
+        const authContext = getAuthContext(req);
+        const { invitationId } = req.params;
 
-    await InvitationService.cancelInvitation({
-      authContext,
-      companyId,
-      invitationId,
-    });
+        const invitation = await InvitationService.cancelInvitation(
+            invitationId,
+            authContext.companyId || '',
+            authContext.role
+        );
 
-    const responseData = {
-      success: true,
-      message: 'Invitation cancelled successfully',
-      data: null,
-    };
+        const responseData = {
+            success: true,
+            message: 'Invitation cancelled successfully',
+            data: {
+                id: invitation.id,
+                status: invitation.status,
+            },
+        };
 
-    sendResponse(res, 200, responseData);
-  }
+        sendResponse(res, 200, responseData);
+    }
+);
+
+/**
+ * @desc    Delete invitation
+ * @route   DELETE /api/v1/invitations/:invitationId
+ * @access  Protected (HR_ADMIN, ORG_ADMIN, SUPER_ADMIN)
+ */
+export const deleteInvitation = catchAsync(
+    async (req: Request, res: Response, next: NextFunction) => {
+        const authContext = getAuthContext(req);
+        const { invitationId } = req.params;
+
+        await InvitationService.deleteInvitation(
+            invitationId,
+            authContext.companyId || '',
+            authContext.role
+        );
+
+        const responseData = {
+            success: true,
+            message: 'Invitation deleted successfully',
+            data: null,
+        };
+
+        sendResponse(res, 200, responseData);
+    }
 );

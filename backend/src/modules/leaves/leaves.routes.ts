@@ -1,98 +1,101 @@
 import { Router } from 'express';
 import { Role } from '@prisma/client';
+import { protect, restrictTo } from '@/shared/middleware';
+import validate from '@/shared/middleware/validate-resource.middleware';
 import * as LeaveController from './leaves.controller';
 import {
-  createLeaveRequestSchema,
-  updateLeaveRequestSchema,
-  getLeaveRequestSchema,
-  getLeaveRequestsSchema,
-  getLeaveBalancesSchema,
-  adjustLeaveBalanceSchema,
+    updateLeaveGradeSchema,
+    createLeavePolicySchema,
+    updateLeavePolicySchema,
+    leaveGradeQuerySchema,
+    updateLeaveRequestStatusSchema
 } from './leaves.schema';
-import { restrictTo, validate } from '@/shared/middleware';
 
 const router = Router();
+router.use(protect);
 
 // =========================================================================
-// LEAVE REQUEST ROUTES
+// 1. GLOBAL LIST (Super Admin)
 // =========================================================================
-// All routes here are already protected and have resolved tenant context
-// from the parent companies router
 
-/**
- * @route   GET /api/v1/companies/:companyId/leaves
- * @desc    Get all leave requests for the company
- * @access  ORG_ADMIN, HR_ADMIN, MANAGER, SUPER_ADMIN (all employees), EMPLOYEE (own only)
- */
 router.get(
-  '/',
-  restrictTo(Role.ORG_ADMIN, Role.HR_ADMIN, Role.MANAGER, Role.EMPLOYEE, Role.SUPER_ADMIN),
-  validate(getLeaveRequestsSchema),
-  LeaveController.getLeaveRequests
+    '/grades',
+    restrictTo(Role.SUPER_ADMIN),
+    validate(leaveGradeQuerySchema),
+    LeaveController.getLeaveGrades
 );
 
-/**
- * @route   POST /api/v1/companies/:companyId/leaves
- * @desc    Create a new leave request
- * @access  All authenticated employees
- */
-router.post(
-  '/',
-  restrictTo(Role.ORG_ADMIN, Role.HR_ADMIN, Role.MANAGER, Role.EMPLOYEE, Role.SUPER_ADMIN),
-  validate(createLeaveRequestSchema),
-  LeaveController.createLeaveRequest
-);
+// =========================================================================
+// 2. SUB-RESOURCES: POLICIES
+// =========================================================================
 
-/**
- * @route   GET /api/v1/companies/:companyId/leaves/:leaveRequestId
- * @desc    Get leave request details by ID
- * @access  ORG_ADMIN, HR_ADMIN, MANAGER, SUPER_ADMIN (any request), EMPLOYEE (own only)
- */
-router.get(
-  '/:leaveRequestId',
-  restrictTo(Role.ORG_ADMIN, Role.HR_ADMIN, Role.MANAGER, Role.EMPLOYEE, Role.SUPER_ADMIN),
-  validate(getLeaveRequestSchema),
-  LeaveController.getLeaveRequestById
-);
-
-/**
- * @route   PATCH /api/v1/companies/:companyId/leaves/:leaveRequestId
- * @desc    Update leave request status (approve/reject)
- * @access  ORG_ADMIN, HR_ADMIN, MANAGER, SUPER_ADMIN
- */
+// PATCH /api/v1/leaves/policies/:policyId
 router.patch(
-  '/:leaveRequestId',
-  restrictTo(Role.ORG_ADMIN, Role.HR_ADMIN, Role.MANAGER, Role.SUPER_ADMIN),
-  validate(updateLeaveRequestSchema),
-  LeaveController.updateLeaveRequest
+    '/policies/:policyId',
+    restrictTo(Role.SUPER_ADMIN, Role.ORG_ADMIN, Role.HR_ADMIN),
+    validate(updateLeavePolicySchema),
+    LeaveController.updatePolicy
+);
+
+// DELETE /api/v1/leaves/policies/:policyId
+router.delete(
+    '/policies/:policyId',
+    restrictTo(Role.SUPER_ADMIN, Role.ORG_ADMIN, Role.HR_ADMIN),
+    LeaveController.deletePolicy
 );
 
 // =========================================================================
-// LEAVE BALANCE ROUTES
+// 3. SINGLE GRADE & DEEP NESTED LISTS
 // =========================================================================
 
-/**
- * @route   GET /api/v1/companies/:companyId/leaves/balances/:employeeId
- * @desc    Get employee leave balances
- * @access  ORG_ADMIN, HR_ADMIN, MANAGER, SUPER_ADMIN (any employee), EMPLOYEE (own only)
- */
+// --- Get/Update/Delete Grade ---
 router.get(
-  '/balances/:employeeId',
-  restrictTo(Role.ORG_ADMIN, Role.HR_ADMIN, Role.MANAGER, Role.EMPLOYEE, Role.SUPER_ADMIN),
-  validate(getLeaveBalancesSchema),
-  LeaveController.getLeaveBalances
+    '/grades/:gradeId',
+    restrictTo(Role.SUPER_ADMIN, Role.ORG_ADMIN, Role.HR_ADMIN, Role.MANAGER),
+    LeaveController.getLeaveGradeById
 );
 
-/**
- * @route   POST /api/v1/companies/:companyId/leaves/adjust/:employeeId
- * @desc    Manually adjust employee leave balance
- * @access  SUPER_ADMIN only
- */
+router.patch(
+    '/grades/:gradeId',
+    restrictTo(Role.SUPER_ADMIN, Role.ORG_ADMIN, Role.HR_ADMIN),
+    validate(updateLeaveGradeSchema),
+    LeaveController.updateLeaveGrade
+);
+
+router.delete(
+    '/grades/:gradeId',
+    restrictTo(Role.SUPER_ADMIN, Role.ORG_ADMIN, Role.HR_ADMIN),
+    LeaveController.deleteLeaveGrade
+);
+
+// --- Sub-Resource List/Create (Needs Grade Context) ---
+
+// GET /api/v1/leaves/grades/:gradeId/policies
+router.get(
+    '/grades/:gradeId/policies',
+    restrictTo(Role.SUPER_ADMIN, Role.ORG_ADMIN, Role.HR_ADMIN, Role.MANAGER),
+    LeaveController.getPolicies
+);
+
+// POST /api/v1/leaves/grades/:gradeId/policies
 router.post(
-  '/adjust/:employeeId',
-  restrictTo(Role.SUPER_ADMIN),
-  validate(adjustLeaveBalanceSchema),
-  LeaveController.adjustLeaveBalance
+    '/grades/:gradeId/policies',
+    restrictTo(Role.SUPER_ADMIN, Role.ORG_ADMIN, Role.HR_ADMIN),
+    validate(createLeavePolicySchema),
+    LeaveController.createPolicy
+);
+
+// =========================================================================
+// 4. LEAVE REQUESTS (Management)
+// =========================================================================
+// Routes for Approving/Rejecting requests (Flat Access)
+
+// PATCH /api/v1/leaves/requests/:requestId/status
+router.patch(
+    '/requests/:requestId/status',
+    restrictTo(Role.SUPER_ADMIN, Role.ORG_ADMIN, Role.HR_ADMIN, Role.MANAGER),
+    validate(updateLeaveRequestStatusSchema),
+    LeaveController.updateLeaveRequestStatus
 );
 
 export default router;

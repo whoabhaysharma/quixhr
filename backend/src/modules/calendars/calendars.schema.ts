@@ -1,15 +1,15 @@
 import { z } from 'zod';
 import { WeeklyRuleType, RuleStrategy } from '@prisma/client';
 
-export const createCalendarSchema = z.object({
+export const createCalendarSchema = {
     body: z.object({
         name: z.string().min(1, 'Name is required'),
         dayStartTime: z.number().min(0).max(1440),
         dayEndTime: z.number().min(0).max(1440),
     }),
-});
+};
 
-export const updateCalendarSchema = z.object({
+export const updateCalendarSchema = {
     params: z.object({
         calendarId: z.string().uuid().optional(),
         id: z.string().uuid().optional()
@@ -19,19 +19,19 @@ export const updateCalendarSchema = z.object({
         dayStartTime: z.number().min(0).max(1440).optional(),
         dayEndTime: z.number().min(0).max(1440).optional(),
     }),
-});
+};
 
-export const calendarQuerySchema = z.object({
+export const calendarQuerySchema = {
     query: z.object({
         companyId: z.string().uuid().optional(),
         page: z.string().regex(/^\d+$/).transform(Number).optional(),
         limit: z.string().regex(/^\d+$/).transform(Number).optional(),
         search: z.string().optional(),
     }),
-});
+};
 
 // Weekly Rules
-export const createWeeklyRuleSchema = z.object({
+export const createWeeklyRuleSchema = {
     body: z.object({
         dayOfWeek: z.number().min(0).max(6),
         type: z.nativeEnum(WeeklyRuleType),
@@ -40,9 +40,9 @@ export const createWeeklyRuleSchema = z.object({
         referenceDate: z.string().datetime().optional(),
         positions: z.array(z.number()).optional(),
     }),
-});
+};
 
-export const updateWeeklyRuleSchema = z.object({
+export const updateWeeklyRuleSchema = {
     body: z.object({
         dayOfWeek: z.number().min(0).max(6).optional(),
         type: z.nativeEnum(WeeklyRuleType).optional(),
@@ -51,28 +51,28 @@ export const updateWeeklyRuleSchema = z.object({
         referenceDate: z.string().datetime().optional(),
         positions: z.array(z.number()).optional(),
     }),
-});
+};
 
 // Holidays
-export const createHolidaySchema = z.object({
+export const createHolidaySchema = {
     body: z.object({
         date: z.string().datetime().or(z.string().regex(/^\d{4}-\d{2}-\d{2}$/)),
         name: z.string().min(1),
         isOptional: z.boolean().optional(),
     }),
-});
+};
 
-export const updateHolidaySchema = z.object({
+export const updateHolidaySchema = {
     body: z.object({
         date: z.string().datetime().or(z.string().regex(/^\d{4}-\d{2}-\d{2}$/)).optional(),
         name: z.string().optional(),
         isOptional: z.boolean().optional(),
     }),
-});
+};
 
-export const holidayQuerySchema = z.object({
+export const holidayQuerySchema = {
     query: z.object({
         year: z.string().regex(/^\d{4}$/).optional(),
         search: z.string().optional(),
     }),
-});
+};

@@ -1,94 +1,30 @@
-import { LeaveStatus, LeaveType, LedgerEvent, Role } from '@prisma/client';
-import { TokenPayload } from '@/modules/auth/auth.types';
+import { LeaveGrade, LeavePolicy, LeaveRequest, LeaveType, LeaveStatus } from '@prisma/client';
 
-// ============================================================================
-// INTERNAL TYPES (NOT for API responses)
-// ============================================================================
-
-/**
- * Authenticated user context extracted from JWT token
- */
-export interface AuthContext extends TokenPayload {
-  // Inherits all properties from TokenPayload
-}
-
-/**
- * Employee context for company validation
- */
-export interface EmployeeContext {
-  id: string;
-  companyId: string;
-  userId: string;
-  role: Role;
-}
-
-/**
- * Pagination query parameters
- */
 export interface PaginationParams {
-  page?: number;
-  limit?: number;
+    page?: number;
+    limit?: number;
+    search?: string;
 }
 
-/**
- * Leave request filters
- */
-export interface LeaveRequestFilters extends PaginationParams {
-  employeeId?: string;
-  status?: LeaveStatus;
-  type?: LeaveType;
-  startDate?: string;
-  endDate?: string;
-}
+// --- Leave Grades ---
+export type CreateLeaveGradeInput = Pick<LeaveGrade, 'companyId' | 'name'>;
+export type UpdateLeaveGradeInput = Partial<Omit<CreateLeaveGradeInput, 'companyId'>>;
 
-/**
- * Leave request creation data
- */
-export interface LeaveRequestCreateData {
-  startDate: Date;
-  endDate: Date;
-  type: LeaveType;
-  reason?: string;
-  dayDetails?: any; // JSON metadata for half-day logic
-}
+// --- Leave Policies ---
+export type CreateLeavePolicyInput = Omit<LeavePolicy, 'id'>;
+export type UpdateLeavePolicyInput = Partial<Omit<LeavePolicy, 'id' | 'leaveGradeId'>>;
 
-/**
- * Leave request update data (for approval/rejection)
- */
-export interface LeaveRequestUpdateData {
-  status: LeaveStatus;
-  reason?: string; // For rejection reason
-}
+// --- Leave Requests ---
+export type CreateLeaveRequestInput = {
+    employeeId: string;
+    startDate: string; // ISO Date String
+    endDate: string;   // ISO Date String
+    type: LeaveType;
+    reason?: string;
+    dayDetails?: any;
+};
 
-/**
- * Leave allocation data
- */
-export interface LeaveAllocationData {
-  employeeId: string;
-  year: number;
-  leaveType: LeaveType;
-  allocated: number;
-  used: number;
-}
-
-/**
- * Leave ledger entry data
- */
-export interface LeaveLedgerData {
-  employeeId: string;
-  event: LedgerEvent;
-  amount: number;
-  remarks?: string;
-  leaveRequestId?: string;
-}
-
-/**
- * Leave balance data
- */
-export interface LeaveBalanceData {
-  leaveType: LeaveType;
-  allocated: number;
-  used: number;
-  remaining: number;
-  carryForward?: number;
-}
+export type UpdateLeaveRequestStatusInput = {
+    status: LeaveStatus;
+    approvedBy?: string; // ID of the approver
+};

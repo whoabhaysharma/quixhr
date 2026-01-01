@@ -512,7 +512,7 @@ export class EmployeeService {
    * Check if user has admin permissions
    */
   private static requireAdminPermissions(role: Role) {
-    const adminRoles = [Role.SUPER_ADMIN, Role.ORG_ADMIN, Role.HR_ADMIN];
+    const adminRoles: Role[] = [Role.SUPER_ADMIN, Role.ORG_ADMIN, Role.HR_ADMIN];
     if (!adminRoles.includes(role)) {
       throw new AppError('Insufficient permissions. Admin access required.', 403);
     }
