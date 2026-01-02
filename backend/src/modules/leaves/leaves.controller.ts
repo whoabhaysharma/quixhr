@@ -46,26 +46,18 @@ export const getLeaveGradeById = catchAsync(async (req: Request, res: Response, 
 });
 
 export const getLeaveGrades = catchAsync(async (req: Request, res: Response, next: NextFunction) => {
-    let filter: { companyId?: string; page?: number; limit?: number; search?: string } = {
+    const companyId = req.targetCompanyId;
+
+    if (!companyId) {
+        return next(new AppError('Company context is required', 400));
+    }
+
+    let filter: { companyId: string; page?: number; limit?: number; search?: string } = {
+        companyId,
         page: req.query.page ? Number(req.query.page) : 1,
         limit: req.query.limit ? Number(req.query.limit) : 10,
         search: req.query.search as string
     };
-
-    if (req.params.companyId) {
-        if (req.user!.role !== 'SUPER_ADMIN' && req.user!.companyId !== req.params.companyId) {
-            return next(new AppError('Permission denied', 403));
-        }
-        filter.companyId = req.params.companyId;
-    } else {
-        if (req.user!.role === 'SUPER_ADMIN') {
-            if (req.query.companyId) {
-                filter.companyId = req.query.companyId as string;
-            }
-        } else {
-            filter.companyId = req.user!.companyId;
-        }
-    }
 
     const result = await LeaveService.findAllGrades(filter);
     sendResponse(res, 200, result, 'Leave grades retrieved successfully');

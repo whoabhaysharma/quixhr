@@ -18,66 +18,51 @@ const router = Router();
 router.use(protect);
 
 // =========================================================================
-// 1. NESTED RESOURCE ENTRY POINTS (The "Context" Routes)
+// 1. NESTED RESOURCE ENTRY POINTS (Creation Only)
 // =========================================================================
-// These routes exist here because they REQUIRE a companyId to function.
 
-// --- Calendars (Nested List & Create) ---
-// GET /api/v1/companies/:companyId/calendars
-router.get(
-    '/:companyId/calendars',
+// --- Employees (Nested Create) ---
+import * as EmployeeController from '../employees/employees.controller';
+import { createEmployeeSchema } from '../employees/employees.schema';
+
+// POST /api/v1/companies/:companyId/employees
+router.post(
+    '/:companyId/employees',
     resolveTenant,
-    restrictTo(Role.SUPER_ADMIN, Role.ORG_ADMIN, Role.HR_ADMIN, Role.MANAGER),
-    validate(calendarQuerySchema),
-    CalendarController.getCalendars
+    restrictTo(Role.ORG_ADMIN, Role.HR_ADMIN, Role.SUPER_ADMIN),
+    validate(createEmployeeSchema),
+    EmployeeController.createEmployee
 );
 
+// --- Calendars (Nested Create) ---
 // POST /api/v1/companies/:companyId/calendars
 router.post(
     '/:companyId/calendars',
     resolveTenant,
-    restrictTo(Role.SUPER_ADMIN, Role.ORG_ADMIN, Role.HR_ADMIN),
+    restrictTo(Role.ORG_ADMIN, Role.HR_ADMIN, Role.SUPER_ADMIN),
     validate(createCalendarSchema),
     CalendarController.createCalendar
 );
 
-// --- Leave Grades (Nested List & Create) ---
-// GET /api/v1/companies/:companyId/leave-grades
-router.get(
-    '/:companyId/leave-grades',
-    resolveTenant,
-    restrictTo(Role.SUPER_ADMIN, Role.ORG_ADMIN, Role.HR_ADMIN, Role.MANAGER),
-    // validate(leaveGradeQuerySchema), // Optional
-    LeaveController.getLeaveGrades
-);
-
+// --- Leave Grades (Nested Create) ---
 // POST /api/v1/companies/:companyId/leave-grades
 router.post(
     '/:companyId/leave-grades',
     resolveTenant,
-    restrictTo(Role.SUPER_ADMIN, Role.ORG_ADMIN, Role.HR_ADMIN),
+    restrictTo(Role.ORG_ADMIN, Role.HR_ADMIN, Role.SUPER_ADMIN),
     validate(createLeaveGradeSchema),
     LeaveController.createLeaveGrade
 );
 
-// --- Invitations (Nested List & Create) ---
+// --- Invitations (Nested Create) ---
 import * as InvitationController from '../invitations/invitations.controller';
-import { createInvitationSchema, getInvitationsSchema } from '../invitations/invitations.schema';
-
-// GET /api/v1/companies/:companyId/invitations
-router.get(
-    '/:companyId/invitations',
-    resolveTenant,
-    restrictTo(Role.SUPER_ADMIN, Role.ORG_ADMIN, Role.HR_ADMIN),
-    validate(getInvitationsSchema),
-    InvitationController.getInvitations
-);
+import { createInvitationSchema } from '../invitations/invitations.schema';
 
 // POST /api/v1/companies/:companyId/invitations
 router.post(
     '/:companyId/invitations',
     resolveTenant,
-    restrictTo(Role.SUPER_ADMIN, Role.ORG_ADMIN, Role.HR_ADMIN),
+    restrictTo(Role.ORG_ADMIN, Role.HR_ADMIN, Role.SUPER_ADMIN),
     validate(createInvitationSchema),
     InvitationController.createInvitation
 );

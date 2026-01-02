@@ -22,11 +22,11 @@ router.use(protect);
 
 /**
  * @route   GET /api/v1/calendars
- * @desc    Get all calendars (Super Admin view)
+ * @desc    Get all calendars (Scoped by tenant)
  */
 router.get(
     '/',
-    restrictTo(Role.SUPER_ADMIN),
+    restrictTo(Role.SUPER_ADMIN, Role.ORG_ADMIN, Role.HR_ADMIN, Role.MANAGER),
     validate(calendarQuerySchema),
     CalendarController.getCalendars
 );

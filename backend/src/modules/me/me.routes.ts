@@ -1,7 +1,6 @@
 import { Router } from 'express';
 import * as MeController from './me.controller';
-import { protect } from '@/shared/middleware/auth.middleware';
-import validate from '@/common/middlewares/validate.middleware';
+import { protect, validate } from '@/shared/middleware';
 import {
   updateUserProfileSchema,
   checkInSchema,

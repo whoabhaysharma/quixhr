@@ -1,5 +1,6 @@
 import { prisma } from '@/utils/prisma';
 import { AppError } from '@/utils/appError';
+import { getQueryOptions } from '@/utils/apiFeatures';
 import { AuthContext, EmployeeFilters, EmployeeCreateData, EmployeeUpdateData } from './employees.types';
 import { Role } from '@prisma/client';
 
@@ -42,46 +43,16 @@ export class EmployeeService {
 
     if (search) {
       whereClause.OR = [
-        {
-          firstName: {
-            contains: search,
-            mode: 'insensitive',
-          },
-        },
-        {
-          lastName: {
-            contains: search,
-            mode: 'insensitive',
-          },
-        },
-        {
-          code: {
-            contains: search,
-            mode: 'insensitive',
-          },
-        },
-        {
-          user: {
-            email: {
-              contains: search,
-              mode: 'insensitive',
-            },
-          },
-        },
+        { firstName: { contains: search, mode: 'insensitive' } },
+        { lastName: { contains: search, mode: 'insensitive' } },
+        { code: { contains: search, mode: 'insensitive' } },
+        { user: { email: { contains: search, mode: 'insensitive' } } },
       ];
     }
 
-    if (status) {
-      whereClause.status = status;
-    }
-
-    if (calendarId) {
-      whereClause.calendarId = calendarId;
-    }
-
-    if (leaveGradeId) {
-      whereClause.leaveGradeId = leaveGradeId;
-    }
+    if (status) whereClause.status = status;
+    if (calendarId) whereClause.calendarId = calendarId;
+    if (leaveGradeId) whereClause.leaveGradeId = leaveGradeId;
 
     const [employees, total] = await Promise.all([
       prisma.employee.findMany({

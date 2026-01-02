@@ -20,7 +20,7 @@ router.use(protect);
 
 router.get(
     '/grades',
-    restrictTo(Role.SUPER_ADMIN),
+    restrictTo(Role.SUPER_ADMIN, Role.ORG_ADMIN, Role.HR_ADMIN, Role.MANAGER),
     validate(leaveGradeQuerySchema),
     LeaveController.getLeaveGrades
 );

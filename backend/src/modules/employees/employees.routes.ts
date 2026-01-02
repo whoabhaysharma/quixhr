@@ -19,12 +19,16 @@ const router = Router();
 // =========================================================================
 // EMPLOYEE ROUTES
 // =========================================================================
-// All routes here are already protected and have resolved tenant context
-// from the parent companies router
+
+// Global Middleware: Resolve Tenant for ALL employee routes
+// Since this is a flat resource, resolveTenant will use the user's token
+// or query param (for super admin) to determine targetCompanyId
+import { resolveTenant } from '@/shared/middleware';
+router.use(resolveTenant);
 
 /**
- * @route   GET /api/v1/companies/:companyId/employees
- * @desc    Get all employees for the company
+ * @route   GET /api/v1/employees
+ * @desc    Get all employees (Scoped by tenant)
  * @access  ORG_ADMIN, HR_ADMIN, MANAGER, SUPER_ADMIN
  */
 router.get(
@@ -34,49 +38,39 @@ router.get(
   EmployeeController.getEmployees
 );
 
-/**
- * @route   POST /api/v1/companies/:companyId/employees
- * @desc    Create a new employee
- * @access  ORG_ADMIN, HR_ADMIN, SUPER_ADMIN
- */
-router.post(
-  '/',
-  restrictTo(Role.ORG_ADMIN, Role.HR_ADMIN, Role.SUPER_ADMIN),
-  validate(createEmployeeSchema),
-  EmployeeController.createEmployee
-);
+// Note: POST /api/v1/companies/:companyId/employees is handled in companies.routes.ts
 
 /**
- * @route   GET /api/v1/companies/:companyId/employees/:employeeId
+ * @route   GET /api/v1/employees/:id
  * @desc    Get employee details by ID
  * @access  ORG_ADMIN, HR_ADMIN, MANAGER, SUPER_ADMIN (+ own profile access handled in controller)
  */
 router.get(
-  '/:employeeId',
+  '/:id',
   restrictTo(Role.ORG_ADMIN, Role.HR_ADMIN, Role.MANAGER, Role.EMPLOYEE, Role.SUPER_ADMIN),
   validate(getEmployeeSchema),
   EmployeeController.getEmployeeById
 );
 
 /**
- * @route   PATCH /api/v1/companies/:companyId/employees/:employeeId
+ * @route   PATCH /api/v1/employees/:id
  * @desc    Update employee details
  * @access  ORG_ADMIN, HR_ADMIN, SUPER_ADMIN
  */
 router.patch(
-  '/:employeeId',
+  '/:id',
   restrictTo(Role.ORG_ADMIN, Role.HR_ADMIN, Role.SUPER_ADMIN),
   validate(updateEmployeeSchema),
   EmployeeController.updateEmployee
 );
 
 /**
- * @route   DELETE /api/v1/companies/:companyId/employees/:employeeId
+ * @route   DELETE /api/v1/employees/:id
  * @desc    Delete employee
  * @access  SUPER_ADMIN only
  */
 router.delete(
-  '/:employeeId',
+  '/:id',
   restrictTo(Role.SUPER_ADMIN),
   validate(deleteEmployeeSchema),
   EmployeeController.deleteEmployee
@@ -84,17 +78,19 @@ router.delete(
 
 // --- Nested: Leave Requests ---
 
-// POST /api/v1/companies/:companyId/employees/:employeeId/leave-requests
+// --- Nested: Leave Requests ---
+
+// POST /api/v1/employees/:id/leave-requests
 router.post(
-  '/:employeeId/leave-requests',
+  '/:id/leave-requests',
   restrictTo(Role.SUPER_ADMIN, Role.ORG_ADMIN, Role.HR_ADMIN, Role.EMPLOYEE),
   validate(createLeaveRequestSchema),
   LeaveController.createLeaveRequest
 );
 
-// GET /api/v1/companies/:companyId/employees/:employeeId/leave-requests
+// GET /api/v1/employees/:id/leave-requests
 router.get(
-  '/:employeeId/leave-requests',
+  '/:id/leave-requests',
   restrictTo(Role.SUPER_ADMIN, Role.ORG_ADMIN, Role.HR_ADMIN, Role.MANAGER, Role.EMPLOYEE),
   // validate(leaveRequestQuerySchema),
   LeaveController.getLeaveRequests
@@ -104,17 +100,17 @@ router.get(
 import * as AllocationController from '../allocations/allocations.controller';
 import { createLeaveAllocationSchema, getAllocationsSchema } from '../allocations/allocations.schema';
 
-// GET /api/v1/companies/:companyId/employees/:employeeId/allocations
+// GET /api/v1/employees/:id/allocations
 router.get(
-  '/:employeeId/allocations',
+  '/:id/allocations',
   restrictTo(Role.SUPER_ADMIN, Role.ORG_ADMIN, Role.HR_ADMIN, Role.MANAGER),
   validate(getAllocationsSchema),
   AllocationController.getEmployeeAllocations
 );
 
-// POST /api/v1/companies/:companyId/employees/:employeeId/allocations
+// POST /api/v1/employees/:id/allocations
 router.post(
-  '/:employeeId/allocations',
+  '/:id/allocations',
   restrictTo(Role.SUPER_ADMIN, Role.ORG_ADMIN, Role.HR_ADMIN),
   validate(createLeaveAllocationSchema),
   AllocationController.createEmployeeAllocation

@@ -30,31 +30,42 @@ const getAuthContext = (req: Request): AuthContext => {
 // =========================================================================
 
 /**
- * @desc    Get all employees for a company
- * @route   GET /api/v1/companies/:companyId/employees
+ * @desc    Get all employees (Scoped by tenant)
+ * @route   GET /api/v1/employees
  * @access  Protected (ORG_ADMIN, HR_ADMIN, SUPER_ADMIN)
  */
 export const getEmployees = catchAsync(
   async (req: Request, res: Response, next: NextFunction) => {
     const authContext = getAuthContext(req);
-    const { companyId } = req.params;
-    
+    // targetCompanyId is set by resolveTenant middleware
+    const companyId = req.targetCompanyId;
+
+    if (!companyId) {
+      return next(new AppError('Company context is required', 400));
+    }
+
+    // We will pass the raw query to the service, or use ApiFeatures there.
+    // Ideally, the service should handle the "business logic" of filtering.
+    // We already have specific params: page, limit, search...
+    // Let's pass query + companyId.
+
     const page = parseInt(req.query.page as string) || 1;
     const limit = parseInt(req.query.limit as string) || 20;
-    const search = req.query.search as string;
-    const status = req.query.status as string;
-    const calendarId = req.query.calendarId as string;
-    const leaveGradeId = req.query.leaveGradeId as string;
+
+    // Filters
+    const filters = {
+      search: req.query.search as string,
+      status: req.query.status as string,
+      calendarId: req.query.calendarId as string,
+      leaveGradeId: req.query.leaveGradeId as string,
+    };
 
     const result = await EmployeeService.getEmployees({
       authContext,
       companyId,
       page,
       limit,
-      search,
-      status,
-      calendarId,
-      leaveGradeId,
+      ...filters
     });
 
     const responseData: EmployeesListResponseDto = {
@@ -72,18 +83,23 @@ export const getEmployees = catchAsync(
 
 /**
  * @desc    Get employee details by ID
- * @route   GET /api/v1/companies/:companyId/employees/:employeeId
+ * @route   GET /api/v1/employees/:id
  * @access  Protected (ORG_ADMIN, HR_ADMIN, MANAGER, SUPER_ADMIN, or own profile)
  */
 export const getEmployeeById = catchAsync(
   async (req: Request, res: Response, next: NextFunction) => {
     const authContext = getAuthContext(req);
-    const { companyId, employeeId } = req.params;
+    const { id } = req.params;
+    const companyId = req.targetCompanyId;
+
+    if (!companyId) {
+      return next(new AppError('Company context is required', 400));
+    }
 
     const employee = await EmployeeService.getEmployeeById({
       authContext,
       companyId,
-      employeeId,
+      employeeId: id,
     });
 
     const responseData: EmployeeDetailsResponseDto = {
@@ -105,7 +121,7 @@ export const createEmployee = catchAsync(
   async (req: Request, res: Response, next: NextFunction) => {
     const authContext = getAuthContext(req);
     const { companyId } = req.params;
-    
+
     const employee = await EmployeeService.createEmployee({
       authContext,
       companyId,
@@ -124,18 +140,23 @@ export const createEmployee = catchAsync(
 
 /**
  * @desc    Update employee
- * @route   PATCH /api/v1/companies/:companyId/employees/:employeeId
+ * @route   PATCH /api/v1/employees/:id
  * @access  Protected (ORG_ADMIN, HR_ADMIN, SUPER_ADMIN)
  */
 export const updateEmployee = catchAsync(
   async (req: Request, res: Response, next: NextFunction) => {
     const authContext = getAuthContext(req);
-    const { companyId, employeeId } = req.params;
+    const { id } = req.params;
+    const companyId = req.targetCompanyId;
+
+    if (!companyId) {
+      return next(new AppError('Company context is required', 400));
+    }
 
     const employee = await EmployeeService.updateEmployee({
       authContext,
       companyId,
-      employeeId,
+      employeeId: id,
       data: req.body,
     });
 
@@ -151,18 +172,23 @@ export const updateEmployee = catchAsync(
 
 /**
  * @desc    Delete employee
- * @route   DELETE /api/v1/companies/:companyId/employees/:employeeId
+ * @route   DELETE /api/v1/employees/:id
  * @access  Protected (SUPER_ADMIN only)
  */
 export const deleteEmployee = catchAsync(
   async (req: Request, res: Response, next: NextFunction) => {
     const authContext = getAuthContext(req);
-    const { companyId, employeeId } = req.params;
+    const { id } = req.params;
+    const companyId = req.targetCompanyId;
+
+    if (!companyId) {
+      return next(new AppError('Company context is required', 400));
+    }
 
     await EmployeeService.deleteEmployee({
       authContext,
       companyId,
-      employeeId,
+      employeeId: id,
     });
 
     const responseData = {

@@ -17,6 +17,22 @@ router.use(protect);
 // FLAT ALLOCATION ROUTES (Resource-based)
 // =========================================================================
 
+// Global Middleware: Resolve Tenant
+import { resolveTenant } from '@/shared/middleware';
+router.use(resolveTenant);
+
+/**
+ * @route   GET /api/v1/allocations
+ * @desc    Get all allocations (Scoped by tenant)
+ * @access  Protected (HR_ADMIN, ORG_ADMIN, MANAGER, SUPER_ADMIN)
+ */
+router.get(
+    '/',
+    restrictTo(Role.SUPER_ADMIN, Role.ORG_ADMIN, Role.HR_ADMIN, Role.MANAGER),
+    validate(getAllocationsSchema),
+    AllocationController.getAllocations
+);
+
 /**
  * @route   GET /api/v1/allocations/:allocationId
  * @desc    Get allocation by ID

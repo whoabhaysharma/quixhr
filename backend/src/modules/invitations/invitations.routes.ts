@@ -1,4 +1,5 @@
 import { Router } from 'express';
+import { Role } from '@prisma/client';
 import * as InvitationController from './invitations.controller';
 import { protect } from '@/shared/middleware/auth.middleware';
 import { validate } from '@/shared/middleware';
@@ -39,11 +40,22 @@ router.post(
 // PROTECTED ROUTES (Authentication required)
 // =========================================================================
 
+// Global Middleware: Resolve Tenant
+import { resolveTenant, restrictTo } from '@/shared/middleware';
+router.use(protect);
+
 /**
- * @route   POST /api/v1/invitations/:invitationId/resend
- * @desc    Resend an invitation
+ * @route   GET /api/v1/invitations
+ * @desc    Get invitations (Scoped by tenant)
  * @access  Protected (HR_ADMIN, ORG_ADMIN, SUPER_ADMIN)
  */
+router.get(
+    '/',
+    resolveTenant,
+    restrictTo(Role.SUPER_ADMIN, Role.ORG_ADMIN, Role.HR_ADMIN),
+    // validate(getInvitationsSchema), // Need to export/import this schema if validation is desired
+    InvitationController.getInvitations
+);
 router.post(
     '/:invitationId/resend',
     protect,

@@ -29,6 +29,8 @@ export const createCalendar = catchAsync(async (req: Request, res: Response, nex
 export const getCalendarById = catchAsync(async (req: Request, res: Response, next: NextFunction) => {
     // Supports both :id and :calendarId param names
     const id = req.params.id || req.params.calendarId;
+    const companyId = req.targetCompanyId;
+
     const calendar = await CalendarService.findById(id);
 
     if (!calendar) {
@@ -36,7 +38,7 @@ export const getCalendarById = catchAsync(async (req: Request, res: Response, ne
     }
 
     // Authorization
-    if (req.user!.role !== 'SUPER_ADMIN' && calendar.companyId !== req.user!.companyId) {
+    if (req.user!.role !== 'SUPER_ADMIN' && companyId && calendar.companyId !== companyId) {
         return next(new AppError('You do not have permission to view this calendar', 403));
     }
 
@@ -47,30 +49,19 @@ export const getCalendarById = catchAsync(async (req: Request, res: Response, ne
 export const getCalendar = getCalendarById;
 
 export const getCalendars = catchAsync(async (req: Request, res: Response, next: NextFunction) => {
-    let filter: { companyId?: string; page?: number; limit?: number; search?: string } = {
+    // targetCompanyId is set by resolveTenant middleware
+    const companyId = req.targetCompanyId;
+
+    if (!companyId) {
+        return next(new AppError('Company context is required', 400));
+    }
+
+    let filter: { companyId: string; page?: number; limit?: number; search?: string } = {
+        companyId,
         page: req.query.page ? Number(req.query.page) : 1,
         limit: req.query.limit ? Number(req.query.limit) : 10,
         search: req.query.search as string
     };
-
-    // If companyId is in params (nested route), use it
-    if (req.params.companyId) {
-        // Auth check: Is user allowed to view this company?
-        if (req.user!.role !== 'SUPER_ADMIN' && req.user!.companyId !== req.params.companyId) {
-            return next(new AppError('You do not have permission to view calendars for this company', 403));
-        }
-        filter.companyId = req.params.companyId;
-    } else {
-        // Global list or Query Param list
-        if (req.user!.role === 'SUPER_ADMIN') {
-            if (req.query.companyId) {
-                filter.companyId = req.query.companyId as string;
-            }
-        } else {
-            // Restrict to own company
-            filter.companyId = req.user!.companyId;
-        }
-    }
 
     const result = await CalendarService.findAll(filter);
     sendResponse(res, 200, result, 'Calendars retrieved successfully');
