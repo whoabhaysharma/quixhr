@@ -8,11 +8,14 @@ export const apiLimiter = rateLimit({
     max: 100, // Limit each IP to 100 requests per windowMs
     standardHeaders: true, // Return rate limit info in the `RateLimit-*` headers
     legacyHeaders: false, // Disable the `X-RateLimit-*` headers
+    skip: () => {
+        return process.env.NODE_ENV === 'test';
+    },
 
     // Use Redis store for distributed rate limiting
     store: new RedisStore({
-        // @ts-expect-error - rate-limit-redis expects a different client type but ioredis works
-        client: redis,
+        // @ts-expect-error - Adapter for ioredis
+        sendCommand: (...args: string[]) => redis.call(...args),
         prefix: 'rl:', // Key prefix in Redis
     }),
 

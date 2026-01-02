@@ -56,7 +56,8 @@ function extractToken(authHeader: string | undefined): string | undefined {
  */
 function verifyToken(token: string): TokenPayload {
     try {
-        return jwt.verify(token, JWT_SECRET) as TokenPayload;
+        const secret = process.env.JWT_SECRET || 'your-secret-key';
+        return jwt.verify(token, secret) as TokenPayload;
     } catch (error: any) {
         if (error.name === 'TokenExpiredError') {
             throw new Error(ERROR_MESSAGES.EXPIRED_TOKEN);

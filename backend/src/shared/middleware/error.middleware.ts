@@ -31,6 +31,7 @@ const ENVIRONMENT = {
 function normalizeError(err: AppError): AppError {
     return {
         ...err,
+        message: err.message,
         statusCode: err.statusCode || DEFAULT_STATUS_CODE,
         status: err.status || DEFAULT_STATUS,
         isOperational: err.isOperational ?? false,

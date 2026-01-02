@@ -36,8 +36,7 @@ export const updateEmployeeSchema = {
     leaveGradeId: z.string().uuid().optional(),
   }),
   params: z.object({
-    companyId: z.string().uuid('Invalid company ID'),
-    employeeId: z.string().uuid('Invalid employee ID'),
+    id: z.string().uuid('Invalid employee ID'),
   }),
 };
 
@@ -46,8 +45,7 @@ export const updateEmployeeSchema = {
  */
 export const getEmployeeSchema = {
   params: z.object({
-    companyId: z.string().uuid('Invalid company ID'),
-    employeeId: z.string().uuid('Invalid employee ID'),
+    id: z.string().uuid('Invalid employee ID'),
   }),
 };
 
@@ -55,9 +53,7 @@ export const getEmployeeSchema = {
  * Schema for listing employees
  */
 export const getEmployeesSchema = {
-  params: z.object({
-    companyId: z.string().uuid('Invalid company ID'),
-  }),
+  // No params for list employees flat route
   query: z.object({
     page: z.coerce.number().min(1).default(1).optional(),
     limit: z.coerce.number().min(1).max(100).default(20).optional(),
@@ -73,8 +69,7 @@ export const getEmployeesSchema = {
  */
 export const deleteEmployeeSchema = {
   params: z.object({
-    companyId: z.string().uuid('Invalid company ID'),
-    employeeId: z.string().uuid('Invalid employee ID'),
+    id: z.string().uuid('Invalid employee ID'),
   }),
 };
 
@@ -193,4 +188,4 @@ export type CreateEmployeeRequestDto = z.infer<typeof createEmployeeSchema.body>
 export type UpdateEmployeeRequestDto = z.infer<typeof updateEmployeeSchema.body>;
 export type GetEmployeeParamsDto = z.infer<typeof getEmployeeSchema.params>;
 export type GetEmployeesQueryDto = z.infer<typeof getEmployeesSchema.query>;
-export type GetEmployeesParamsDto = z.infer<typeof getEmployeesSchema.params>;
+// export type GetEmployeesParamsDto = z.infer<typeof getEmployeesSchema.params>; // Params removed from schema

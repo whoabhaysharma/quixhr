@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import { Role } from '@prisma/client';
-import { protect, restrictTo } from '@/shared/middleware';
+import { protect, restrictTo, resolveTenant } from '@/shared/middleware';
 import validate from '@/shared/middleware/validate-resource.middleware';
 import * as CalendarController from './calendars.controller';
 import {
@@ -15,6 +15,7 @@ import {
 
 const router = Router();
 router.use(protect);
+router.use(resolveTenant);
 
 // =========================================================================
 // 1. GLOBAL LIST (Super Admin / Cross-Company)

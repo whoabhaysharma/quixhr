@@ -23,7 +23,8 @@ const router = Router();
 // Global Middleware: Resolve Tenant for ALL employee routes
 // Since this is a flat resource, resolveTenant will use the user's token
 // or query param (for super admin) to determine targetCompanyId
-import { resolveTenant } from '@/shared/middleware';
+import { resolveTenant, protect } from '@/shared/middleware';
+router.use(protect);
 router.use(resolveTenant);
 
 /**

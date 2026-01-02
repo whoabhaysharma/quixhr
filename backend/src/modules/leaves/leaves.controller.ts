@@ -46,7 +46,7 @@ export const getLeaveGradeById = catchAsync(async (req: Request, res: Response, 
 });
 
 export const getLeaveGrades = catchAsync(async (req: Request, res: Response, next: NextFunction) => {
-    const companyId = req.targetCompanyId;
+    const companyId = req.targetCompanyId || req.user?.companyId;
 
     if (!companyId) {
         return next(new AppError('Company context is required', 400));

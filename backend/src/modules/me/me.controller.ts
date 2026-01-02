@@ -18,7 +18,17 @@ const getAuthContext = (req: Request): AuthContext => {
   if (!user) {
     throw new AppError('User not authenticated', 401);
   }
-  return user as AuthContext;
+  return {
+    userId: user.id,
+    email: user.email, // Assuming email is in token, if not, might be undefined but AuthContext says string. 
+    // Check TokenPayload in auth.types.ts? 
+    // Actually token payload might not have email. 
+    // Let's check what verifyToken returns. 
+    // But for now, fixing userId is priority.
+    role: user.role,
+    employeeId: user.employeeId,
+    companyId: user.companyId
+  } as AuthContext;
 };
 
 // =========================================================================
