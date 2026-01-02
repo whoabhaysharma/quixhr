@@ -66,7 +66,7 @@ export default function AuditLogsPage() {
     useEffect(() => {
         if (!authLoading) {
             if (!user || (user.role !== "HR_ADMIN" && user.role !== "SUPER_ADMIN" && user.role !== "MANAGER")) {
-                router.push("/dashboard");
+                router.push("/a/dashboard");
             } else {
                 fetchLogs();
             }

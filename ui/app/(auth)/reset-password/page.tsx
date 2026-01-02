@@ -40,7 +40,7 @@ export default function ResetPasswordPage() {
             return
         }
 
-        resetPasswordMutation.mutate({ token, password }, {
+        resetPasswordMutation.mutate({ token, password, confirmPassword }, {
             onSuccess: () => {
                 setSuccess(true)
             }

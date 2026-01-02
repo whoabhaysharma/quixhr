@@ -13,8 +13,10 @@ export default function AuthLayout({
     const router = useRouter()
 
     useEffect(() => {
-        if (!isLoading && isAuthenticated) {
-            router.push("/dashboard")
+        if (!isLoading && isAuthenticated && user) {
+            if (user.role === 'SUPER_ADMIN') router.push('/s/dashboard');
+            else if (['ORG_ADMIN', 'HR_ADMIN', 'MANAGER'].includes(user.role)) router.push('/a/dashboard');
+            else router.push('/e/dashboard');
         }
     }, [isLoading, isAuthenticated, router])
 

@@ -92,8 +92,8 @@ export function useForgotPassword() {
 
 export function useResetPassword() {
     return useMutation({
-        mutationFn: ({ token, password }: { token: string; password: string }) =>
-            authService.resetPassword(token, password),
+        mutationFn: ({ token, password, confirmPassword }: { token: string; password: string; confirmPassword: string }) =>
+            authService.resetPassword(token, password, confirmPassword),
         onSuccess: () => {
             toast.success('Password reset successfully');
         },

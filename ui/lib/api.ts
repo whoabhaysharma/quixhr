@@ -12,6 +12,7 @@ const api = axios.create({
 // Request interceptor - automatically add JWT token
 api.interceptors.request.use(
     (config: InternalAxiosRequestConfig) => {
+        console.log(`[API REQUEST] ${config.method?.toUpperCase()} ${config.url}`, config.data);
         const token = localStorage.getItem('token');
         if (token && config.headers) {
             config.headers.Authorization = `Bearer ${token}`;
@@ -19,6 +20,7 @@ api.interceptors.request.use(
         return config;
     },
     (error: AxiosError) => {
+        console.error('[API REQUEST ERROR]', error);
         return Promise.reject(error);
     }
 );
@@ -26,6 +28,7 @@ api.interceptors.request.use(
 // Response interceptor - handle common errors
 api.interceptors.response.use(
     (response) => {
+        console.log(`[API RESPONSE] ${response.status} ${response.config.url}`, response.data);
         return response;
     },
     (error: AxiosError) => {
@@ -54,11 +57,9 @@ export default api;
 
 // Type definitions for common API responses
 export interface ApiResponse<T = any> {
-    success: boolean;
+    status: 'success' | 'fail' | 'error';
     data: T;
-    error?: {
-        message: string;
-    };
+    message?: string;
 }
 
 export interface PaginatedResponse<T> extends ApiResponse<T> {

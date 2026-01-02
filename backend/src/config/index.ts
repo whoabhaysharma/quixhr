@@ -41,6 +41,12 @@ export const config = {
     // Email
     email: {
         from: process.env.FROM_EMAIL || 'no-reply@quixhr.com',
+        smtp: {
+            host: process.env.SMTP_HOST || 'smtp.gmail.com',
+            port: parseInt(process.env.SMTP_PORT || '587'),
+            user: process.env.SMTP_USER,
+            pass: process.env.SMTP_PASS,
+        }
     },
 
     // Frontend
@@ -59,6 +65,12 @@ export const config = {
     // Notifications
     notification: {
         retentionDays: parseInt(process.env.NOTIFICATION_RETENTION_DAYS || '2'),
+    },
+
+    // Super Admin
+    superAdmin: {
+        email: process.env.SUPER_ADMIN_EMAIL || 'whoabhaysharma@gmail.com',
+        password: process.env.SUPER_ADMIN_PASSWORD || 'password123',
     },
 
     // Audit

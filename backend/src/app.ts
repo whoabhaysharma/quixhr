@@ -32,8 +32,26 @@ const app = express();
 app.use(helmet());
 
 // CORS - Restricted to your frontend in production
+// CORS - Restricted to your frontend in production
 app.use(cors({
-  origin: process.env.FRONTEND_URL || '*',
+  origin: (origin, callback) => {
+    // Allow requests with no origin (like mobile apps or curl requests)
+    if (!origin) return callback(null, true);
+
+    const allowedOrigins = [
+      'http://localhost:3000',
+      'http://localhost:3001',
+      process.env.FRONTEND_URL
+    ].filter(Boolean) as string[];
+
+    // Check if origin is in allowed list or if it's a localhost URL (for loose dev matching)
+    if (allowedOrigins.includes(origin) || origin.startsWith('http://localhost:')) {
+      callback(null, true);
+    } else {
+      console.error('CORS Blocked:', origin);
+      callback(new Error('Not allowed by CORS'));
+    }
+  },
   credentials: true
 }));
 

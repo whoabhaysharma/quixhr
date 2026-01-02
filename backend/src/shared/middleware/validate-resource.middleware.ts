@@ -29,12 +29,17 @@ const validate = (schema: ValidationSchema) => {
             }
             next();
         } catch (error: any) {
-            if (error.errors) {
-                const errorMessages = error.errors.map((issue: any) => ({
+            const issues = error.issues || error.errors;
+            if (issues) {
+                const errorMessages = issues.map((issue: any) => ({
                     path: issue.path.join('.'),
                     message: issue.message,
                 }));
+                // console.error('Validation Error Details:', JSON.stringify(errorMessages, null, 2));
                 return next(new AppError(`Validation error: ${JSON.stringify(errorMessages)}`, 400));
+            } else {
+                // Log non-standard errors
+                console.error('Unexpected Validation Error:', error);
             }
             return next(new AppError('Validation failed', 400));
         }

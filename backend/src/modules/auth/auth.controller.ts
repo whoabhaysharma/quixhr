@@ -7,6 +7,7 @@ import { sendEmail } from '@/infra/email/email.service';
 import { AppError } from '@/utils/appError';
 import { catchAsync } from '@/utils/catchAsync';
 import { sendResponse } from '@/utils/sendResponse';
+import { config } from '@/config';
 import { TokenPayload } from './auth.types';
 import {
   AuthResponseDto,
@@ -127,7 +128,7 @@ export const register = catchAsync(
         data: {
           email,
           password: hashedPassword,
-          role: 'SUPER_ADMIN',
+          role: 'ORG_ADMIN',
           isEmailVerified: false,
         },
       });
@@ -182,7 +183,7 @@ export const register = catchAsync(
       template: 'verify-email',
       data: {
         name: firstName,
-        verificationLink: `${process.env.FRONTEND_URL}/verify-email?token=${accessToken}`,
+        verificationLink: `${config.frontend.url}/verify-email?token=${accessToken}`,
       },
     });
 
@@ -243,6 +244,18 @@ export const login = catchAsync(
       refreshToken,
       user: buildUserResponse({ ...user, employee: user.employee || undefined }),
     };
+
+    // Send Login Alert (Fire and Forget)
+    sendEmail({
+      to: user.email,
+      subject: 'New Login Alert - QuixHR',
+      template: 'login-alert',
+      data: {
+        name: user.employee?.firstName || user.email,
+        device: req.headers['user-agent'] || 'Unknown Device',
+        time: new Date().toLocaleString()
+      }
+    }).catch(err => console.error('Failed to send login alert:', err));
 
     sendResponse(res, 200, response, 'User logged in successfully');
   }
@@ -344,7 +357,7 @@ export const forgotPassword = catchAsync(
         template: 'reset-password',
         data: {
           name: user.email,
-          resetLink: `${process.env.FRONTEND_URL}/reset-password?token=${resetToken}`,
+          resetLink: `${config.frontend.url}/reset-password?token=${resetToken}`,
           expiresIn: '1 hour',
         },
       });

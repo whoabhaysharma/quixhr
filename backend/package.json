@@ -5,15 +5,16 @@
   "main": "dist/index.js",
   "scripts": {
     "dev": "concurrently \"npm run dev:server\" \"npm run dev:worker\"",
-    "dev:server": "ts-node-dev --respawn --transpile-only src/index.ts",
-    "dev:worker": "ts-node-dev --respawn --transpile-only src/workers/index.ts",
-    "dev:watch": "ts-node-dev --respawn --transpile-only src/index.ts",
+    "dev:server": "ts-node-dev -r tsconfig-paths/register --respawn --transpile-only src/index.ts",
+    "dev:worker": "ts-node-dev -r tsconfig-paths/register --respawn --transpile-only src/workers/index.ts",
+    "dev:watch": "ts-node-dev -r tsconfig-paths/register --respawn --transpile-only src/index.ts",
     "build": "tsc",
     "start": "node dist/index.js",
     "worker": "node dist/workers/index.js",
     "test": "jest --runInBand --forceExit",
     "test:watch": "jest --watch --runInBand",
-    "test:coverage": "jest --coverage --runInBand"
+    "test:coverage": "jest --coverage --runInBand",
+    "db:clear": "ts-node -r tsconfig-paths/register scripts/clear-db.ts"
   },
   "keywords": [
     "express",
@@ -75,6 +76,7 @@
     "ts-jest": "^29.4.6",
     "ts-node": "^10.9.1",
     "ts-node-dev": "^2.0.0",
+    "tsconfig-paths": "^4.2.0",
     "typescript": "^5.3.0"
   },
   "engines": {

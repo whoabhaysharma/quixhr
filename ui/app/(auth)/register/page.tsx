@@ -15,7 +15,8 @@ export default function RegisterPage() {
     const router = useRouter()
 
     // Form State
-    const [name, setName] = useState("")
+    const [firstName, setFirstName] = useState("")
+    const [lastName, setLastName] = useState("")
     const [companyName, setCompanyName] = useState("")
     const [email, setEmail] = useState("")
     const [password, setPassword] = useState("")
@@ -43,17 +44,19 @@ export default function RegisterPage() {
             const response = await authService.register({
                 email,
                 password,
-                name,
+                confirmPassword,
+                firstName,
+                lastName,
                 companyName
             })
 
-            if (response.success) {
+            if (response.status === 'success') {
                 setIsSuccess(true)
             } else {
-                setError(response.error?.message || "Registration failed")
+                setError(response.message || "Registration failed")
             }
         } catch (err: any) {
-            setError(err.response?.data?.error?.message || err.message || "Registration failed")
+            setError(err.response?.data?.message || err.message || "Registration failed")
         } finally {
             setIsLoading(false)
         }
@@ -150,29 +153,42 @@ export default function RegisterPage() {
                         <form onSubmit={handleRegister} className="space-y-4">
                             <div className="grid grid-cols-2 gap-4">
                                 <div className="space-y-2">
-                                    <Label htmlFor="name" className="text-slate-700">Full Name</Label>
+                                    <Label htmlFor="firstName" className="text-slate-700">First Name</Label>
                                     <Input
-                                        id="name"
+                                        id="firstName"
                                         type="text"
-                                        placeholder="John Doe"
-                                        value={name}
-                                        onChange={(e) => setName(e.target.value)}
+                                        placeholder="John"
+                                        value={firstName}
+                                        onChange={(e) => setFirstName(e.target.value)}
                                         className="h-10 rounded-md border-slate-200 focus:ring-slate-900 focus:border-slate-900"
                                         required
                                     />
                                 </div>
                                 <div className="space-y-2">
-                                    <Label htmlFor="companyName" className="text-slate-700">Company</Label>
+                                    <Label htmlFor="lastName" className="text-slate-700">Last Name</Label>
                                     <Input
-                                        id="companyName"
+                                        id="lastName"
                                         type="text"
-                                        placeholder="Acme Inc."
-                                        value={companyName}
-                                        onChange={(e) => setCompanyName(e.target.value)}
+                                        placeholder="Doe"
+                                        value={lastName}
+                                        onChange={(e) => setLastName(e.target.value)}
                                         className="h-10 rounded-md border-slate-200 focus:ring-slate-900 focus:border-slate-900"
                                         required
                                     />
                                 </div>
+                            </div>
+
+                            <div className="space-y-2">
+                                <Label htmlFor="companyName" className="text-slate-700">Company</Label>
+                                <Input
+                                    id="companyName"
+                                    type="text"
+                                    placeholder="Acme Inc."
+                                    value={companyName}
+                                    onChange={(e) => setCompanyName(e.target.value)}
+                                    className="h-10 rounded-md border-slate-200 focus:ring-slate-900 focus:border-slate-900"
+                                    required
+                                />
                             </div>
 
                             <div className="space-y-2">
@@ -194,7 +210,7 @@ export default function RegisterPage() {
                                     <Input
                                         id="password"
                                         type={showPassword ? "text" : "password"}
-                                        placeholder="8+ characters"
+                                        placeholder="8+ characters, 1 upper, 1 lower, 1 digit, 1 special"
                                         value={password}
                                         onChange={(e) => setPassword(e.target.value)}
                                         className="h-10 rounded-md border-slate-200 focus:ring-slate-900 focus:border-slate-900 pr-10"

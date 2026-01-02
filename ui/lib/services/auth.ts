@@ -2,20 +2,27 @@ import api, { ApiResponse } from '../api';
 
 export interface User {
     id: string;
-    name: string;
     email: string;
-    role: 'ADMIN' | 'HR' | 'EMPLOYEE';
-    organizationId: string;
-    holidayCalendarId?: string;
+    role: string; // 'SUPER_ADMIN' | 'ADMIN' | 'EMPLOYEE' etc.
+    isEmailVerified: boolean;
+    employee?: {
+        id: string;
+        firstName: string;
+        lastName: string;
+        companyId: string;
+    };
 }
 
 export interface LoginResponse {
-    token: string;
+    accessToken: string;
+    refreshToken: string;
     user: User;
 }
 
 export interface RegisterResponse {
-    message: string;
+    accessToken: string;
+    refreshToken: string;
+    user: User;
 }
 
 export const authService = {
@@ -25,11 +32,13 @@ export const authService = {
         return response.data;
     },
 
-    // Complete registration
+    // Register new company/user
     register: async (data: {
-        name: string;
+        firstName: string;
+        lastName: string;
         email: string;
         password: string;
+        confirmPassword: string;
         companyName: string;
     }): Promise<ApiResponse<RegisterResponse>> => {
         const response = await api.post('/auth/register', data);
@@ -42,7 +51,7 @@ export const authService = {
         role: string;
         organization: { name: string };
     }>> => {
-        const response = await api.get(`/invites/${token}`);
+        const response = await api.get(`/invitations/verify/${token}`);
         return response.data;
     },
 
@@ -52,30 +61,31 @@ export const authService = {
         name: string;
         password: string;
     }): Promise<ApiResponse<LoginResponse>> => {
-        const response = await api.post('/auth/register-invite', data);
+        // Invitations module handles acceptance
+        const response = await api.post('/invitations/accept', data);
         return response.data;
     },
 
     // Get current user
     getCurrentUser: async (): Promise<ApiResponse<User>> => {
-        const response = await api.get('/auth/me');
+        const response = await api.get('/me');
         return response.data;
     },
     // Forgot password
-    forgotPassword: async (email: string): Promise<ApiResponse<{ message: string }>> => {
+    forgotPassword: async (email: string): Promise<ApiResponse<string>> => {
         const response = await api.post('/auth/forgot-password', { email });
         return response.data;
     },
 
     // Reset password
-    resetPassword: async (token: string, password: string): Promise<ApiResponse<{ message: string }>> => {
-        const response = await api.post('/auth/reset-password', { token, newPassword: password });
+    resetPassword: async (token: string, password: string, confirmPassword: string): Promise<ApiResponse<string>> => {
+        const response = await api.post('/auth/reset-password', { token, password, confirmPassword });
         return response.data;
     },
 
     // Verify email
-    verifyEmail: async (token: string): Promise<ApiResponse<{ message: string }>> => {
-        const response = await api.get(`/auth/verify-email/${token}`);
+    verifyEmail: async (token: string): Promise<ApiResponse<string>> => {
+        const response = await api.post('/auth/verify-email', { token });
         return response.data;
     },
 };

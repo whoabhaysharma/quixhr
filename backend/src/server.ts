@@ -3,8 +3,15 @@ dotenv.config();
 
 import app from './app';
 
-const PORT = process.env.PORT || 4000;
+import { seedSuperAdmin } from './utils/seed-super-admin';
 
-app.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`);
-});
+const PORT = 4000; // process.env.PORT || 4000;
+
+const startServer = async () => {
+  await seedSuperAdmin();
+  app.listen(PORT, () => {
+    console.log(`Server running on port ${PORT}`);
+  });
+};
+
+startServer();

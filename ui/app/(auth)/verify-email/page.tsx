@@ -1,63 +1,54 @@
 "use client"
 
-import { useEffect, useState, Suspense, useRef } from "react"
+import { useEffect, useState, Suspense } from "react"
 import { useSearchParams } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { CheckCircle2, XCircle, Loader2 } from "lucide-react"
 import Link from "next/link"
 import { toast } from "sonner"
-import api from "@/lib/api"
+import { useVerifyEmail } from "@/lib/hooks/useAuth"
 
 function VerifyEmailContent() {
     const searchParams = useSearchParams()
     const token = searchParams.get("token")
 
-    const [status, setStatus] = useState<'loading' | 'success' | 'error'>('loading')
-    const [errorMessage, setErrorMessage] = useState('')
-    const hasVerified = useRef(false)
+    // Use React Query's built-in state management
+    const { mutate: verifyEmail, status, error, isPending, isSuccess, isError } = useVerifyEmail()
+
+    // Debug logging
+    useEffect(() => {
+        console.log('VerifyEmail Status:', { status, isPending, isSuccess, isError })
+    }, [status, isPending, isSuccess, isError])
 
     useEffect(() => {
-        if (!token) {
-            setStatus('error')
-            setErrorMessage('Invalid verification link. No token provided.')
-            return
+        if (token) {
+            verifyEmail(token)
         }
+    }, [token, verifyEmail])
 
-        // Prevent duplicate calls (React Strict Mode runs effects twice in dev)
-        if (hasVerified.current) {
-            return
-        }
-        hasVerified.current = true
+    // Derive UI state from mutation status
+    // Treat 'idle' (initial), 'pending' as loading.
+    const isLoading = status === 'idle' || status === 'pending'
 
-        // Call API directly
-        const verifyEmail = async () => {
-            try {
-                const response = await api.get(`/auth/verify-email/${token}`)
-                if (response.data.success) {
-                    setStatus('success')
-                    toast.success(response.data.data.message || 'Email verified successfully!')
-                } else {
-                    setStatus('error')
-                    setErrorMessage(response.data.error || 'Verification failed')
-                    toast.error(response.data.error || 'Email verification failed')
-                }
-            } catch (error: any) {
-                setStatus('error')
-                const errMsg = error.response?.data?.error || 'The verification link is invalid or has expired.'
-                setErrorMessage(errMsg)
-                toast.error(errMsg)
-            }
-        }
+    // Extract error message safely
+    const errorMessage = error
+        ? ((error as any).response?.data?.message ||
+            (error as any).message ||
+            'Verification failed')
+        : (!token ? 'Invalid verification link. No token provided.' : '')
 
-        verifyEmail()
-    }, [token])
+    // If no token provided, we effectively have an error state (or redirect)
+    // But for this UI, let's treat (!token) as an error condition if we want to show it.
+    const showLoading = isLoading && !!token
+    const showError = isError || !token
+    const showSuccess = isSuccess
 
     return (
         <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 p-4">
             <div className="w-full max-w-md">
                 <div className="bg-white rounded-2xl shadow-2xl p-8">
                     <div className="text-center">
-                        {status === 'loading' && (
+                        {showLoading && (
                             <>
                                 <div className="w-16 h-16 bg-indigo-100 rounded-full flex items-center justify-center mx-auto mb-4">
                                     <Loader2 className="w-8 h-8 text-indigo-600 animate-spin" />
@@ -71,7 +62,7 @@ function VerifyEmailContent() {
                             </>
                         )}
 
-                        {status === 'success' && (
+                        {showSuccess && (
                             <>
                                 <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
                                     <CheckCircle2 className="w-8 h-8 text-green-600" />
@@ -90,7 +81,7 @@ function VerifyEmailContent() {
                             </>
                         )}
 
-                        {status === 'error' && (
+                        {showError && (
                             <>
                                 <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
                                     <XCircle className="w-8 h-8 text-red-600" />

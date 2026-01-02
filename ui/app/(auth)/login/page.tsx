@@ -24,10 +24,19 @@ export default function LoginPage() {
 
         try {
             const response = await loginMutation.mutateAsync({ email, password })
-            if (response.success) {
-                login(response.data.token)
+            if (response.status === 'success') {
+                login(response.data.accessToken)
+
+                // Redirect based on role
+                if (response.data.user.role === 'SUPER_ADMIN') {
+                    window.location.href = '/s/dashboard'
+                } else if (['ORG_ADMIN', 'HR_ADMIN', 'MANAGER'].includes(response.data.user.role)) {
+                    window.location.href = '/a/dashboard'
+                } else {
+                    window.location.href = '/e/dashboard'
+                }
             } else {
-                setError(response.error?.message || "Invalid credentials")
+                setError(response.message || "Invalid credentials")
             }
         } catch (err: any) {
             setError(err.response?.data?.error?.message || "Login failed")

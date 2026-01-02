@@ -59,7 +59,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
                 // Redirect to dashboard if on auth pages
                 if (pathname.startsWith('/login') || pathname.startsWith('/register') || pathname.startsWith('/join')) {
-                    router.push('/dashboard');
+                    if (decoded.role === 'SUPER_ADMIN') router.push('/s/dashboard');
+                    else if (['ORG_ADMIN', 'HR_ADMIN', 'MANAGER'].includes(decoded.role)) router.push('/a/dashboard');
+                    else router.push('/e/dashboard');
                 }
 
             } catch (error) {
