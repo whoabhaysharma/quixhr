@@ -11,7 +11,7 @@ import { AppError } from './utils/appError';
 // Route Imports
 import authRoutes from './modules/auth/auth.routes';
 import webhookRoutes from './modules/webhooks/webhooks.routes';
-import planRoutes from './modules/plans/plans.routes';
+// import planRoutes from './modules/plans/plans.routes';
 import invitationRoutes from './modules/invitations/invitations.routes';
 import meRoutes from './modules/me/me.routes';
 import companyRoutes from './modules/companies/companies.routes';
@@ -19,7 +19,6 @@ import employeeRoutes from './modules/employees/employees.routes';
 import calendarRoutes from './modules/calendars/calendars.routes';
 import leaveRoutes from './modules/leaves/leaves.routes';
 import allocationRoutes from './modules/allocations/allocations.routes';
-import userRoutes from './modules/users/users.routes';
 import { apiLimiter } from './utils/rateLImiter';
 
 const app = express();
@@ -65,7 +64,7 @@ app.use('/api', apiLimiter);
 // Versioned Routes
 app.use('/api/v1/auth', authRoutes);
 app.use('/api/v1/webhooks', webhookRoutes);
-app.use('/api/v1/plans', planRoutes);
+// app.use('/api/v1/plans', planRoutes);
 app.use('/api/v1/invitations', invitationRoutes);
 app.use('/api/v1/me', meRoutes);
 app.use('/api/v1/companies', companyRoutes);
@@ -73,7 +72,6 @@ app.use('/api/v1/employees', employeeRoutes);
 app.use('/api/v1/calendars', calendarRoutes);
 app.use('/api/v1/leaves', leaveRoutes);
 app.use('/api/v1/allocations', allocationRoutes);
-app.use('/api/v1/users', userRoutes);
 
 // ==========================================
 // 3. ERROR HANDLING

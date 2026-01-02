@@ -19,25 +19,6 @@ enum Role {
   EMPLOYEE
 }
 
-enum PaymentProvider {
-  RAZORPAY
-  STRIPE
-  MANUAL         // For Cash/Bank Transfer overrides
-}
-
-enum PaymentStatus {
-  PENDING
-  SUCCESS
-  FAILED
-  REFUNDED
-}
-
-enum SubscriptionStatus {
-  ACTIVE
-  EXPIRED
-  GRACE_PERIOD
-}
-
 enum RuleStrategy {
   CYCLIC          // Every X weeks (1, 2, 3...)
   POSITIONAL      // Specific occurrences (1st, 3rd, Last)
@@ -83,67 +64,6 @@ enum LeaveType {
 }
 
 // ==========================================
-// 2. PREPAID BILLING (MANUAL PAY)
-// ==========================================
-
-model Plan {
-  id               String   @id @default(uuid())
-  name             String   // "Starter", "Pro"
-  
-  maxEmployees     Int
-  priceMonthly     Float
-  priceYearly      Float
-
-  isActive         Boolean  @default(true)
-  
-  // No "External IDs" needed because we calculate price manually
-  subscriptions    Subscription[]
-}
-
-model Subscription {
-  id               String             @id @default(uuid())
-  companyId        String             @unique
-  planId           String
-  
-  status           SubscriptionStatus
-  
-  // CORE FIELD: The date access expires.
-  // Logic: When user pays, validUntil = validUntil + 30 days
-  validUntil       DateTime
-  
-  lastPaymentDate  DateTime?
-  createdAt        DateTime           @default(now())
-  updatedAt        DateTime           @updatedAt
-
-  company          Company            @relation(fields: [companyId], references: [id])
-  plan             Plan               @relation(fields: [planId], references: [id])
-  payments         Payment[]
-}
-
-model Payment {
-  id                String          @id @default(uuid())
-  subscriptionId    String
-  
-  amount            Float
-  currency          String          @default("INR")
-  status            PaymentStatus
-  provider          PaymentProvider 
-  
-  // RAZORPAY STANDARD ORDER FLOW
-  // 1. You create an order -> store order_id here
-  providerOrderId   String          @unique 
-  
-  // 2. User pays -> store payment_id here
-  providerPaymentId String?         
-  
-  // Metadata (e.g., "Manual Renewal - 1 Year")
-  notes             String?         
-
-  createdAt         DateTime        @default(now())
-  subscription      Subscription    @relation(fields: [subscriptionId], references: [id])
-}
-
-// ==========================================
 // 3. ORGANIZATION & USERS
 // ==========================================
 
@@ -158,7 +78,7 @@ model Company {
   logoUrl          String?
   
   // Simple link to their membership record
-  subscription     Subscription?
+  // subscription     Subscription?
   
   employees        Employee[]
   calendars        Calendar[]

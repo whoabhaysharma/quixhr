@@ -133,6 +133,7 @@ router.get(
 // =========================================================================
 // 3. BILLING & PLANS
 // =========================================================================
+/*
 router.post(
     '/:companyId/billing/upgrade',
     resolveTenant,
@@ -146,5 +147,6 @@ router.get(
     restrictTo(Role.ORG_ADMIN, Role.SUPER_ADMIN),
     CompanyController.getBillingHistory
 );
+*/
 
 export default router;

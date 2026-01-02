@@ -63,6 +63,7 @@ export const getCompanyAuditLogs = catchAsync(async (req: Request, res: Response
     sendResponse(res, 200, logs, 'Audit logs retrieved');
 });
 
+/*
 export const initiateUpgrade = catchAsync(async (req: Request, res: Response, next: NextFunction) => {
     sendResponse(res, 200, { message: 'Upgrade logic not implemented' }, 'Upgrade initiated');
 });
@@ -70,3 +71,4 @@ export const initiateUpgrade = catchAsync(async (req: Request, res: Response, ne
 export const getBillingHistory = catchAsync(async (req: Request, res: Response, next: NextFunction) => {
     sendResponse(res, 200, [], 'Billing history retrieved');
 });
+*/

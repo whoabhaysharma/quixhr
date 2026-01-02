@@ -66,14 +66,14 @@ const buildUserResponse = (user: any): UserResponseDto => {
     isEmailVerified: user.isEmailVerified,
     employee: user.employee
       ? {
-          id: user.employee.id,
-          firstName: user.employee.firstName,
-          lastName: user.employee.lastName,
-          code: user.employee.code,
-          status: user.employee.status,
-          joiningDate: user.employee.joiningDate,
-          companyId: user.employee.companyId,
-        }
+        id: user.employee.id,
+        firstName: user.employee.firstName,
+        lastName: user.employee.lastName,
+        code: user.employee.code,
+        status: user.employee.status,
+        joiningDate: user.employee.joiningDate,
+        companyId: user.employee.companyId,
+      }
       : undefined,
   };
 };
@@ -145,20 +145,20 @@ export const register = catchAsync(
       });
 
       // 4. Create Subscription (Start with free plan or trial)
-      const plan = await tx.plan.findFirst({ where: { isActive: true } });
-      if (plan) {
-        const validUntil = new Date();
-        validUntil.setDate(validUntil.getDate() + 30); // 30 days trial
+      // const plan = await tx.plan.findFirst({ where: { isActive: true } });
+      // if (plan) {
+      //   const validUntil = new Date();
+      //   validUntil.setDate(validUntil.getDate() + 30); // 30 days trial
 
-        await tx.subscription.create({
-          data: {
-            companyId: company.id,
-            planId: plan.id,
-            status: 'ACTIVE',
-            validUntil,
-          },
-        });
-      }
+      //   await tx.subscription.create({
+      //     data: {
+      //       companyId: company.id,
+      //       planId: plan.id,
+      //       status: 'ACTIVE',
+      //       validUntil,
+      //     },
+      //   });
+      // }
 
       return { user, company, employee };
     });
