@@ -21,6 +21,33 @@ export const getCompany = catchAsync(async (req: Request, res: Response, next: N
     sendResponse(res, 200, company, 'Company retrieved successfully');
 });
 
+export const createCompany = catchAsync(async (req: Request, res: Response, next: NextFunction) => {
+    // Only Super Admin
+    if (req.user!.role !== 'SUPER_ADMIN') {
+        return next(new AppError('Permission denied', 403));
+    }
+
+    const company = await CompanyService.create(req.body);
+    sendResponse(res, 201, company, 'Company created successfully');
+});
+
+export const getCompanies = catchAsync(async (req: Request, res: Response, next: NextFunction) => {
+    // Only Super Admin
+    if (req.user!.role !== 'SUPER_ADMIN') {
+        return next(new AppError('Permission denied', 403));
+    }
+
+    const { page = 1, limit = 10, search } = req.query;
+
+    const result = await CompanyService.findAll({
+        page: Number(page),
+        limit: Number(limit),
+        search: search as string
+    });
+
+    sendResponse(res, 200, result, 'Companies retrieved successfully');
+});
+
 export const updateCompany = catchAsync(async (req: Request, res: Response, next: NextFunction) => {
     const { companyId } = req.params;
 
@@ -39,12 +66,7 @@ export const getDashboardStats = catchAsync(async (req: Request, res: Response, 
         return next(new AppError('Permission denied', 403));
     }
 
-    // Placeholder for actual stats
-    const stats = {
-        employeesCode: 0,
-        activeSchedules: 0,
-        pendingLeaves: 0
-    };
+    const stats = await CompanyService.getDashboardStats(companyId);
 
     sendResponse(res, 200, stats, 'Dashboard stats retrieved');
 });
@@ -62,13 +84,3 @@ export const getCompanyAuditLogs = catchAsync(async (req: Request, res: Response
     const logs = await CompanyService.getAuditLogs(companyId, { page, limit });
     sendResponse(res, 200, logs, 'Audit logs retrieved');
 });
-
-/*
-export const initiateUpgrade = catchAsync(async (req: Request, res: Response, next: NextFunction) => {
-    sendResponse(res, 200, { message: 'Upgrade logic not implemented' }, 'Upgrade initiated');
-});
-
-export const getBillingHistory = catchAsync(async (req: Request, res: Response, next: NextFunction) => {
-    sendResponse(res, 200, [], 'Billing history retrieved');
-});
-*/

@@ -1,20 +1,20 @@
 import { useQuery } from '@tanstack/react-query'
 import { dashboardService, AdminStats, EmployeeStats } from '../services/dashboard'
 import { toast } from 'sonner'
+import { useAuth } from './useAuth'
 
-export function useAdminStats(enabled: boolean = true) {
+export function useAdminStats() {
     return useQuery({
-        queryKey: ['dashboard', 'admin'],
+        queryKey: ['dashboard', 'stats'],
         queryFn: async () => {
             try {
-                const response = await dashboardService.getAdminStats()
-                return response.data
+                const response = await dashboardService.getStats()
+                return response.data as AdminStats
             } catch (error: any) {
-                // process error silently or toast
+                console.error("Failed to fetch dashboard stats:", error);
                 throw error
             }
-        },
-        enabled
+        }
     })
 }
 

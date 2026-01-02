@@ -2,24 +2,40 @@ import api, { ApiResponse } from '../api';
 
 export interface AdminStats {
     totalEmployees: number;
+    pendingLeaves: number;
     presentToday: number;
     absentToday: number;
     onLeaveToday: number;
-    pendingLeaves: number;
     recentJoiners: Array<{
         id: string;
         name: string;
+        email: string;
         joinedAt: string;
-    }>;
-    leaveDistribution: Array<{
-        status: string;
-        count: number;
+        avatar?: string | null;
     }>;
     upcomingHolidays: Array<{
         id: string;
         name: string;
         date: string;
         description?: string;
+    }>;
+    leaveDistribution: Array<{
+        name: string;
+        value: number;
+    }>;
+    pendingLeaveRequests: Array<{
+        id: string;
+        type: string;
+        startDate: string;
+        endDate: string;
+        reason: string;
+        createdAt: string;
+        employee: {
+            id: string;
+            firstName: string;
+            lastName: string;
+            avatar: string | null;
+        }
     }>;
 }
 
@@ -51,15 +67,21 @@ export interface EmployeeStats {
 }
 
 export const dashboardService = {
-    // Get admin dashboard statistics
-    getAdminStats: async (): Promise<ApiResponse<AdminStats>> => {
-        const response = await api.get('/dashboard/admin/stats');
+    // Get dashboard statistics (Role based)
+    getStats: async (): Promise<ApiResponse<AdminStats | EmployeeStats>> => {
+        const response = await api.get('/dashboard/stats');
+        return response.data;
+    },
+
+    // Legacy support or specific if needed (deprecated)
+    getAdminStats: async (companyId?: string): Promise<ApiResponse<AdminStats>> => {
+        const response = await api.get('/dashboard/stats');
         return response.data;
     },
 
     // Get employee dashboard statistics
     getEmployeeStats: async (): Promise<ApiResponse<EmployeeStats>> => {
-        const response = await api.get('/dashboard/employee/stats');
+        const response = await api.get('/dashboard/stats');
         return response.data;
     },
 };

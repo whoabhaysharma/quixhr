@@ -12,6 +12,11 @@ export function useCurrentUser(options?: { enabled?: boolean }) {
     })
 }
 
+export const useAuth = () => {
+    const { data: user, ...rest } = useCurrentUser();
+    return { user, ...rest };
+};
+
 export function useLogin() {
     return useMutation({
         mutationFn: ({ email, password }: { email: string; password: string }) =>

@@ -80,6 +80,9 @@ model Company {
   // Simple link to their membership record
   // subscription     Subscription?
   
+  // planId           String?
+  // plan             Plan?        @relation(fields: [planId], references: [id])
+  
   employees        Employee[]
   calendars        Calendar[]
   leaveGrades      LeaveGrade[]
@@ -87,6 +90,23 @@ model Company {
 
   createdAt        DateTime     @default(now())
 }
+
+// model Plan {
+//   id          String   @id @default(uuid())
+//   name        String   // "Starter", "Pro", "Enterprise"
+//   description String?
+//   price       Float    @default(0)
+//   interval    String   @default("MONTHLY") // MONTHLY, YEARLY
+//   features    Json?    // Array of feature strings
+//   
+//   maxEmployees Int     @default(5)
+//   isActive    Boolean  @default(true)
+//
+//   companies   Company[]
+//
+//   createdAt   DateTime @default(now())
+//   updatedAt   DateTime @updatedAt
+// }
 
 model Invitation {
   id        String   @id @default(uuid())

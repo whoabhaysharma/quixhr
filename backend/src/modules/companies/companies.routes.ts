@@ -84,6 +84,26 @@ router.get(
 );
 
 /**
+ * @route   GET /api/v1/companies
+ */
+router.get(
+    '/',
+    resolveTenant,
+    restrictTo(Role.SUPER_ADMIN),
+    CompanyController.getCompanies
+);
+
+/**
+ * @route   POST /api/v1/companies
+ */
+router.post(
+    '/',
+    resolveTenant,
+    restrictTo(Role.SUPER_ADMIN),
+    CompanyController.createCompany
+);
+
+/**
  * @route   PATCH /api/v1/companies/:companyId
  */
 router.patch(

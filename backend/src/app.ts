@@ -16,10 +16,12 @@ import invitationRoutes from './modules/invitations/invitations.routes';
 import meRoutes from './modules/me/me.routes';
 import companyRoutes from './modules/companies/companies.routes';
 import employeeRoutes from './modules/employees/employees.routes';
+import usersRoutes from './modules/users/users.routes';
 import calendarRoutes from './modules/calendars/calendars.routes';
 import leaveRoutes from './modules/leaves/leaves.routes';
 import allocationRoutes from './modules/allocations/allocations.routes';
 import attendanceRoutes from './modules/attendance/attendance.routes';
+import dashboardRoutes from './modules/dashboard/dashboard.routes';
 import { apiLimiter } from './utils/rateLImiter';
 
 const app = express();
@@ -88,10 +90,12 @@ app.use('/api/v1/invitations', invitationRoutes);
 app.use('/api/v1/me', meRoutes);
 app.use('/api/v1/companies', companyRoutes);
 app.use('/api/v1/employees', employeeRoutes);
+app.use('/api/v1/users', usersRoutes);
 app.use('/api/v1/calendars', calendarRoutes);
 app.use('/api/v1/leaves', leaveRoutes);
 app.use('/api/v1/allocations', allocationRoutes);
 app.use('/api/v1/attendance', attendanceRoutes);
+app.use('/api/v1/dashboard', dashboardRoutes);
 
 // ==========================================
 // 3. ERROR HANDLING

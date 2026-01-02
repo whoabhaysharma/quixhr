@@ -15,7 +15,6 @@ export default function SuperAdminLayout({ children }: { children: React.ReactNo
             title: "Platform Management",
             items: [
                 { name: "Companies", href: "/s/companies", icon: Building2 },
-                { name: "Plans", href: "/s/plans", icon: CreditCard },
                 { name: "Admins", href: "/s/admins", icon: Users }
             ]
         },

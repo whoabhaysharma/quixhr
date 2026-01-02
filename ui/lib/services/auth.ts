@@ -69,6 +69,23 @@ export const authService = {
     // Get current user
     getCurrentUser: async (): Promise<ApiResponse<User>> => {
         const response = await api.get('/me');
+        // Transform backend response { user, employee, company } to frontend User interface { ...user, employee: { ...employee } }
+        const data = response.data as any;
+
+        if (data.user && data.employee) {
+            const user: User = {
+                ...data.user,
+                employee: {
+                    ...data.employee
+                }
+            };
+            // Preserve wrapper if it exists, otherwise return as data
+            if (response.data.status) {
+                return { ...response.data, data: user };
+            }
+            return { status: 'success', data: user, message: 'User profile retrieved' }; // Mock ApiResponse wrapper if needed
+        }
+
         return response.data;
     },
     // Forgot password
