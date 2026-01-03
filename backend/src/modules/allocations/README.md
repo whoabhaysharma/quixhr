@@ -1,18 +1,18 @@
 # Leave Allocation API - Refactored Structure
 
 ## Overview
-Leave allocations have been moved from company-level to employee-level routes, following the same pattern as leave requests. This makes more semantic sense as allocations belong to specific employees.
+Leave allocations have been moved from organization-level to employee-level routes, following the same pattern as leave requests. This makes more semantic sense as allocations belong to specific employees.
 
 ## Changes Made
 
-### 1. Removed from Companies Router
-- ❌ Removed `GET /api/v1/companies/:companyId/allocations`
-- ❌ Removed `POST /api/v1/companies/:companyId/allocations`
-- ❌ Removed `POST /api/v1/companies/:companyId/allocations/bulk`
+### 1. Removed from Organizations Router
+- ❌ Removed `GET /api/v1/org/:organizationId/allocations`
+- ❌ Removed `POST /api/v1/org/:organizationId/allocations`
+- ❌ Removed `POST /api/v1/org/:organizationId/allocations/bulk`
 
 ### 2. Added to Employees Router
-- ✅ Added `GET /api/v1/companies/:companyId/employees/:employeeId/allocations`
-- ✅ Added `POST /api/v1/companies/:companyId/employees/:employeeId/allocations`
+- ✅ Added `GET /api/v1/org/:organizationId/employees/:employeeId/allocations`
+- ✅ Added `POST /api/v1/org/:organizationId/employees/:employeeId/allocations`
 
 ### 3. Flat Routes (Unchanged)
 - ✅ `GET /api/v1/allocations/:allocationId` - Get by ID
@@ -22,11 +22,11 @@ Leave allocations have been moved from company-level to employee-level routes, f
 ## API Endpoints
 
 ### Nested Routes (Employee Context)
-**Base Path:** `/api/v1/companies/:companyId/employees/:employeeId/allocations`
+**Base Path:** `/api/v1/org/:organizationId/employees/:employeeId/allocations`
 
 #### 1. Get Employee Allocations
 - **Method:** GET
-- **Path:** `/api/v1/companies/:companyId/employees/:employeeId/allocations`
+- **Path:** `/api/v1/org/:organizationId/employees/:employeeId/allocations`
 - **Access:** HR_ADMIN, ORG_ADMIN, MANAGER, EMPLOYEE, SUPER_ADMIN
 - **Query Params:**
   - `year` (optional) - Filter by year
@@ -35,7 +35,7 @@ Leave allocations have been moved from company-level to employee-level routes, f
   - `limit` (optional) - Items per page (default: 20)
 - **Authorization:**
   - SUPER_ADMIN: Can view any employee's allocations
-  - HR_ADMIN/ORG_ADMIN/MANAGER: Can view allocations for employees in their company
+  - HR_ADMIN/ORG_ADMIN/MANAGER: Can view allocations for employees in their organization
   - EMPLOYEE: Can only view their own allocations
 - **Response:**
   ```json
@@ -72,7 +72,7 @@ Leave allocations have been moved from company-level to employee-level routes, f
 
 #### 2. Create Employee Allocation
 - **Method:** POST
-- **Path:** `/api/v1/companies/:companyId/employees/:employeeId/allocations`
+- **Path:** `/api/v1/org/:organizationId/employees/:employeeId/allocations`
 - **Access:** HR_ADMIN, ORG_ADMIN, SUPER_ADMIN
 - **Body:**
   ```json
@@ -84,7 +84,7 @@ Leave allocations have been moved from company-level to employee-level routes, f
   ```
 - **Note:** `employeeId` is taken from URL parameter, not body
 - **Validations:**
-  - Employee must belong to the company
+  - Employee must belong to the organization
   - No duplicate allocation for same employee/year/type
   - Year must be between 2000-2100
   - Allocated must be >= 0
@@ -96,7 +96,7 @@ Leave allocations have been moved from company-level to employee-level routes, f
 - **Method:** GET
 - **Path:** `/api/v1/allocations/:allocationId`
 - **Access:** HR_ADMIN, ORG_ADMIN, MANAGER, SUPER_ADMIN
-- **Authorization:** Validates company access via allocation's employee
+- **Authorization:** Validates organization access via allocation's employee
 
 #### 4. Update Allocation
 - **Method:** PATCH
@@ -111,7 +111,7 @@ Leave allocations have been moved from company-level to employee-level routes, f
   ```
 - **Validations:**
   - Used cannot exceed allocated
-  - Company access validation
+  - Organization access validation
 
 #### 5. Delete Allocation
 - **Method:** DELETE
@@ -119,26 +119,26 @@ Leave allocations have been moved from company-level to employee-level routes, f
 - **Access:** HR_ADMIN, ORG_ADMIN, SUPER_ADMIN
 - **Validations:**
   - Cannot delete if allocation has been used (used > 0)
-  - Company access validation
+  - Organization access validation
 
 ## Key Features
 
 ### Authorization Logic
-1. **SUPER_ADMIN:** Full access to all allocations across all companies
-2. **HR_ADMIN/ORG_ADMIN:** Can manage allocations for employees in their company
-3. **MANAGER:** Can view allocations for employees in their company
+1. **SUPER_ADMIN:** Full access to all allocations across all organizations
+2. **HR_ADMIN/ORG_ADMIN:** Can manage allocations for employees in their organization
+3. **MANAGER:** Can view allocations for employees in their organization
 4. **EMPLOYEE:** Can only view their own allocations
 
 ### Service Layer
 - **`getEmployeeAllocations()`** - New method for employee-specific allocation retrieval
   - Validates employee exists
-  - Enforces company-level access control
+  - Enforces organization-level access control
   - Enforces employee-level access control for EMPLOYEE role
   - Supports filtering by year and leave type
   - Includes pagination
 
 - **`createAllocation()`** - Updated to handle employee context
-  - Validates employee belongs to company
+  - Validates employee belongs to organization
   - Prevents duplicate allocations
   - Sets initial used to 0
 
@@ -149,9 +149,9 @@ Leave allocations have been moved from company-level to employee-level routes, f
 
 ## Migration Notes
 
-### Before (Company-level)
+### Before (Organization-level)
 ```
-POST /api/v1/companies/company-uuid/allocations
+POST /api/v1/org/org-uuid/allocations
 {
   "employeeId": "emp-uuid",
   "year": 2024,
@@ -162,7 +162,7 @@ POST /api/v1/companies/company-uuid/allocations
 
 ### After (Employee-level)
 ```
-POST /api/v1/companies/company-uuid/employees/emp-uuid/allocations
+POST /api/v1/org/org-uuid/employees/emp-uuid/allocations
 {
   "year": 2024,
   "leaveType": "ANNUAL",
@@ -180,7 +180,7 @@ POST /api/v1/companies/company-uuid/employees/emp-uuid/allocations
 
 ## Files Modified
 
-1. **`companies.routes.ts`** - Removed allocation routes
+1. **`organizations.routes.ts`** - Removed allocation routes
 2. **`employees.routes.ts`** - Added allocation routes
 3. **`allocations.controller.ts`** - Added employee-specific methods
 4. **`allocations.service.ts`** - Added `getEmployeeAllocations()` method

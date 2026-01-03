@@ -91,7 +91,7 @@ const buildUserResponse = (user: any): UserResponseDto => {
 export const register = catchAsync(
   async (req: Request, res: Response, next: NextFunction) => {
     const {
-      companyName, // Keeping the field name as companyName to avoid breaking frontend immediately, but mapping to organization name
+      organizationName,
       timezone = 'Asia/Kolkata',
       currency = 'INR',
       dateFormat = 'DD/MM/YYYY',
@@ -116,7 +116,7 @@ export const register = catchAsync(
       // 1. Create Organization
       const organization = await tx.organization.create({
         data: {
-          name: companyName,
+          name: organizationName,
           timezone,
           currency,
           dateFormat,

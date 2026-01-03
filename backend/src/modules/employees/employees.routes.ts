@@ -39,7 +39,7 @@ router.get(
   EmployeeController.getEmployees
 );
 
-// Note: POST /api/v1/companies/:companyId/employees is handled in companies.routes.ts
+// Note: POST /api/v1/org/:organizationId/employees is handled in organizations.routes.ts
 
 /**
  * @route   GET /api/v1/employees/:id

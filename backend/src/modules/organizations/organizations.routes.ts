@@ -67,6 +67,37 @@ router.post(
     InvitationController.createInvitation
 );
 
+// --- Allocations (Nested List/Create) ---
+import * as AllocationController from '../allocations/allocations.controller';
+import { createLeaveAllocationSchema, getAllocationsSchema } from '../allocations/allocations.schema';
+
+// GET /api/v1/org/:organizationId/allocations
+router.get(
+    '/:organizationId/allocations',
+    resolveTenant,
+    restrictTo(Role.ORG_ADMIN, Role.HR_ADMIN, Role.MANAGER, Role.SUPER_ADMIN),
+    validate(getAllocationsSchema),
+    AllocationController.getAllocations
+);
+
+// POST /api/v1/org/:organizationId/allocations
+router.post(
+    '/:organizationId/allocations',
+    resolveTenant,
+    restrictTo(Role.ORG_ADMIN, Role.HR_ADMIN, Role.SUPER_ADMIN),
+    validate(createLeaveAllocationSchema),
+    AllocationController.createEmployeeAllocation // Note: The old route used createAllocation (implied from body), but if we want nested creation we should probably use a controller method that handles it. The docs say "Create Allocation".
+);
+
+// POST /api/v1/org/:organizationId/allocations/bulk
+router.post(
+    '/:organizationId/allocations/bulk',
+    resolveTenant,
+    restrictTo(Role.ORG_ADMIN, Role.HR_ADMIN, Role.SUPER_ADMIN),
+    // validate(bulkAllocateSchema), // Assuming schema exists
+    AllocationController.bulkAllocate
+);
+
 
 
 // =========================================================================

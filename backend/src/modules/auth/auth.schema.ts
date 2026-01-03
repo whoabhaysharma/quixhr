@@ -9,7 +9,7 @@ import { Role } from '@prisma/client';
  * Register schema - Create new organization + super admin
  */
 export const registerSchema = z.object({
-  companyName: z
+  organizationName: z
     .string()
     .min(2, 'Organization name must be at least 2 characters')
     .max(255, 'Organization name must not exceed 255 characters'),

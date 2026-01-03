@@ -86,7 +86,7 @@ export interface UserProfileResponseDto {
  */
 export interface EmployeeProfileResponseDto {
   id: string;
-  companyId: string;
+  organizationId: string;
   userId: string;
   firstName: string;
   lastName: string;
@@ -98,9 +98,9 @@ export interface EmployeeProfileResponseDto {
 }
 
 /**
- * Company profile response DTO
+ * Organization profile response DTO
  */
-export interface CompanyProfileResponseDto {
+export interface OrganizationProfileResponseDto {
   id: string;
   name: string;
   timezone: string;
@@ -116,7 +116,7 @@ export interface CompanyProfileResponseDto {
 export interface CompleteProfileResponseDto {
   user: UserProfileResponseDto;
   employee?: EmployeeProfileResponseDto;
-  company?: CompanyProfileResponseDto;
+  organization?: OrganizationProfileResponseDto;
 }
 
 /**

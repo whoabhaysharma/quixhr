@@ -9,7 +9,7 @@ import {
     CheckInRequestDto,
     CheckOutRequestDto,
     CompleteProfileResponseDto,
-    CompanyProfileResponseDto, // We'll keep the DTO name compatible for now but map to organization
+    OrganizationProfileResponseDto,
     UserProfileResponseDto,
     EmployeeProfileResponseDto,
     MyLeavesResponseDto,
@@ -62,21 +62,21 @@ export class MeService {
             where: { userId },
         });
 
-        let company: CompanyProfileResponseDto | undefined; // Mapping organization to "company" in response for now
+        let organization: OrganizationProfileResponseDto | undefined;
         if (employee) {
-            const organization = await prisma.organization.findUnique({
+            const org = await prisma.organization.findUnique({
                 where: { id: employee.organizationId },
             });
 
-            if (organization) {
-                company = {
-                    id: organization.id,
-                    name: organization.name,
-                    timezone: organization.timezone,
-                    currency: organization.currency,
-                    dateFormat: organization.dateFormat,
-                    logoUrl: organization.logoUrl || undefined,
-                    createdAt: organization.createdAt,
+            if (org) {
+                organization = {
+                    id: org.id,
+                    name: org.name,
+                    timezone: org.timezone,
+                    currency: org.currency,
+                    dateFormat: org.dateFormat,
+                    logoUrl: org.logoUrl || undefined,
+                    createdAt: org.createdAt,
                 };
             }
         }
@@ -91,7 +91,7 @@ export class MeService {
         const employeeProfile: EmployeeProfileResponseDto | undefined = employee
             ? {
                 id: employee.id,
-                companyId: employee.organizationId, // Keeping response key as companyId for frontend compatibility if needed, but value is orgId
+                organizationId: employee.organizationId,
                 userId: employee.userId || '',
                 firstName: employee.firstName,
                 lastName: employee.lastName,
@@ -106,7 +106,7 @@ export class MeService {
         return {
             user: userProfile,
             employee: employeeProfile,
-            company,
+            organization,
         };
     }
 

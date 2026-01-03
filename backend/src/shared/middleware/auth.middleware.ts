@@ -9,7 +9,7 @@ declare global {
     namespace Express {
         interface Request {
             user?: TokenPayload;
-            targetCompanyId?: string;
+            targetOrganizationId?: string;
         }
     }
 }
