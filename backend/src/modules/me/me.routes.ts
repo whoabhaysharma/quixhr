@@ -25,6 +25,13 @@ router.use(protect);
 router.get('/', MeController.getProfile);
 
 /**
+ * @route   GET /api/v1/me/dashboard
+ * @desc    Get my dashboard summary
+ * @access  Protected
+ */
+router.get('/dashboard', MeController.getMyDashboard);
+
+/**
  * @route   PATCH /api/v1/me
  * @desc    Update my profile (email, verification status)
  * @access  Protected

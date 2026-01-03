@@ -22,6 +22,7 @@ import leaveRoutes from './modules/leaves/leaves.routes';
 import allocationRoutes from './modules/allocations/allocations.routes';
 import attendanceRoutes from './modules/attendance/attendance.routes';
 import dashboardRoutes from './modules/dashboard/dashboard.routes';
+import adminRoutes from './modules/admin/admin.routes';
 import { apiLimiter } from './utils/rateLImiter';
 
 const app = express();
@@ -96,6 +97,7 @@ app.use('/api/v1/leaves', leaveRoutes);
 app.use('/api/v1/allocations', allocationRoutes);
 app.use('/api/v1/attendance', attendanceRoutes);
 app.use('/api/v1/dashboard', dashboardRoutes);
+app.use('/api/v1/admin', adminRoutes);
 
 // ==========================================
 // 3. ERROR HANDLING

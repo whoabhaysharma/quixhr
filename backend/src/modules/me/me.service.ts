@@ -19,7 +19,8 @@ import {
     MyAttendanceResponseDto,
     CheckInOutResponseDto,
     NotificationsListResponseDto,
-    AuditLogsListResponseDto
+    AuditLogsListResponseDto,
+    MyDashboardResponseDto
 } from './me.schema';
 
 export class MeService {
@@ -569,6 +570,56 @@ export class MeService {
                 createdAt: log.createdAt,
             })),
             total,
+        };
+    }
+    /**
+     * Get dashboard summary for the authenticated user
+     */
+    static async getMyDashboard(userId: string): Promise<MyDashboardResponseDto> {
+        const employee = await this.getEmployeeContext(userId);
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+
+        const [attendance, leaveBalance, nextHoliday, pendingRequests] = await Promise.all([
+            // Am I clocked in?
+            prisma.attendance.findUnique({
+                where: {
+                    employeeId_date: {
+                        employeeId: employee.id,
+                        date: today,
+                    },
+                },
+                select: { status: true, checkIn: true }
+            }),
+            // My leave balance
+            this.getMyLeaveBalance(userId),
+            // Next holiday
+            employee.calendarId ? prisma.calendarHoliday.findFirst({
+                where: {
+                    calendarId: employee.calendarId,
+                    date: { gt: new Date() }
+                },
+                orderBy: { date: 'asc' },
+                select: { date: true, name: true }
+            }) : null,
+            // Pending leave requests (as a proxy for pending tasks for now)
+            prisma.leaveRequest.count({
+                where: {
+                    employeeId: employee.id,
+                    status: 'PENDING'
+                }
+            })
+        ]);
+
+        return {
+            status: attendance?.status || 'ABSENT',
+            clockedInAt: attendance?.checkIn || undefined,
+            leaveBalance: leaveBalance.allocations,
+            nextHoliday: nextHoliday ? {
+                date: nextHoliday.date,
+                name: nextHoliday.name
+            } : undefined,
+            pendingTasksCount: pendingRequests
         };
     }
 }

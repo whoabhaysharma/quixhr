@@ -285,3 +285,17 @@ export interface CheckInOutResponseDto {
   workMinutes: number;
   isLate: boolean;
 }
+
+/**
+ * My Dashboard response DTO
+ */
+export interface MyDashboardResponseDto {
+  status: string;
+  clockedInAt?: Date;
+  leaveBalance: LeaveAllocationResponseDto[];
+  nextHoliday?: {
+    date: Date;
+    name: string;
+  };
+  pendingTasksCount: number;
+}

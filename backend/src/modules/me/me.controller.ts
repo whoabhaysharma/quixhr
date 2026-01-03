@@ -247,3 +247,15 @@ export const getAuditLogs = catchAsync(
     sendResponse(res, 200, response, 'Audit logs retrieved successfully');
   }
 );
+/**
+ * @desc    Get dashboard summary
+ * @route   GET /api/v1/me/dashboard
+ * @access  Protected
+ */
+export const getMyDashboard = catchAsync(
+  async (req: Request, res: Response, next: NextFunction) => {
+    const authContext = getAuthContext(req);
+    const response = await MeService.getMyDashboard(authContext.userId);
+    sendResponse(res, 200, response, 'Dashboard summary retrieved successfully');
+  }
+);

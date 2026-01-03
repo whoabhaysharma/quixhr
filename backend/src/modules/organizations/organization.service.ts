@@ -72,7 +72,8 @@ export const getDashboardStats = async (organizationId: string) => {
         recentJoiners,
         upcomingHolidays,
         leaveStats,
-        pendingLeaveRequests
+        pendingLeaveRequests,
+        subscription
     ] = await Promise.all([
         // 1. Total Active Employees
         prisma.employee.count({
@@ -140,14 +141,20 @@ export const getDashboardStats = async (organizationId: string) => {
             take: 5,
             orderBy: { createdAt: 'desc' },
             include: { employee: true }
+        }),
+
+        // 8. Subscription Information
+        (prisma as any).subscription.findUnique({
+            where: { organizationId },
+            select: { status: true, validUntil: true }
         })
     ]);
 
     // Process Attendance Counts
-    const attendanceMap = todayAttendance.reduce((acc, curr) => {
+    const attendanceMap = todayAttendance.reduce((acc: any, curr: any) => {
         acc[curr.status] = curr._count;
         return acc;
-    }, {} as Record<AttendanceStatus, number>);
+    }, {} as Record<string, number>);
 
     return {
         totalEmployees,
@@ -155,6 +162,18 @@ export const getDashboardStats = async (organizationId: string) => {
         presentToday: attendanceMap.PRESENT || 0,
         absentToday: attendanceMap.ABSENT || 0,
         onLeaveToday: attendanceMap.ON_LEAVE || 0,
+        headcount: {
+            total: totalEmployees,
+            present: attendanceMap.PRESENT || 0,
+            onLeave: attendanceMap.ON_LEAVE || 0
+        },
+        actionItems: {
+            pendingLeaves: pendingLeaves
+        },
+        subscription: subscription ? {
+            status: subscription.status,
+            expiresInDays: Math.ceil((subscription.validUntil.getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24))
+        } : null,
         recentJoiners: recentJoiners.map(e => ({
             id: e.id,
             name: `${e.firstName} ${e.lastName}`,
