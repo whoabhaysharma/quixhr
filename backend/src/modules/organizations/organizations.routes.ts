@@ -21,17 +21,17 @@ router.use(protect);
 // 1. NESTED RESOURCE ENTRY POINTS (Creation Only)
 // =========================================================================
 
-// --- Employees (Nested Create) ---
-import * as EmployeeController from '../employees/employees.controller';
-import { createEmployeeSchema } from '../employees/employees.schema';
+// --- Members (Nested Create) ---
+import * as MemberController from '../members/members.controller';
+import { createMemberSchema } from '../members/members.schema';
 
-// POST /api/v1/org/:organizationId/employees
+// POST /api/v1/org/:organizationId/members
 router.post(
-    '/:organizationId/employees',
+    '/:organizationId/members',
     resolveTenant,
     restrictTo(Role.ORG_ADMIN, Role.HR_ADMIN, Role.SUPER_ADMIN),
-    validate(createEmployeeSchema),
-    EmployeeController.createEmployee
+    validate(createMemberSchema),
+    MemberController.createMember
 );
 
 // GET /api/v1/org/:organizationId/members
@@ -184,7 +184,7 @@ router.get(
 );
 
 // =========================================================================
-// MEMBER MANAGEMENT ROUTES (Restricted Strict RBAC)
+// MEMBER MANAGEMENT (Restricted Strict RBAC)
 // =========================================================================
 
 
