@@ -69,14 +69,14 @@ router.post(
 
 // --- Allocations (Nested List/Create) ---
 import * as AllocationController from '../allocations/allocations.controller';
-import { createLeaveAllocationSchema, getAllocationsSchema } from '../allocations/allocations.schema';
+import { createLeaveAllocationSchema, getAllocationsQuerySchema } from '../allocations/allocations.schema';
 
 // GET /api/v1/org/:organizationId/allocations
 router.get(
     '/:organizationId/allocations',
     resolveTenant,
     restrictTo(Role.ORG_ADMIN, Role.HR_ADMIN, Role.MANAGER, Role.SUPER_ADMIN),
-    validate(getAllocationsSchema),
+    validate(getAllocationsQuerySchema),
     AllocationController.getAllocations
 );
 

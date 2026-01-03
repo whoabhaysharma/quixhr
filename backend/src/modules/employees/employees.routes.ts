@@ -13,7 +13,7 @@ import {
 import * as LeaveController from '../leaves/leaves.controller';
 import { createLeaveRequestSchema } from '../leaves/leaves.schema';
 import * as AllocationController from '../allocations/allocations.controller';
-import { createLeaveAllocationSchema, getAllocationsSchema } from '../allocations/allocations.schema';
+import { createLeaveAllocationSchema, getAllocationsQuerySchema } from '../allocations/allocations.schema';
 
 const router = Router();
 
@@ -95,7 +95,7 @@ router.get(
 router.get(
   '/:id/allocations',
   restrictTo(Role.SUPER_ADMIN, Role.ORG_ADMIN, Role.HR_ADMIN, Role.MANAGER),
-  validate(getAllocationsSchema),
+  validate(getAllocationsQuerySchema),
   AllocationController.getEmployeeAllocations
 );
 
