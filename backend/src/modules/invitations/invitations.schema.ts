@@ -72,7 +72,7 @@ export const verifyInvitationSchema = {
 
 export interface InvitationResponseDto {
     id: string;
-    companyId: string;
+    organizationId: string;
     email: string;
     role: Role;
     status: string;
@@ -100,7 +100,7 @@ export interface InvitationDetailsResponseDto {
     data: {
         email: string;
         role: Role;
-        companyName: string;
+        organizationName: string;
         expiresAt: Date;
     };
 }

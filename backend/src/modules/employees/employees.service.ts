@@ -10,11 +10,11 @@ import { Role } from '@prisma/client';
  */
 export class EmployeeService {
   /**
-   * Get all employees for a company with pagination and filtering
+   * Get all employees for a organization with pagination and filtering
    */
   static async getEmployees({
     authContext,
-    companyId,
+    organizationId,
     page = 1,
     limit = 20,
     search,
@@ -23,7 +23,7 @@ export class EmployeeService {
     leaveGradeId,
   }: {
     authContext: AuthContext;
-    companyId: string;
+    organizationId: string;
     page?: number;
     limit?: number;
     search?: string;
@@ -31,14 +31,14 @@ export class EmployeeService {
     calendarId?: string;
     leaveGradeId?: string;
   }) {
-    // Validate company access
-    await this.validateCompanyAccess(authContext, companyId);
+    // Validate organization access
+    await this.validateOrganizationAccess(authContext, organizationId);
 
     const skip = (page - 1) * limit;
 
     // Build where clause
     const whereClause: any = {
-      companyId,
+      organizationId,
     };
 
     if (search) {
@@ -92,7 +92,7 @@ export class EmployeeService {
     return {
       employees: employees.map((employee) => ({
         id: employee.id,
-        companyId: employee.companyId,
+        organizationId: employee.organizationId,
         firstName: employee.firstName,
         lastName: employee.lastName,
         fullName: `${employee.firstName} ${employee.lastName}`,
@@ -118,15 +118,15 @@ export class EmployeeService {
    */
   static async getEmployeeById({
     authContext,
-    companyId,
+    organizationId,
     employeeId,
   }: {
     authContext: AuthContext;
-    companyId: string;
+    organizationId: string;
     employeeId: string;
   }) {
-    // Validate company access
-    await this.validateCompanyAccess(authContext, companyId);
+    // Validate organization access
+    await this.validateOrganizationAccess(authContext, organizationId);
 
     const employee = await prisma.employee.findUnique({
       where: { id: employeeId },
@@ -167,13 +167,13 @@ export class EmployeeService {
       throw new AppError('Employee not found', 404);
     }
 
-    if (employee.companyId !== companyId) {
-      throw new AppError('Access denied. Employee belongs to different company.', 403);
+    if (employee.organizationId !== organizationId) {
+      throw new AppError('Access denied. Employee belongs to different organization.', 403);
     }
 
     return {
       id: employee.id,
-      companyId: employee.companyId,
+      organizationId: employee.organizationId,
       firstName: employee.firstName,
       lastName: employee.lastName,
       fullName: `${employee.firstName} ${employee.lastName}`,
@@ -191,35 +191,35 @@ export class EmployeeService {
    */
   static async createEmployee({
     authContext,
-    companyId,
+    organizationId,
     data,
   }: {
     authContext: AuthContext;
-    companyId: string;
+    organizationId: string;
     data: EmployeeCreateData;
   }) {
     // Validate permissions (only admins can create employees)
     this.requireAdminPermissions(authContext.role);
 
-    // Validate company access
-    await this.validateCompanyAccess(authContext, companyId);
+    // Validate organization access
+    await this.validateOrganizationAccess(authContext, organizationId);
 
-    // Check if employee code is unique within company
+    // Check if employee code is unique within organization
     if (data.code) {
       const existingEmployee = await prisma.employee.findFirst({
         where: {
-          companyId,
+          organizationId,
           code: data.code,
         },
       });
 
       if (existingEmployee) {
-        throw new AppError('Employee code already exists in this company', 400);
+        throw new AppError('Employee code already exists in this organization', 400);
       }
     }
 
-    // Validate calendar and leave grade belong to the company
-    await this.validateResourcesAccess(companyId, data.calendarId, data.leaveGradeId);
+    // Validate calendar and leave grade belong to the organization
+    await this.validateResourcesAccess(organizationId, data.calendarId, data.leaveGradeId);
 
     let userId: string | undefined;
 
@@ -257,7 +257,7 @@ export class EmployeeService {
 
     const employee = await prisma.employee.create({
       data: {
-        companyId,
+        organizationId,
         userId,
         firstName: data.firstName,
         lastName: data.lastName,
@@ -293,7 +293,7 @@ export class EmployeeService {
 
     return {
       id: employee.id,
-      companyId: employee.companyId,
+      organizationId: employee.organizationId,
       firstName: employee.firstName,
       lastName: employee.lastName,
       fullName: `${employee.firstName} ${employee.lastName}`,
@@ -312,20 +312,20 @@ export class EmployeeService {
    */
   static async updateEmployee({
     authContext,
-    companyId,
+    organizationId,
     employeeId,
     data,
   }: {
     authContext: AuthContext;
-    companyId: string;
+    organizationId: string;
     employeeId: string;
     data: EmployeeUpdateData;
   }) {
     // Validate permissions
     this.requireAdminPermissions(authContext.role);
 
-    // Validate company access
-    await this.validateCompanyAccess(authContext, companyId);
+    // Validate organization access
+    await this.validateOrganizationAccess(authContext, organizationId);
 
     const employee = await prisma.employee.findUnique({
       where: { id: employeeId },
@@ -335,27 +335,27 @@ export class EmployeeService {
       throw new AppError('Employee not found', 404);
     }
 
-    if (employee.companyId !== companyId) {
-      throw new AppError('Access denied. Employee belongs to different company.', 403);
+    if (employee.organizationId !== organizationId) {
+      throw new AppError('Access denied. Employee belongs to different organization.', 403);
     }
 
     // Check if new employee code is unique
     if (data.code && data.code !== employee.code) {
       const existingEmployee = await prisma.employee.findFirst({
         where: {
-          companyId,
+          organizationId,
           code: data.code,
           id: { not: employeeId },
         },
       });
 
       if (existingEmployee) {
-        throw new AppError('Employee code already exists in this company', 400);
+        throw new AppError('Employee code already exists in this organization', 400);
       }
     }
 
-    // Validate calendar and leave grade belong to the company
-    await this.validateResourcesAccess(companyId, data.calendarId, data.leaveGradeId);
+    // Validate calendar and leave grade belong to the organization
+    await this.validateResourcesAccess(organizationId, data.calendarId, data.leaveGradeId);
 
     const updateData: any = { ...data };
     if (updateData.joiningDate) {
@@ -391,7 +391,7 @@ export class EmployeeService {
 
     return {
       id: updatedEmployee.id,
-      companyId: updatedEmployee.companyId,
+      organizationId: updatedEmployee.organizationId,
       firstName: updatedEmployee.firstName,
       lastName: updatedEmployee.lastName,
       fullName: `${updatedEmployee.firstName} ${updatedEmployee.lastName}`,
@@ -410,18 +410,18 @@ export class EmployeeService {
    */
   static async deleteEmployee({
     authContext,
-    companyId,
+    organizationId,
     employeeId,
   }: {
     authContext: AuthContext;
-    companyId: string;
+    organizationId: string;
     employeeId: string;
   }) {
     // Validate permissions (only super admin and org admin can delete employees)
     this.requireSuperAdminPermissions(authContext.role);
 
-    // Validate company access
-    await this.validateCompanyAccess(authContext, companyId);
+    // Validate organization access
+    await this.validateOrganizationAccess(authContext, organizationId);
 
     const employee = await prisma.employee.findUnique({
       where: { id: employeeId },
@@ -437,8 +437,8 @@ export class EmployeeService {
       throw new AppError('Employee not found', 404);
     }
 
-    if (employee.companyId !== companyId) {
-      throw new AppError('Access denied. Employee belongs to different company.', 403);
+    if (employee.organizationId !== organizationId) {
+      throw new AppError('Access denied. Employee belongs to different organization.', 403);
     }
 
     // Check if employee has related data that prevents deletion
@@ -465,17 +465,17 @@ export class EmployeeService {
   // =========================================================================
 
   /**
-   * Validate company access for the user
+   * Validate organization access for the user
    */
-  private static async validateCompanyAccess(authContext: AuthContext, companyId: string) {
-    // SUPER_ADMIN can access any company
+  private static async validateOrganizationAccess(authContext: AuthContext, organizationId: string) {
+    // SUPER_ADMIN can access any organization
     if (authContext.role === Role.SUPER_ADMIN) {
       return;
     }
 
-    // For other roles, check if user belongs to the company
-    if (authContext.companyId !== companyId) {
-      throw new AppError('Access denied. You do not have permission to access this company.', 403);
+    // For other roles, check if user belongs to the organization
+    if (authContext.organizationId !== organizationId) {
+      throw new AppError('Access denied. You do not have permission to access this organization.', 403);
     }
   }
 
@@ -499,10 +499,10 @@ export class EmployeeService {
   }
 
   /**
-   * Validate that calendar and leave grade belong to the company
+   * Validate that calendar and leave grade belong to the organization
    */
   private static async validateResourcesAccess(
-    companyId: string,
+    organizationId: string,
     calendarId?: string,
     leaveGradeId?: string
   ) {
@@ -511,8 +511,8 @@ export class EmployeeService {
         where: { id: calendarId },
       });
 
-      if (!calendar || calendar.companyId !== companyId) {
-        throw new AppError('Invalid calendar. Calendar does not belong to this company.', 400);
+      if (!calendar || calendar.organizationId !== organizationId) {
+        throw new AppError('Invalid calendar. Calendar does not belong to this organization.', 400);
       }
     }
 
@@ -521,8 +521,8 @@ export class EmployeeService {
         where: { id: leaveGradeId },
       });
 
-      if (!leaveGrade || leaveGrade.companyId !== companyId) {
-        throw new AppError('Invalid leave grade. Leave grade does not belong to this company.', 400);
+      if (!leaveGrade || leaveGrade.organizationId !== organizationId) {
+        throw new AppError('Invalid leave grade. Leave grade does not belong to this organization.', 400);
       }
     }
   }

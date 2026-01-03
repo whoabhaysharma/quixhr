@@ -12,18 +12,18 @@ describe('Leaves Module', () => {
 
     const setupEmployee = async () => {
         const { user: employeeUser, token: employeeToken, employee } = await createTestEmployee(undefined, Role.EMPLOYEE);
-        return { employeeUser, employeeToken, companyId: employee.companyId, employee };
+        return { employeeUser, employeeToken, organizationId: employee.organizationId, employee };
     };
 
-    const setupAdmin = async (companyId: string) => {
-        const { user: adminUser, token: adminToken } = await createTestUser(Role.ORG_ADMIN, companyId);
+    const setupAdmin = async (organizationId: string) => {
+        const { user: adminUser, token: adminToken } = await createTestUser(Role.ORG_ADMIN, organizationId);
         return { adminUser, adminToken };
     };
 
     describe('Allocations', () => {
         it('should allow admin to allocate leaves', async () => {
-            const { employee, companyId } = await setupEmployee();
-            const { adminToken } = await setupAdmin(companyId!);
+            const { employee, organizationId } = await setupEmployee();
+            const { adminToken } = await setupAdmin(organizationId!);
 
             const res = await request(app)
                 .post(`/api/v1/employees/${employee.id}/allocations`)

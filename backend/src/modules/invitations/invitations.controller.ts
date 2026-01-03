@@ -31,26 +31,26 @@ const getAuthContext = (req: Request): AuthContext => {
 
 /**
  * @desc    Create a new invitation
- * @route   POST /api/v1/companies/:companyId/invitations
+ * @route   POST /api/v1/org/:organizationId/invitations
  * @access  Protected (HR_ADMIN, ORG_ADMIN, SUPER_ADMIN)
  */
 export const createInvitation = catchAsync(
     async (req: Request, res: Response, next: NextFunction) => {
         const authContext = getAuthContext(req);
-        const { companyId } = req.params;
+        const { organizationId } = req.params;
 
-        // Validate company access
+        // Validate organization access
         if (
             authContext.role !== 'SUPER_ADMIN' &&
-            authContext.companyId !== companyId
+            authContext.organizationId !== organizationId
         ) {
             return next(
-                new AppError('Access denied. You can only invite to your own company.', 403)
+                new AppError('Access denied. You can only invite to your own organization.', 403)
             );
         }
 
         const invitation = await InvitationService.createInvitation(
-            companyId,
+            organizationId,
             req.body
         );
 
@@ -59,7 +59,7 @@ export const createInvitation = catchAsync(
             message: 'Invitation sent successfully',
             data: {
                 id: invitation.id,
-                companyId: invitation.companyId,
+                organizationId: invitation.organizationId,
                 email: invitation.email,
                 role: invitation.role,
                 status: invitation.status,
@@ -78,10 +78,10 @@ export const createInvitation = catchAsync(
  */
 export const getInvitations = catchAsync(
     async (req: Request, res: Response, next: NextFunction) => {
-        const companyId = req.targetCompanyId;
+        const organizationId = req.targetOrganizationId;
 
-        if (!companyId) {
-            return next(new AppError('Company context is required', 400));
+        if (!organizationId) {
+            return next(new AppError('Organization context is required', 400));
         }
 
         const page = parseInt(req.query.page as string) || 1;
@@ -89,7 +89,7 @@ export const getInvitations = catchAsync(
         const status = req.query.status as string;
         const email = req.query.email as string;
 
-        const result = await InvitationService.getInvitations(companyId, {
+        const result = await InvitationService.getInvitations(organizationId, {
             page,
             limit,
             status,
@@ -169,13 +169,13 @@ export const resendInvitation = catchAsync(
         const authContext = getAuthContext(req);
         const { invitationId } = req.params;
 
-        // Use targetCompanyId if resolved, or fall back to user's company for safety if middleware not applied (though it should be)
-        const companyId = req.targetCompanyId || authContext.companyId || '';
+        // Use targetOrganizationId if resolved, or fall back to user's organization for safety if middleware not applied (though it should be)
+        const organizationId = req.targetOrganizationId || authContext.organizationId || '';
 
-        // Get invitation to check company access
+        // Get invitation to check organization access
         const invitation = await InvitationService.resendInvitation(
             invitationId,
-            companyId,
+            organizationId,
             authContext.role
         );
 
@@ -202,11 +202,11 @@ export const cancelInvitation = catchAsync(
     async (req: Request, res: Response, next: NextFunction) => {
         const authContext = getAuthContext(req);
         const { invitationId } = req.params;
-        const companyId = req.targetCompanyId || authContext.companyId || '';
+        const organizationId = req.targetOrganizationId || authContext.organizationId || '';
 
         const invitation = await InvitationService.cancelInvitation(
             invitationId,
-            companyId,
+            organizationId,
             authContext.role
         );
 
@@ -232,11 +232,11 @@ export const deleteInvitation = catchAsync(
     async (req: Request, res: Response, next: NextFunction) => {
         const authContext = getAuthContext(req);
         const { invitationId } = req.params;
-        const companyId = req.targetCompanyId || authContext.companyId || '';
+        const organizationId = req.targetOrganizationId || authContext.organizationId || '';
 
         await InvitationService.deleteInvitation(
             invitationId,
-            companyId,
+            organizationId,
             authContext.role
         );
 

@@ -12,7 +12,7 @@ export interface TokenPayload {
   email: string;
   role: Role;
   employeeId?: string;
-  companyId?: string;
+  organizationId?: string;
   iat?: number;
   exp?: number;
 }

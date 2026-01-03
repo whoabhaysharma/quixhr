@@ -12,17 +12,17 @@ describe('Employees Module', () => {
 
     // We need an admin to perform operations
     const setupAdmin = async () => {
-        const { user: adminUser, token: adminToken, companyId } = await createTestUser(Role.ORG_ADMIN);
-        return { adminUser, adminToken, companyId };
+        const { user: adminUser, token: adminToken, organizationId } = await createTestUser(Role.ORG_ADMIN);
+        return { adminUser, adminToken, organizationId };
     };
 
     describe('GET /api/v1/employees', () => {
         it('should list employees for the tenant', async () => {
-            const { adminToken, companyId } = await setupAdmin();
+            const { adminToken, organizationId } = await setupAdmin();
 
             // Create some employees
-            await createTestEmployee(companyId!, Role.EMPLOYEE);
-            await createTestEmployee(companyId!, Role.MANAGER);
+            await createTestEmployee(organizationId!, Role.EMPLOYEE);
+            await createTestEmployee(organizationId!, Role.MANAGER);
 
             const res = await request(app)
                 .get('/api/v1/employees')
@@ -33,12 +33,12 @@ describe('Employees Module', () => {
         });
     });
 
-    describe('POST /api/v1/companies/:companyId/employees', () => {
+    describe('POST /api/v1/org/:organizationId/employees', () => {
         it('should create a new employee', async () => {
-            const { adminToken, companyId } = await setupAdmin();
+            const { adminToken, organizationId } = await setupAdmin();
 
             const res = await request(app)
-                .post(`/api/v1/companies/${companyId}/employees`)
+                .post(`/api/v1/org/${organizationId}/employees`)
                 .set('Authorization', `Bearer ${adminToken}`)
                 .send({
                     firstName: 'New',
@@ -55,14 +55,14 @@ describe('Employees Module', () => {
 
             const dbEmployee = await prisma.employee.findFirst({ where: { firstName: 'New' } });
             expect(dbEmployee).toBeDefined();
-            expect(dbEmployee?.companyId).toBe(companyId);
+            expect(dbEmployee?.organizationId).toBe(organizationId);
         });
     });
 
     describe('GET /api/v1/employees/:id', () => {
         it('should get employee details', async () => {
-            const { adminToken, companyId } = await setupAdmin();
-            const { employee } = await createTestEmployee(companyId!, Role.EMPLOYEE);
+            const { adminToken, organizationId } = await setupAdmin();
+            const { employee } = await createTestEmployee(organizationId!, Role.EMPLOYEE);
 
             const res = await request(app)
                 .get(`/api/v1/employees/${employee.id}`)

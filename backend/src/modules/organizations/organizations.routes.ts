@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import { Role } from '@prisma/client';
-import * as CompanyController from './company.controller';
-import { updateCompanySchema, auditLogQuerySchema } from './company.schema';
+import * as OrganizationController from './organization.controller';
+import { updateOrganizationSchema, auditLogQuerySchema } from './organization.schema';
 
 // --- Cross-Module Imports ---
 import * as CalendarController from '../calendars/calendars.controller';
@@ -25,9 +25,9 @@ router.use(protect);
 import * as EmployeeController from '../employees/employees.controller';
 import { createEmployeeSchema } from '../employees/employees.schema';
 
-// POST /api/v1/companies/:companyId/employees
+// POST /api/v1/org/:organizationId/employees
 router.post(
-    '/:companyId/employees',
+    '/:organizationId/employees',
     resolveTenant,
     restrictTo(Role.ORG_ADMIN, Role.HR_ADMIN, Role.SUPER_ADMIN),
     validate(createEmployeeSchema),
@@ -35,9 +35,9 @@ router.post(
 );
 
 // --- Calendars (Nested Create) ---
-// POST /api/v1/companies/:companyId/calendars
+// POST /api/v1/org/:organizationId/calendars
 router.post(
-    '/:companyId/calendars',
+    '/:organizationId/calendars',
     resolveTenant,
     restrictTo(Role.ORG_ADMIN, Role.HR_ADMIN, Role.SUPER_ADMIN),
     validate(createCalendarSchema),
@@ -45,9 +45,9 @@ router.post(
 );
 
 // --- Leave Grades (Nested Create) ---
-// POST /api/v1/companies/:companyId/leave-grades
+// POST /api/v1/org/:organizationId/leave-grades
 router.post(
-    '/:companyId/leave-grades',
+    '/:organizationId/leave-grades',
     resolveTenant,
     restrictTo(Role.ORG_ADMIN, Role.HR_ADMIN, Role.SUPER_ADMIN),
     validate(createLeaveGradeSchema),
@@ -58,9 +58,9 @@ router.post(
 import * as InvitationController from '../invitations/invitations.controller';
 import { createInvitationSchema } from '../invitations/invitations.schema';
 
-// POST /api/v1/companies/:companyId/invitations
+// POST /api/v1/org/:organizationId/invitations
 router.post(
-    '/:companyId/invitations',
+    '/:organizationId/invitations',
     resolveTenant,
     restrictTo(Role.ORG_ADMIN, Role.HR_ADMIN, Role.SUPER_ADMIN),
     validate(createInvitationSchema),
@@ -70,69 +70,69 @@ router.post(
 
 
 // =========================================================================
-// 2. COMPANY MANAGEMENT ROUTES
+// 2. ORGANIZATION MANAGEMENT ROUTES
 // =========================================================================
 
 /**
- * @route   GET /api/v1/companies/:companyId
+ * @route   GET /api/v1/org/:organizationId
  */
 router.get(
-    '/:companyId',
+    '/:organizationId',
     resolveTenant,
     restrictTo(Role.ORG_ADMIN, Role.HR_ADMIN, Role.SUPER_ADMIN),
-    CompanyController.getCompany
+    OrganizationController.getOrganization
 );
 
 /**
- * @route   GET /api/v1/companies
+ * @route   GET /api/v1/org
  */
 router.get(
     '/',
     resolveTenant,
     restrictTo(Role.SUPER_ADMIN),
-    CompanyController.getCompanies
+    OrganizationController.getOrganizations
 );
 
 /**
- * @route   POST /api/v1/companies
+ * @route   POST /api/v1/org
  */
 router.post(
     '/',
     resolveTenant,
     restrictTo(Role.SUPER_ADMIN),
-    CompanyController.createCompany
+    OrganizationController.createOrganization
 );
 
 /**
- * @route   PATCH /api/v1/companies/:companyId
+ * @route   PATCH /api/v1/org/:organizationId
  */
 router.patch(
-    '/:companyId',
+    '/:organizationId',
     resolveTenant,
     restrictTo(Role.ORG_ADMIN, Role.SUPER_ADMIN),
-    validate(updateCompanySchema),
-    CompanyController.updateCompany
+    validate(updateOrganizationSchema),
+    OrganizationController.updateOrganization
 );
 
 /**
- * @route   GET /api/v1/companies/:companyId/dashboard
+ * @route   GET /api/v1/org/:organizationId/dashboard
  */
 router.get(
-    '/:companyId/dashboard',
+    '/:organizationId/dashboard',
     resolveTenant,
     restrictTo(Role.ORG_ADMIN, Role.HR_ADMIN, Role.SUPER_ADMIN),
-    CompanyController.getDashboardStats
+    OrganizationController.getDashboardStats
 );
 
 /**
- * @route   GET /api/v1/companies/:companyId/audit-logs
+ * @route   GET /api/v1/org/:organizationId/audit-logs
  */
 router.get(
-    '/:companyId/audit-logs',
+    '/:organizationId/audit-logs',
     resolveTenant,
     restrictTo(Role.ORG_ADMIN, Role.SUPER_ADMIN),
     validate(auditLogQuerySchema),
-    CompanyController.getCompanyAuditLogs
+    OrganizationController.getOrganizationAuditLogs
 );
 
 // =========================================================================
@@ -140,17 +140,17 @@ router.get(
 // =========================================================================
 /*
 router.post(
-    '/:companyId/billing/upgrade',
+    '/:organizationId/billing/upgrade',
     resolveTenant,
     restrictTo(Role.ORG_ADMIN, Role.SUPER_ADMIN),
-    CompanyController.initiateUpgrade
+    OrganizationController.initiateUpgrade
 );
 
 router.get(
-    '/:companyId/billing/invoices',
+    '/:organizationId/billing/invoices',
     resolveTenant,
     restrictTo(Role.ORG_ADMIN, Role.SUPER_ADMIN),
-    CompanyController.getBillingHistory
+    OrganizationController.getBillingHistory
 );
 */
 

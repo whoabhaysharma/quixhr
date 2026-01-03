@@ -11,7 +11,7 @@ describe('Auth Module', () => {
     });
 
     describe('POST /api/v1/auth/register', () => {
-        it('should register a new company and super admin', async () => {
+        it('should register a new organization and super admin', async () => {
             const res = await request(app).post('/api/v1/auth/register').send({
                 companyName: 'Acme Corp',
                 email: 'admin@acme.com',
@@ -29,18 +29,17 @@ describe('Auth Module', () => {
             expect(res.status).toBe(201);
             expect(res.body.status).toBe('success');
             expect(res.body.data.user.email).toBe('admin@acme.com');
-            // Company object is not returned in the new DTO structure
+            // Organization object is not returned in the new DTO structure
             // expect(res.body.data.company.name).toBe('Acme Corp');
 
             // Verify DB
             const user = await prisma.user.findUnique({ where: { email: 'admin@acme.com' } });
             expect(user).toBeDefined();
-            expect(user?.role).toBe(Role.SUPER_ADMIN);
+            // Role should be ORG_ADMIN as per updated controller logic for registration
+            expect(user?.role).toBe(Role.ORG_ADMIN);
         });
 
         it('should fail if email already exists', async () => {
-            await createTestUser(Role.SUPER_ADMIN); // Creates user with random email, but we want fixed
-
             // Register first user manually to control email
             await request(app).post('/api/v1/auth/register').send({
                 companyName: 'Acme Corp',

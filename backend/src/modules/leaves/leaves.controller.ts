@@ -15,15 +15,15 @@ import { LeaveStatus, LeaveType } from '@prisma/client';
 // =========================================================================
 
 export const createLeaveGrade = catchAsync(async (req: Request, res: Response, next: NextFunction) => {
-    const { companyId } = req.params;
+    const { organizationId } = req.params;
 
-    if (req.user!.role !== 'SUPER_ADMIN' && req.user!.companyId !== companyId) {
-        return next(new AppError('You do not have permission to create a leave grade for this company', 403));
+    if (req.user!.role !== 'SUPER_ADMIN' && req.user!.organizationId !== organizationId) {
+        return next(new AppError('You do not have permission to create a leave grade for this organization', 403));
     }
 
     const input: CreateLeaveGradeInput = {
         ...req.body,
-        companyId
+        organizationId
     };
 
     const grade = await LeaveService.createGrade(input);
@@ -38,7 +38,7 @@ export const getLeaveGradeById = catchAsync(async (req: Request, res: Response, 
         return next(new AppError('Leave grade not found', 404));
     }
 
-    if (req.user!.role !== 'SUPER_ADMIN' && grade.companyId !== req.user!.companyId) {
+    if (req.user!.role !== 'SUPER_ADMIN' && grade.organizationId !== req.user!.organizationId) {
         return next(new AppError('You do not have permission to view this leave grade', 403));
     }
 
@@ -46,14 +46,14 @@ export const getLeaveGradeById = catchAsync(async (req: Request, res: Response, 
 });
 
 export const getLeaveGrades = catchAsync(async (req: Request, res: Response, next: NextFunction) => {
-    const companyId = req.targetCompanyId || req.user?.companyId;
+    const organizationId = req.targetOrganizationId || req.user?.organizationId;
 
-    if (!companyId) {
-        return next(new AppError('Company context is required', 400));
+    if (!organizationId) {
+        return next(new AppError('Organization context is required', 400));
     }
 
-    let filter: { companyId: string; page?: number; limit?: number; search?: string } = {
-        companyId,
+    let filter: { organizationId: string; page?: number; limit?: number; search?: string } = {
+        organizationId,
         page: req.query.page ? Number(req.query.page) : 1,
         limit: req.query.limit ? Number(req.query.limit) : 10,
         search: req.query.search as string
@@ -68,7 +68,7 @@ export const updateLeaveGrade = catchAsync(async (req: Request, res: Response, n
     const existing = await LeaveService.findGradeById(id);
     if (!existing) { return next(new AppError('Leave grade not found', 404)); }
 
-    if (req.user!.role !== 'SUPER_ADMIN' && existing.companyId !== req.user!.companyId) {
+    if (req.user!.role !== 'SUPER_ADMIN' && existing.organizationId !== req.user!.organizationId) {
         return next(new AppError('Permission denied', 403));
     }
 
@@ -81,7 +81,7 @@ export const deleteLeaveGrade = catchAsync(async (req: Request, res: Response, n
     const existing = await LeaveService.findGradeById(id);
     if (!existing) { return next(new AppError('Leave grade not found', 404)); }
 
-    if (req.user!.role !== 'SUPER_ADMIN' && existing.companyId !== req.user!.companyId) {
+    if (req.user!.role !== 'SUPER_ADMIN' && existing.organizationId !== req.user!.organizationId) {
         return next(new AppError('Permission denied', 403));
     }
 
@@ -101,7 +101,7 @@ export const getPolicies = catchAsync(async (req: Request, res: Response, next: 
     if (!grade) return next(new AppError('Leave grade not found', 404));
 
     // Auth check
-    if (req.user!.role !== 'SUPER_ADMIN' && grade.companyId !== req.user!.companyId) {
+    if (req.user!.role !== 'SUPER_ADMIN' && grade.organizationId !== req.user!.organizationId) {
         return next(new AppError('Permission denied', 403));
     }
 
@@ -115,7 +115,7 @@ export const createPolicy = catchAsync(async (req: Request, res: Response, next:
     const grade = await LeaveService.findGradeById(gradeId);
     if (!grade) return next(new AppError('Leave grade not found', 404));
 
-    if (req.user!.role !== 'SUPER_ADMIN' && grade.companyId !== req.user!.companyId) {
+    if (req.user!.role !== 'SUPER_ADMIN' && grade.organizationId !== req.user!.organizationId) {
         return next(new AppError('Permission denied', 403));
     }
 
@@ -129,7 +129,7 @@ export const updatePolicy = catchAsync(async (req: Request, res: Response, next:
     const existingPolicy = await LeaveService.findPolicyById(policyId);
     if (!existingPolicy) return next(new AppError('Policy not found', 404));
 
-    if (req.user!.role !== 'SUPER_ADMIN' && existingPolicy.grade.companyId !== req.user!.companyId) {
+    if (req.user!.role !== 'SUPER_ADMIN' && existingPolicy.grade.organizationId !== req.user!.organizationId) {
         return next(new AppError('Permission denied', 403));
     }
 
@@ -142,7 +142,7 @@ export const deletePolicy = catchAsync(async (req: Request, res: Response, next:
     const existingPolicy = await LeaveService.findPolicyById(policyId);
     if (!existingPolicy) return next(new AppError('Policy not found', 404));
 
-    if (req.user!.role !== 'SUPER_ADMIN' && existingPolicy.grade.companyId !== req.user!.companyId) {
+    if (req.user!.role !== 'SUPER_ADMIN' && existingPolicy.grade.organizationId !== req.user!.organizationId) {
         return next(new AppError('Permission denied', 403));
     }
 
@@ -161,11 +161,11 @@ export const createLeaveRequest = catchAsync(async (req: Request, res: Response,
     if (req.user!.role !== 'SUPER_ADMIN' && req.user!.userId !== employeeId && req.user!.employeeId !== employeeId) {
         // NOTE: We need to verify if 'employeeId' param matches the logged in user's employeeId
         // If the route is /employees/:employeeId/leave-requests, we check if req.user.employeeId === employeeId
-        // Or if user is admin of that company.
+        // Or if user is admin of that organization.
     }
 
     // Simplified Auth for now:
-    // If not super admin, check if user belongs to same company or is the employee
+    // If not super admin, check if user belongs to same organization or is the employee
     if (req.user!.role !== 'SUPER_ADMIN') {
         // Validation logic typically happens in Middleware or Service if comprehensive.
         // Here assuming user is authorized if they can access the parent route (protected by resolveTenant typically)
@@ -181,7 +181,7 @@ export const createLeaveRequest = catchAsync(async (req: Request, res: Response,
 });
 
 export const getLeaveRequests = catchAsync(async (req: Request, res: Response, next: NextFunction) => {
-    // Determine context: Employee-Specific OR Company-Wide (Admin)
+    // Determine context: Employee-Specific OR Organization-Wide (Admin)
     const { employeeId } = req.params; // If nested under employee
 
     let filter: any = {
@@ -200,7 +200,7 @@ export const getLeaveRequests = catchAsync(async (req: Request, res: Response, n
     } else {
         // Flattened list (e.g. for Admin Dashboard)
         if (req.user!.role !== 'SUPER_ADMIN') {
-            filter.companyId = req.user!.companyId;
+            filter.organizationId = req.user!.organizationId;
         }
     }
 
@@ -213,8 +213,8 @@ export const updateLeaveRequestStatus = catchAsync(async (req: Request, res: Res
     const existing = await LeaveService.findRequestById(requestId);
     if (!existing) return next(new AppError('Request not found', 404));
 
-    // Auth: Must be Admin/Manager of the company
-    if (req.user!.role !== 'SUPER_ADMIN' && existing.employee.companyId !== req.user!.companyId) {
+    // Auth: Must be Admin/Manager of the organization
+    if (req.user!.role !== 'SUPER_ADMIN' && existing.employee.organizationId !== req.user!.organizationId) {
         return next(new AppError('Permission denied', 403));
     }
 

@@ -12,8 +12,8 @@ export class LeaveAllocationService {
     /**
      * Create a leave allocation
      */
-    static async createAllocation(data: CreateLeaveAllocationInput, companyId: string) {
-        // Verify employee belongs to company
+    static async createAllocation(data: CreateLeaveAllocationInput, organizationId: string) {
+        // Verify employee belongs to organization
         const employee = await prisma.employee.findUnique({
             where: { id: data.employeeId },
         });
@@ -22,8 +22,8 @@ export class LeaveAllocationService {
             throw new AppError('Employee not found', 404);
         }
 
-        if (employee.companyId !== companyId) {
-            throw new AppError('Employee does not belong to this company', 403);
+        if (employee.organizationId !== organizationId) {
+            throw new AppError('Employee does not belong to this organization', 403);
         }
 
         // Check if allocation already exists
@@ -67,13 +67,13 @@ export class LeaveAllocationService {
     /**
      * Get allocations with filters
      */
-    static async getAllocations(companyId: string, filters: LeaveAllocationFilters) {
+    static async getAllocations(organizationId: string, filters: LeaveAllocationFilters) {
         const { employeeId, year, leaveType, page = 1, limit = 20 } = filters;
         const skip = (page - 1) * limit;
 
         const whereClause: any = {
             employee: {
-                companyId,
+                organizationId,
             },
         };
 
@@ -126,7 +126,7 @@ export class LeaveAllocationService {
     /**
      * Get allocation by ID
      */
-    static async getAllocationById(allocationId: string, companyId: string, userRole: string) {
+    static async getAllocationById(allocationId: string, organizationId: string, userRole: string) {
         const allocation = await prisma.leaveAllocation.findUnique({
             where: { id: allocationId },
             include: {
@@ -136,7 +136,7 @@ export class LeaveAllocationService {
                         firstName: true,
                         lastName: true,
                         code: true,
-                        companyId: true,
+                        organizationId: true,
                     },
                 },
             },
@@ -146,8 +146,8 @@ export class LeaveAllocationService {
             throw new AppError('Allocation not found', 404);
         }
 
-        // Validate company access
-        if (userRole !== 'SUPER_ADMIN' && allocation.employee.companyId !== companyId) {
+        // Validate organization access
+        if (userRole !== 'SUPER_ADMIN' && allocation.employee.organizationId !== organizationId) {
             throw new AppError('Access denied', 403);
         }
 
@@ -163,7 +163,7 @@ export class LeaveAllocationService {
     static async updateAllocation(
         allocationId: string,
         data: UpdateLeaveAllocationInput,
-        companyId: string,
+        organizationId: string,
         userRole: string
     ) {
         const allocation = await prisma.leaveAllocation.findUnique({
@@ -177,8 +177,8 @@ export class LeaveAllocationService {
             throw new AppError('Allocation not found', 404);
         }
 
-        // Validate company access
-        if (userRole !== 'SUPER_ADMIN' && allocation.employee.companyId !== companyId) {
+        // Validate organization access
+        if (userRole !== 'SUPER_ADMIN' && allocation.employee.organizationId !== organizationId) {
             throw new AppError('Access denied', 403);
         }
 
@@ -214,7 +214,7 @@ export class LeaveAllocationService {
     /**
      * Delete allocation
      */
-    static async deleteAllocation(allocationId: string, companyId: string, userRole: string) {
+    static async deleteAllocation(allocationId: string, organizationId: string, userRole: string) {
         const allocation = await prisma.leaveAllocation.findUnique({
             where: { id: allocationId },
             include: {
@@ -226,8 +226,8 @@ export class LeaveAllocationService {
             throw new AppError('Allocation not found', 404);
         }
 
-        // Validate company access
-        if (userRole !== 'SUPER_ADMIN' && allocation.employee.companyId !== companyId) {
+        // Validate organization access
+        if (userRole !== 'SUPER_ADMIN' && allocation.employee.organizationId !== organizationId) {
             throw new AppError('Access denied', 403);
         }
 
@@ -246,12 +246,12 @@ export class LeaveAllocationService {
     /**
      * Bulk allocate leaves based on leave grade policies
      */
-    static async bulkAllocate(companyId: string, data: BulkAllocateInput) {
+    static async bulkAllocate(organizationId: string, data: BulkAllocateInput) {
         const { year, leaveGradeId, employeeIds } = data;
 
         // Build employee filter
         const employeeWhere: any = {
-            companyId,
+            organizationId,
         };
 
         if (leaveGradeId) {
@@ -330,25 +330,25 @@ export class LeaveAllocationService {
      */
     static async getEmployeeAllocations(
         employeeId: string,
-        userCompanyId: string,
+        userOrganizationId: string,
         userRole: string,
         requestingEmployeeId?: string,
         filters: Omit<LeaveAllocationFilters, 'employeeId'> = {}
     ) {
-        // Verify employee exists and get their company
+        // Verify employee exists and get their organization
         const employee = await prisma.employee.findUnique({
             where: { id: employeeId },
-            select: { companyId: true },
+            select: { organizationId: true },
         });
 
         if (!employee) {
             throw new AppError('Employee not found', 404);
         }
 
-        // Authorization: SUPER_ADMIN can access any, others only their company
+        // Authorization: SUPER_ADMIN can access any, others only their organization
         // EMPLOYEE role can only access their own allocations
         if (userRole !== 'SUPER_ADMIN') {
-            if (employee.companyId !== userCompanyId) {
+            if (employee.organizationId !== userOrganizationId) {
                 throw new AppError('Access denied', 403);
             }
 

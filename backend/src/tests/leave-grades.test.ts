@@ -11,16 +11,16 @@ describe('Leave Grades Module', () => {
     });
 
     const setupAdmin = async () => {
-        const { user: adminUser, token: adminToken, companyId } = await createTestUser(Role.ORG_ADMIN);
-        return { adminUser, adminToken, companyId: companyId! };
+        const { user: adminUser, token: adminToken, organizationId } = await createTestUser(Role.ORG_ADMIN);
+        return { adminUser, adminToken, organizationId: organizationId! };
     };
 
     describe('Leave Grades Management', () => {
         it('should allow admin to create a leave grade', async () => {
-            const { adminToken, companyId } = await setupAdmin();
+            const { adminToken, organizationId } = await setupAdmin();
 
             const res = await request(app)
-                .post(`/api/v1/companies/${companyId}/leave-grades`)
+                .post(`/api/v1/org/${organizationId}/leave-grades`)
                 .set('Authorization', `Bearer ${adminToken}`)
                 .send({
                     name: 'Full Time Staff'
@@ -32,15 +32,15 @@ describe('Leave Grades Module', () => {
             // Grade is the prisma object.
             // So res.body.data.data.name
             expect(res.body.data.name).toBe('Full Time Staff');
-            expect(res.body.data.companyId).toBe(companyId);
+            expect(res.body.data.organizationId).toBe(organizationId);
         });
 
-        it('should list leave grades for the company', async () => {
-            const { adminToken, companyId } = await setupAdmin();
+        it('should list leave grades for the organization', async () => {
+            const { adminToken, organizationId } = await setupAdmin();
 
             // Create one
             await request(app)
-                .post(`/api/v1/companies/${companyId}/leave-grades`)
+                .post(`/api/v1/org/${organizationId}/leave-grades`)
                 .set('Authorization', `Bearer ${adminToken}`)
                 .send({ name: 'Grade A' });
 
@@ -57,10 +57,10 @@ describe('Leave Grades Module', () => {
         });
 
         it('should get a leave grade by ID', async () => {
-            const { adminToken, companyId } = await setupAdmin();
+            const { adminToken, organizationId } = await setupAdmin();
 
             const createRes = await request(app)
-                .post(`/api/v1/companies/${companyId}/leave-grades`)
+                .post(`/api/v1/org/${organizationId}/leave-grades`)
                 .set('Authorization', `Bearer ${adminToken}`)
                 .send({ name: 'Grade B' });
 
@@ -76,10 +76,10 @@ describe('Leave Grades Module', () => {
         });
 
         it('should update a leave grade', async () => {
-            const { adminToken, companyId } = await setupAdmin();
+            const { adminToken, organizationId } = await setupAdmin();
 
             const createRes = await request(app)
-                .post(`/api/v1/companies/${companyId}/leave-grades`)
+                .post(`/api/v1/org/${organizationId}/leave-grades`)
                 .set('Authorization', `Bearer ${adminToken}`)
                 .send({ name: 'Old Name' });
 
@@ -95,10 +95,10 @@ describe('Leave Grades Module', () => {
         });
 
         it('should delete a leave grade', async () => {
-            const { adminToken, companyId } = await setupAdmin();
+            const { adminToken, organizationId } = await setupAdmin();
 
             const createRes = await request(app)
-                .post(`/api/v1/companies/${companyId}/leave-grades`)
+                .post(`/api/v1/org/${organizationId}/leave-grades`)
                 .set('Authorization', `Bearer ${adminToken}`)
                 .send({ name: 'To Delete' });
 
@@ -124,10 +124,10 @@ describe('Leave Grades Module', () => {
 
     describe('Leave Policies Management', () => {
         it('should add a policy to a leave grade', async () => {
-            const { adminToken, companyId } = await setupAdmin();
+            const { adminToken, organizationId } = await setupAdmin();
 
             const gradeRes = await request(app)
-                .post(`/api/v1/companies/${companyId}/leave-grades`)
+                .post(`/api/v1/org/${organizationId}/leave-grades`)
                 .set('Authorization', `Bearer ${adminToken}`)
                 .send({ name: 'Policy Grade' });
 
@@ -150,10 +150,10 @@ describe('Leave Grades Module', () => {
         });
 
         it('should list policies for a grade', async () => {
-            const { adminToken, companyId } = await setupAdmin();
+            const { adminToken, organizationId } = await setupAdmin();
 
             const gradeRes = await request(app)
-                .post(`/api/v1/companies/${companyId}/leave-grades`)
+                .post(`/api/v1/org/${organizationId}/leave-grades`)
                 .set('Authorization', `Bearer ${adminToken}`)
                 .send({ name: 'Policy List Grade' });
 

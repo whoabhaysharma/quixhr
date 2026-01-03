@@ -6,13 +6,13 @@ import { Role } from '@prisma/client';
 // =========================================================================
 
 /**
- * Register schema - Create new company + super admin
+ * Register schema - Create new organization + super admin
  */
 export const registerSchema = z.object({
   companyName: z
     .string()
-    .min(2, 'Company name must be at least 2 characters')
-    .max(255, 'Company name must not exceed 255 characters'),
+    .min(2, 'Organization name must be at least 2 characters')
+    .max(255, 'Organization name must not exceed 255 characters'),
   timezone: z.string().default('Asia/Kolkata'),
   currency: z.string().default('INR'),
   dateFormat: z.string().default('DD/MM/YYYY'),
@@ -137,7 +137,7 @@ export interface UserResponseDto {
     code?: string;
     status: string;
     joiningDate: Date;
-    companyId: string;
+    organizationId: string;
   };
   createdAt?: Date;
 }

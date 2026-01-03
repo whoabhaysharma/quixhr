@@ -23,7 +23,7 @@ const getAuthContext = (req: Request): AuthContext => {
     email: user.email,
     role: user.role,
     employeeId: user.employeeId,
-    companyId: user.companyId
+    organizationId: user.organizationId
   } as AuthContext;
 };
 
@@ -32,7 +32,7 @@ const getAuthContext = (req: Request): AuthContext => {
 // =========================================================================
 
 /**
- * @desc    Get complete user profile (user + employee + company info)
+ * @desc    Get complete user profile (user + employee + organization info)
  * @route   GET /api/v1/me
  * @access  Protected
  */

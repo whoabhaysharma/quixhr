@@ -12,7 +12,7 @@ export interface AuthContext {
     email: string;
     role: Role;
     employeeId?: string;
-    companyId?: string;
+    organizationId?: string;
 }
 
 /**

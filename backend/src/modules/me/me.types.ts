@@ -10,7 +10,7 @@ export interface AuthContext {
   email: string;
   role: string;
   employeeId?: string;
-  companyId?: string;
+  organizationId?: string;
 }
 
 /**
@@ -18,7 +18,7 @@ export interface AuthContext {
  */
 export interface EmployeeContext {
   id: string;
-  companyId: string;
+  organizationId: string;
   userId: string;
   firstName: string;
   lastName: string;

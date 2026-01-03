@@ -20,7 +20,7 @@ export const updateLeaveGradeSchema = {
 
 export const leaveGradeQuerySchema = {
     query: z.object({
-        companyId: z.string().uuid().optional(),
+        organizationId: z.string().uuid().optional(),
         page: z.string().regex(/^\d+$/).transform(Number).optional(),
         limit: z.string().regex(/^\d+$/).transform(Number).optional(),
         search: z.string().optional(),
@@ -66,7 +66,7 @@ export const updateLeaveRequestStatusSchema = {
 export const leaveRequestQuerySchema = {
     query: z.object({
         employeeId: z.string().uuid().optional(),
-        companyId: z.string().uuid().optional(), // For Admin to view all requests in company
+        organizationId: z.string().uuid().optional(), // For Admin to view all requests in organization
         status: z.nativeEnum(LeaveStatus).optional(),
         type: z.nativeEnum(LeaveType).optional(),
         page: z.string().regex(/^\d+$/).transform(Number).optional(),

@@ -8,21 +8,21 @@ export const generateToken = (payload: any) => {
     return jwt.sign(payload, process.env.JWT_SECRET || 'your-secret-key', { expiresIn: '1h' });
 };
 
-export const createTestUser = async (role: Role = Role.SUPER_ADMIN, companyId?: string) => {
+export const createTestUser = async (role: Role = Role.SUPER_ADMIN, organizationId?: string) => {
     const hashedPassword = await bcrypt.hash('Password123!', 10);
 
-    // Create company if needed and not provided, unless SUPER_ADMIN who might not belong to one (or does?)
+    // Create organization if needed and not provided, unless SUPER_ADMIN who might not belong to one (or does?)
     // For simplicity, if not provided and role requires it, create one.
-    if (!companyId && role !== Role.SUPER_ADMIN) {
-        const company = await prisma.company.create({
+    if (!organizationId && role !== Role.SUPER_ADMIN) {
+        const organization = await prisma.organization.create({
             data: {
-                name: 'Test Company',
+                name: 'Test Organization',
                 timezone: 'Asia/Kolkata',
                 currency: 'INR',
                 dateFormat: 'DD/MM/YYYY'
             }
         });
-        companyId = company.id;
+        organizationId = organization.id;
     }
 
     const user = await prisma.user.create({
@@ -34,14 +34,14 @@ export const createTestUser = async (role: Role = Role.SUPER_ADMIN, companyId?: 
         },
     });
 
-    const token = generateToken({ id: user.id, userId: user.id, role: user.role, companyId: companyId });
+    const token = generateToken({ id: user.id, userId: user.id, role: user.role, organizationId: organizationId });
 
-    return { user, token, companyId };
+    return { user, token, organizationId };
 };
 
-export const createTestEmployee = async (companyId?: string, role: Role = Role.EMPLOYEE) => {
+export const createTestEmployee = async (organizationId?: string, role: Role = Role.EMPLOYEE) => {
     // 1. Create User
-    const { user, token: _token, companyId: createdCompanyId } = await createTestUser(role, companyId);
+    const { user, token: _token, organizationId: createdOrganizationId } = await createTestUser(role, organizationId);
 
     // 2. Create Employee Linked to User
     const employee = await prisma.employee.create({
@@ -50,7 +50,7 @@ export const createTestEmployee = async (companyId?: string, role: Role = Role.E
             lastName: 'Employee',
             status: 'ACTIVE',
             joiningDate: new Date(),
-            companyId: createdCompanyId!,
+            organizationId: createdOrganizationId!,
             userId: user.id,
             code: `EMP-${Date.now()}`
         }
@@ -61,7 +61,7 @@ export const createTestEmployee = async (companyId?: string, role: Role = Role.E
         id: user.id,
         userId: user.id, // Explicitly add userId as some controllers expect it
         role: user.role,
-        companyId: createdCompanyId,
+        organizationId: createdOrganizationId,
         employeeId: employee.id
     });
 

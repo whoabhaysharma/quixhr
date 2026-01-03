@@ -6,8 +6,8 @@ export interface PaginationParams {
     search?: string;
 }
 
-export type CreateCalendarInput = Pick<Calendar, 'companyId' | 'name' | 'dayStartTime' | 'dayEndTime'>;
-export type UpdateCalendarInput = Partial<Omit<CreateCalendarInput, 'companyId'>>;
+export type CreateCalendarInput = Pick<Calendar, 'organizationId' | 'name' | 'dayStartTime' | 'dayEndTime'>;
+export type UpdateCalendarInput = Partial<Omit<CreateCalendarInput, 'organizationId'>>;
 
 export type CreateWeeklyRuleInput = Omit<CalendarWeeklyRule, 'id'>;
 export type UpdateWeeklyRuleInput = Partial<Omit<CalendarWeeklyRule, 'id' | 'calendarId'>>;

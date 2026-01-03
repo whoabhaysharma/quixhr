@@ -85,7 +85,7 @@ export interface EmployeeResponseDto {
   message: string;
   data: {
     id: string;
-    companyId: string;
+    organizationId: string;
     firstName: string;
     lastName: string;
     fullName: string;
@@ -113,7 +113,7 @@ export interface EmployeeDetailsResponseDto {
   message: string;
   data: {
     id: string;
-    companyId: string;
+    organizationId: string;
     firstName: string;
     lastName: string;
     fullName: string;
@@ -153,7 +153,7 @@ export interface EmployeesListResponseDto {
   data: {
     employees: Array<{
       id: string;
-      companyId: string;
+      organizationId: string;
       firstName: string;
       lastName: string;
       fullName: string;

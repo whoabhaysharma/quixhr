@@ -11,16 +11,16 @@ describe('Invitations Module', () => {
     });
 
     const setupAdmin = async () => {
-        const { user: adminUser, token: adminToken, companyId } = await createTestUser(Role.ORG_ADMIN);
-        return { adminUser, adminToken, companyId: companyId! };
+        const { user: adminUser, token: adminToken, organizationId } = await createTestUser(Role.ORG_ADMIN);
+        return { adminUser, adminToken, organizationId: organizationId! };
     };
 
     describe('Invitation Lifecycle', () => {
         it('should allow admin to create an invitation', async () => {
-            const { adminToken, companyId } = await setupAdmin();
+            const { adminToken, organizationId } = await setupAdmin();
 
             const res = await request(app)
-                .post(`/api/v1/companies/${companyId}/invitations`)
+                .post(`/api/v1/org/${organizationId}/invitations`)
                 .set('Authorization', `Bearer ${adminToken}`)
                 .send({
                     email: 'newhire@example.com',
@@ -32,12 +32,12 @@ describe('Invitations Module', () => {
             expect(res.body.data.data.status).toBe('PENDING');
         });
 
-        it('should list invitations for the company', async () => {
-            const { adminToken, companyId } = await setupAdmin();
+        it('should list invitations for the organization', async () => {
+            const { adminToken, organizationId } = await setupAdmin();
 
             // Create one
             await request(app)
-                .post(`/api/v1/companies/${companyId}/invitations`)
+                .post(`/api/v1/org/${organizationId}/invitations`)
                 .set('Authorization', `Bearer ${adminToken}`)
                 .send({ email: 'listtest@example.com', role: Role.EMPLOYEE });
 
@@ -52,10 +52,10 @@ describe('Invitations Module', () => {
         });
 
         it('should verify an invitation token', async () => {
-            const { adminToken, companyId } = await setupAdmin();
+            const { adminToken, organizationId } = await setupAdmin();
 
             const createRes = await request(app)
-                .post(`/api/v1/companies/${companyId}/invitations`)
+                .post(`/api/v1/org/${organizationId}/invitations`)
                 .set('Authorization', `Bearer ${adminToken}`)
                 .send({ email: 'verify@example.com', role: Role.EMPLOYEE });
 
@@ -73,10 +73,10 @@ describe('Invitations Module', () => {
         });
 
         it('should accept an invitation', async () => {
-            const { adminToken, companyId } = await setupAdmin();
+            const { adminToken, organizationId } = await setupAdmin();
 
             const createRes = await request(app)
-                .post(`/api/v1/companies/${companyId}/invitations`)
+                .post(`/api/v1/org/${organizationId}/invitations`)
                 .set('Authorization', `Bearer ${adminToken}`)
                 .send({ email: 'accept@example.com', role: Role.EMPLOYEE });
 
@@ -106,14 +106,14 @@ describe('Invitations Module', () => {
             // Check employee directly
             const employee = await prisma.employee.findFirst({ where: { userId: user!.id } });
             expect(employee).toBeDefined();
-            expect(employee!.companyId).toBe(companyId);
+            expect(employee!.organizationId).toBe(organizationId);
         });
 
         it('should cancel an invitation', async () => {
-            const { adminToken, companyId } = await setupAdmin();
+            const { adminToken, organizationId } = await setupAdmin();
 
             const createRes = await request(app)
-                .post(`/api/v1/companies/${companyId}/invitations`)
+                .post(`/api/v1/org/${organizationId}/invitations`)
                 .set('Authorization', `Bearer ${adminToken}`)
                 .send({ email: 'cancel@example.com', role: Role.EMPLOYEE });
 
@@ -131,10 +131,10 @@ describe('Invitations Module', () => {
         });
 
         it('should delete an invitation', async () => {
-            const { adminToken, companyId } = await setupAdmin();
+            const { adminToken, organizationId } = await setupAdmin();
 
             const createRes = await request(app)
-                .post(`/api/v1/companies/${companyId}/invitations`)
+                .post(`/api/v1/org/${organizationId}/invitations`)
                 .set('Authorization', `Bearer ${adminToken}`)
                 .send({ email: 'delete@example.com', role: Role.EMPLOYEE });
 
