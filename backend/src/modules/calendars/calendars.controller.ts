@@ -1,95 +1,58 @@
 import { Request, Response, NextFunction } from 'express';
 import { catchAsync } from '@/utils/catchAsync';
 import { sendResponse } from '@/utils/sendResponse';
-import { AppError } from '@/utils/appError';
-import * as CalendarService from './calendars.service';
-import { CreateCalendarInput, UpdateCalendarInput, CreateWeeklyRuleInput, UpdateWeeklyRuleInput, CreateHolidayInput, UpdateHolidayInput } from './calendars.types';
+import { getOrganizationContext } from '@/utils/tenantContext';
+import { getPaginationParams } from '@/utils/pagination';
+import { CalendarService } from './calendars.service';
+import {
+    CreateCalendarInput,
+    UpdateCalendarInput,
+    CreateWeeklyRuleInput,
+    UpdateWeeklyRuleInput,
+    CreateHolidayInput,
+    UpdateHolidayInput
+} from './calendars.schema';
 
 // =========================================================================
 // 1. CALENDAR CONTROLLERS
 // =========================================================================
 
 export const createCalendar = catchAsync(async (req: Request, res: Response, next: NextFunction) => {
-    const { organizationId } = req.params;
-
-    // Authorization: User must belong to this organization (or be Super Admin)
-    if (req.user!.role !== 'SUPER_ADMIN' && req.user!.organizationId !== organizationId) {
-        return next(new AppError('You do not have permission to create a calendar for this organization', 403));
-    }
-
-    const input: CreateCalendarInput = {
-        ...req.body,
-        organizationId
-    };
-
-    const calendar = await CalendarService.create(input);
-    sendResponse(res, 201, calendar, 'Calendar created successfully');
+    const organizationId = getOrganizationContext(req, next);
+    const result = await CalendarService.createCalendar(organizationId, req.body as CreateCalendarInput);
+    sendResponse(res, 201, result, 'Calendar created successfully');
 });
-
-export const getCalendarById = catchAsync(async (req: Request, res: Response, next: NextFunction) => {
-    // Supports both :id and :calendarId param names
-    const id = req.params.id || req.params.calendarId;
-    const organizationId = req.targetOrganizationId;
-
-    const calendar = await CalendarService.findById(id);
-
-    if (!calendar) {
-        return next(new AppError('Calendar not found', 404));
-    }
-
-    // Authorization
-    if (req.user!.role !== 'SUPER_ADMIN' && organizationId && calendar.organizationId !== organizationId) {
-        return next(new AppError('You do not have permission to view this calendar', 403));
-    }
-
-    sendResponse(res, 200, calendar, 'Calendar retrieved successfully');
-});
-
-// Alias for backward compatibility if needed, but routes should point to getCalendarById
-export const getCalendar = getCalendarById;
 
 export const getCalendars = catchAsync(async (req: Request, res: Response, next: NextFunction) => {
-    // targetOrganizationId is set by resolveTenant middleware
-    const organizationId = req.targetOrganizationId;
+    const organizationId = getOrganizationContext(req, next);
+    const pagination = getPaginationParams(req, 'name', 'asc');
 
-    if (!organizationId) {
-        return next(new AppError('Organization context is required', 400));
-    }
-
-    let filter: { organizationId: string; page?: number; limit?: number; search?: string } = {
-        organizationId,
-        page: req.query.page ? Number(req.query.page) : 1,
-        limit: req.query.limit ? Number(req.query.limit) : 10,
-        search: req.query.search as string
-    };
-
-    const result = await CalendarService.findAll(filter);
+    // Filters could be extracted from req.query if needed, currently empty
+    const result = await CalendarService.getCalendars(organizationId, pagination, {});
     sendResponse(res, 200, result, 'Calendars retrieved successfully');
 });
 
+export const getCalendarById = catchAsync(async (req: Request, res: Response, next: NextFunction) => {
+    const organizationId = getOrganizationContext(req, next);
+    const { id } = req.params;
+    const result = await CalendarService.getCalendar(organizationId, id);
+    sendResponse(res, 200, result, 'Calendar retrieved successfully');
+});
+
+// Alias for backwards compatibility if referenced by name elsewhere
+export const getCalendar = getCalendarById;
+
 export const updateCalendar = catchAsync(async (req: Request, res: Response, next: NextFunction) => {
-    const id = req.params.id || req.params.calendarId;
-    const existing = await CalendarService.findById(id);
-    if (!existing) { return next(new AppError('Calendar not found', 404)); }
-
-    if (req.user!.role !== 'SUPER_ADMIN' && existing.organizationId !== req.user!.organizationId) {
-        return next(new AppError('You do not have permission to update this calendar', 403));
-    }
-
-    const calendar = await CalendarService.update(id, req.body as UpdateCalendarInput);
-    sendResponse(res, 200, calendar, 'Calendar updated successfully');
+    const organizationId = getOrganizationContext(req, next);
+    const { id } = req.params;
+    const result = await CalendarService.updateCalendar(organizationId, id, req.body as UpdateCalendarInput);
+    sendResponse(res, 200, result, 'Calendar updated successfully');
 });
 
 export const deleteCalendar = catchAsync(async (req: Request, res: Response, next: NextFunction) => {
-    const id = req.params.id || req.params.calendarId;
-    const existing = await CalendarService.findById(id);
-    if (!existing) { return next(new AppError('Calendar not found', 404)); }
-
-    if (req.user!.role !== 'SUPER_ADMIN' && existing.organizationId !== req.user!.organizationId) {
-        return next(new AppError('You do not have permission to delete this calendar', 403));
-    }
-
-    await CalendarService.remove(id);
+    const organizationId = getOrganizationContext(req, next);
+    const { id } = req.params;
+    await CalendarService.deleteCalendar(organizationId, id);
     sendResponse(res, 204, null, 'Calendar deleted successfully');
 });
 
@@ -98,138 +61,65 @@ export const deleteCalendar = catchAsync(async (req: Request, res: Response, nex
 // =========================================================================
 
 export const getWeeklyRules = catchAsync(async (req: Request, res: Response, next: NextFunction) => {
+    const organizationId = getOrganizationContext(req, next);
     const { calendarId } = req.params;
-
-    // Parent check
-    const calendar = await CalendarService.findById(calendarId);
-    if (!calendar) return next(new AppError('Calendar not found', 404));
-
-    // Auth check
-    if (req.user!.role !== 'SUPER_ADMIN' && calendar.organizationId !== req.user!.organizationId) {
-        return next(new AppError('Permission denied', 403));
-    }
-
-    const rules = await CalendarService.findWeeklyRules(calendarId);
-    sendResponse(res, 200, rules, 'Weekly rules retrieved successfully');
+    const result = await CalendarService.getWeeklyRules(organizationId, calendarId);
+    sendResponse(res, 200, result, 'Weekly rules retrieved successfully');
 });
 
 export const createWeeklyRule = catchAsync(async (req: Request, res: Response, next: NextFunction) => {
+    const organizationId = getOrganizationContext(req, next);
     const { calendarId } = req.params;
-
-    // Parent check
-    const calendar = await CalendarService.findById(calendarId);
-    if (!calendar) return next(new AppError('Calendar not found', 404));
-
-    // Auth check
-    if (req.user!.role !== 'SUPER_ADMIN' && calendar.organizationId !== req.user!.organizationId) {
-        return next(new AppError('Permission denied', 403));
-    }
-
-    const input: CreateWeeklyRuleInput = { ...req.body, calendarId };
-    const rule = await CalendarService.createWeeklyRule(input);
-    sendResponse(res, 201, rule, 'Weekly rule created successfully');
+    // req.body is validated, includes dayOfWeek etc.
+    const result = await CalendarService.createWeeklyRule(organizationId, calendarId, req.body as CreateWeeklyRuleInput);
+    sendResponse(res, 201, result, 'Weekly rule created successfully');
 });
 
 export const updateWeeklyRule = catchAsync(async (req: Request, res: Response, next: NextFunction) => {
+    const organizationId = getOrganizationContext(req, next);
     const { ruleId } = req.params;
-    const existingRule = await CalendarService.findWeeklyRuleById(ruleId);
-    if (!existingRule) return next(new AppError('Rule not found', 404));
-
-    // Auth check
-    if (req.user!.role !== 'SUPER_ADMIN' && existingRule.calendar.organizationId !== req.user!.organizationId) {
-        return next(new AppError('Permission denied', 403));
-    }
-
-    const rule = await CalendarService.updateWeeklyRule(ruleId, req.body as UpdateWeeklyRuleInput);
-    sendResponse(res, 200, rule, 'Weekly rule updated successfully');
+    const result = await CalendarService.updateWeeklyRule(organizationId, ruleId, req.body as UpdateWeeklyRuleInput);
+    sendResponse(res, 200, result, 'Weekly rule updated successfully');
 });
 
 export const deleteWeeklyRule = catchAsync(async (req: Request, res: Response, next: NextFunction) => {
+    const organizationId = getOrganizationContext(req, next);
     const { ruleId } = req.params;
-    const existingRule = await CalendarService.findWeeklyRuleById(ruleId);
-    if (!existingRule) return next(new AppError('Rule not found', 404));
-
-    // Auth check
-    if (req.user!.role !== 'SUPER_ADMIN' && existingRule.calendar.organizationId !== req.user!.organizationId) {
-        return next(new AppError('Permission denied', 403));
-    }
-
-    await CalendarService.deleteWeeklyRule(ruleId);
+    await CalendarService.deleteWeeklyRule(organizationId, ruleId);
     sendResponse(res, 204, null, 'Weekly rule deleted successfully');
 });
-
 
 // =========================================================================
 // 3. HOLIDAYS CONTROLLERS
 // =========================================================================
 
 export const getHolidays = catchAsync(async (req: Request, res: Response, next: NextFunction) => {
+    const organizationId = getOrganizationContext(req, next);
     const { calendarId } = req.params;
-    const year = req.query.year ? parseInt(req.query.year as string) : undefined;
+    const year = req.query.year ? Number(req.query.year) : undefined;
     const search = req.query.search as string;
 
-    // Parent check
-    const calendar = await CalendarService.findById(calendarId);
-    if (!calendar) return next(new AppError('Calendar not found', 404));
-
-    // Auth check
-    if (req.user!.role !== 'SUPER_ADMIN' && calendar.organizationId !== req.user!.organizationId) {
-        return next(new AppError('Permission denied', 403));
-    }
-
-    const holidays = await CalendarService.findHolidays(calendarId, year, search);
-    sendResponse(res, 200, holidays, 'Holidays retrieved successfully');
+    const result = await CalendarService.getHolidays(organizationId, calendarId, year, search);
+    sendResponse(res, 200, result, 'Holidays retrieved successfully');
 });
 
 export const createHoliday = catchAsync(async (req: Request, res: Response, next: NextFunction) => {
+    const organizationId = getOrganizationContext(req, next);
     const { calendarId } = req.params;
-
-    // Parent check
-    const calendar = await CalendarService.findById(calendarId);
-    if (!calendar) return next(new AppError('Calendar not found', 404));
-
-    // Auth check
-    if (req.user!.role !== 'SUPER_ADMIN' && calendar.organizationId !== req.user!.organizationId) {
-        return next(new AppError('Permission denied', 403));
-    }
-
-    // Ensure date is a Date object
-    const date = new Date(req.body.date);
-
-    const input: CreateHolidayInput = { ...req.body, date, calendarId };
-    const holiday = await CalendarService.createHoliday(input);
-    sendResponse(res, 201, holiday, 'Holiday created successfully');
+    const result = await CalendarService.createHoliday(organizationId, calendarId, req.body as CreateHolidayInput);
+    sendResponse(res, 201, result, 'Holiday created successfully');
 });
 
 export const updateHoliday = catchAsync(async (req: Request, res: Response, next: NextFunction) => {
+    const organizationId = getOrganizationContext(req, next);
     const { holidayId } = req.params;
-    const existingHoliday = await CalendarService.findHolidayById(holidayId);
-    if (!existingHoliday) return next(new AppError('Holiday not found', 404));
-
-    // Auth check
-    if (req.user!.role !== 'SUPER_ADMIN' && existingHoliday.calendar.organizationId !== req.user!.organizationId) {
-        return next(new AppError('Permission denied', 403));
-    }
-
-    const input: UpdateHolidayInput = { ...req.body };
-    if (input.date) {
-        input.date = new Date(input.date);
-    }
-
-    const holiday = await CalendarService.updateHoliday(holidayId, input);
-    sendResponse(res, 200, holiday, 'Holiday updated successfully');
+    const result = await CalendarService.updateHoliday(organizationId, holidayId, req.body as UpdateHolidayInput);
+    sendResponse(res, 200, result, 'Holiday updated successfully');
 });
 
 export const deleteHoliday = catchAsync(async (req: Request, res: Response, next: NextFunction) => {
+    const organizationId = getOrganizationContext(req, next);
     const { holidayId } = req.params;
-    const existingHoliday = await CalendarService.findHolidayById(holidayId);
-    if (!existingHoliday) return next(new AppError('Holiday not found', 404));
-
-    // Auth check
-    if (req.user!.role !== 'SUPER_ADMIN' && existingHoliday.calendar.organizationId !== req.user!.organizationId) {
-        return next(new AppError('Permission denied', 403));
-    }
-
-    await CalendarService.deleteHoliday(holidayId);
+    await CalendarService.deleteHoliday(organizationId, holidayId);
     sendResponse(res, 204, null, 'Holiday deleted successfully');
 });

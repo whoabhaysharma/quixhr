@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { paginationSchema } from '@/utils/pagination';
 
 export const updateOrganizationSchema = {
     body: z.object({
@@ -10,22 +11,20 @@ export const updateOrganizationSchema = {
     }),
 };
 
+// Merge common pagination with specific requirements if needed, 
+// or just use the common schema directly in the route if distinct fields aren't needed.
+// For now, we reuse the loose common schema but we can refine specific allowedEnums here if strictly necessary.
+// But to keep it "common list getting params", we'll just extend/use it.
+
 export const getOrganizationsQuerySchema = {
-    query: z.object({
-        page: z.string().regex(/^\d+$/).transform(Number).optional(),
-        limit: z.string().regex(/^\d+$/).transform(Number).optional(),
-        search: z.string().optional(),
+    query: paginationSchema.extend({
         sortBy: z.enum(['name', 'createdAt', 'updatedAt']).optional(),
-        sortOrder: z.enum(['asc', 'desc']).optional(),
-    }),
+    })
 };
 
 export const auditLogQuerySchema = {
-    query: z.object({
-        page: z.string().regex(/^\d+$/).transform(Number).optional(),
-        limit: z.string().regex(/^\d+$/).transform(Number).optional(),
+    query: paginationSchema.extend({
         sortBy: z.enum(['createdAt', 'action', 'entity']).optional(),
-        sortOrder: z.enum(['asc', 'desc']).optional(),
-    }),
+    })
 };
 

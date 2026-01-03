@@ -1,132 +1,163 @@
 import { Router } from 'express';
 import { Role } from '@prisma/client';
-import { protect, restrictTo, resolveTenant } from '@/shared/middleware';
-import validate from '@/shared/middleware/validate-resource.middleware';
+import { protect, resolveTenant, restrictTo, validate } from '@/shared/middleware';
 import * as CalendarController from './calendars.controller';
 import {
+    createCalendarSchema,
     updateCalendarSchema,
+    getCalendarsQuerySchema,
+    calendarIdSchema,
     createWeeklyRuleSchema,
     updateWeeklyRuleSchema,
+    weeklyRuleIdSchema,
     createHolidaySchema,
     updateHolidaySchema,
-    calendarQuerySchema,
-    holidayQuerySchema,
+    getHolidaysQuerySchema,
+    holidayIdSchema
 } from './calendars.schema';
 
 const router = Router();
+
+// Global Middleware
 router.use(protect);
 router.use(resolveTenant);
 
 // =========================================================================
-// 1. GLOBAL LIST (Super Admin / Cross-Company)
+// CALENDAR ROUTES
 // =========================================================================
 
 /**
  * @route   GET /api/v1/calendars
- * @desc    Get all calendars (Scoped by tenant)
+ * @desc    Get all calendars
+ * @access  ORG_ADMIN, HR_ADMIN, SUPER_ADMIN
  */
 router.get(
     '/',
-    restrictTo(Role.SUPER_ADMIN, Role.ORG_ADMIN, Role.HR_ADMIN, Role.MANAGER),
-    validate(calendarQuerySchema),
+    restrictTo(Role.ORG_ADMIN, Role.HR_ADMIN, Role.SUPER_ADMIN),
+    validate(getCalendarsQuerySchema),
     CalendarController.getCalendars
 );
 
-// =========================================================================
-// 2. SUB-RESOURCES: WEEKLY RULES (Shallow Management)
-// =========================================================================
-// NOTE: We define these BEFORE the generic /:calendarId to avoid collisions.
-
-// --- Management (Using unique Rule ID) ---
-// PATCH /api/v1/calendars/weekly-rules/:ruleId
-router.patch(
-    '/weekly-rules/:ruleId',
-    restrictTo(Role.SUPER_ADMIN, Role.ORG_ADMIN, Role.HR_ADMIN, Role.MANAGER),
-    validate(updateWeeklyRuleSchema),
-    CalendarController.updateWeeklyRule
+/**
+ * @route   POST /api/v1/calendars
+ * @desc    Create a new calendar
+ * @access  ORG_ADMIN, HR_ADMIN, SUPER_ADMIN
+ */
+router.post(
+    '/',
+    restrictTo(Role.ORG_ADMIN, Role.HR_ADMIN, Role.SUPER_ADMIN),
+    validate(createCalendarSchema),
+    CalendarController.createCalendar
 );
 
-// DELETE /api/v1/calendars/weekly-rules/:ruleId
-router.delete(
-    '/weekly-rules/:ruleId',
-    restrictTo(Role.SUPER_ADMIN, Role.ORG_ADMIN, Role.HR_ADMIN, Role.MANAGER),
-    CalendarController.deleteWeeklyRule
-);
-
-// --- Holidays Management (Using unique Holiday ID) ---
-// PATCH /api/v1/calendars/holidays/:holidayId
-router.patch(
-    '/holidays/:holidayId',
-    restrictTo(Role.SUPER_ADMIN, Role.ORG_ADMIN, Role.HR_ADMIN, Role.MANAGER),
-    validate(updateHolidaySchema),
-    CalendarController.updateHoliday
-);
-
-// DELETE /api/v1/calendars/holidays/:holidayId
-router.delete(
-    '/holidays/:holidayId',
-    restrictTo(Role.SUPER_ADMIN, Role.ORG_ADMIN, Role.HR_ADMIN, Role.MANAGER),
-    CalendarController.deleteHoliday
-);
-
-// =========================================================================
-// 3. SINGLE CALENDAR & DEEP NESTED LISTS
-// =========================================================================
-
-// --- Get/Update/Delete Calendar ---
-// URL: /api/v1/calendars/:calendarId
+/**
+ * @route   GET /api/v1/calendars/:id
+ * @desc    Get calendar details
+ * @access  ORG_ADMIN, HR_ADMIN, SUPER_ADMIN
+ */
 router.get(
-    '/:calendarId',
-    restrictTo(Role.SUPER_ADMIN, Role.ORG_ADMIN, Role.HR_ADMIN, Role.MANAGER),
+    '/:id',
+    restrictTo(Role.ORG_ADMIN, Role.HR_ADMIN, Role.SUPER_ADMIN),
+    validate(calendarIdSchema),
     CalendarController.getCalendarById
 );
 
+/**
+ * @route   PATCH /api/v1/calendars/:id
+ * @desc    Update calendar
+ * @access  ORG_ADMIN, HR_ADMIN, SUPER_ADMIN
+ */
 router.patch(
-    '/:calendarId',
-    restrictTo(Role.SUPER_ADMIN, Role.ORG_ADMIN, Role.HR_ADMIN, Role.MANAGER),
+    '/:id',
+    restrictTo(Role.ORG_ADMIN, Role.HR_ADMIN, Role.SUPER_ADMIN),
     validate(updateCalendarSchema),
     CalendarController.updateCalendar
 );
 
+/**
+ * @route   DELETE /api/v1/calendars/:id
+ * @desc    Delete calendar
+ * @access  ORG_ADMIN, HR_ADMIN, SUPER_ADMIN
+ */
 router.delete(
-    '/:calendarId',
-    restrictTo(Role.SUPER_ADMIN, Role.ORG_ADMIN, Role.HR_ADMIN, Role.MANAGER),
+    '/:id',
+    restrictTo(Role.ORG_ADMIN, Role.HR_ADMIN, Role.SUPER_ADMIN),
+    validate(calendarIdSchema),
     CalendarController.deleteCalendar
 );
 
-// --- Sub-Resource Lists & Creation (Requires Calendar Context) ---
+// =========================================================================
+// WEEKLY RULE ROUTES (Nested under /:calendarId/weekly-rules)
+// =========================================================================
 
-// Weekly Rules
-// GET /api/v1/calendars/:calendarId/weekly-rules
+// Note: Using :calendarId param, but express Router mergeParams might be needed if this was separate router.
+// Since it's one file, we just define the paths.
+
 router.get(
     '/:calendarId/weekly-rules',
-    restrictTo(Role.SUPER_ADMIN, Role.ORG_ADMIN, Role.HR_ADMIN, Role.MANAGER),
+    restrictTo(Role.ORG_ADMIN, Role.HR_ADMIN, Role.SUPER_ADMIN),
+    // Validate that calendarId is UUID? createWeeklyRuleSchema params handles it?
+    // We should ideally have a schema for just calendarId param here. 
+    // We can reuse calendarIdSchema if we rename param in check or use explicit object.
+    // Let's rely on createWeeklyRuleSchema's param part if getting strictly, or just generic check.
+    // Actually, validate middleware accepts { params: ... }.
+    // Let's use customized inline schema or reuse generic ones.
+    // createWeeklyRuleSchema has params: { calendarId }
+    validate({ params: createWeeklyRuleSchema.params }),
     CalendarController.getWeeklyRules
 );
 
-// POST /api/v1/calendars/:calendarId/weekly-rules
 router.post(
     '/:calendarId/weekly-rules',
-    restrictTo(Role.SUPER_ADMIN, Role.ORG_ADMIN, Role.HR_ADMIN), // Usually Admins only
+    restrictTo(Role.ORG_ADMIN, Role.HR_ADMIN, Role.SUPER_ADMIN),
     validate(createWeeklyRuleSchema),
     CalendarController.createWeeklyRule
 );
 
-// Holidays
-// GET /api/v1/calendars/:calendarId/holidays
+router.patch(
+    '/weekly-rules/:ruleId',
+    restrictTo(Role.ORG_ADMIN, Role.HR_ADMIN, Role.SUPER_ADMIN),
+    validate(updateWeeklyRuleSchema),
+    CalendarController.updateWeeklyRule
+);
+
+router.delete(
+    '/weekly-rules/:ruleId',
+    restrictTo(Role.ORG_ADMIN, Role.HR_ADMIN, Role.SUPER_ADMIN),
+    validate(weeklyRuleIdSchema),
+    CalendarController.deleteWeeklyRule
+);
+
+// =========================================================================
+// HOLIDAY ROUTES (Nested under /:calendarId/holidays)
+// =========================================================================
+
 router.get(
     '/:calendarId/holidays',
-    restrictTo(Role.SUPER_ADMIN, Role.ORG_ADMIN, Role.HR_ADMIN, Role.MANAGER),
-    validate(holidayQuerySchema),
+    restrictTo(Role.ORG_ADMIN, Role.HR_ADMIN, Role.SUPER_ADMIN),
+    validate(getHolidaysQuerySchema),
     CalendarController.getHolidays
 );
 
-// POST /api/v1/calendars/:calendarId/holidays
 router.post(
     '/:calendarId/holidays',
-    restrictTo(Role.SUPER_ADMIN, Role.ORG_ADMIN, Role.HR_ADMIN),
+    restrictTo(Role.ORG_ADMIN, Role.HR_ADMIN, Role.SUPER_ADMIN),
     validate(createHolidaySchema),
     CalendarController.createHoliday
+);
+
+router.patch(
+    '/holidays/:holidayId',
+    restrictTo(Role.ORG_ADMIN, Role.HR_ADMIN, Role.SUPER_ADMIN),
+    validate(updateHolidaySchema),
+    CalendarController.updateHoliday
+);
+
+router.delete(
+    '/holidays/:holidayId',
+    restrictTo(Role.ORG_ADMIN, Role.HR_ADMIN, Role.SUPER_ADMIN),
+    validate(holidayIdSchema),
+    CalendarController.deleteHoliday
 );
 
 export default router;

@@ -2,64 +2,50 @@ import { Request, Response, NextFunction } from 'express';
 import { catchAsync } from '@/utils/catchAsync';
 import { sendResponse } from '@/utils/sendResponse';
 import { AppError } from '@/utils/appError';
-import * as AttendanceService from './attendance.service';
+import { getOrganizationContext } from '@/utils/tenantContext';
+import { getPaginationParams } from '@/utils/pagination';
+import { AttendanceService } from './attendance.service';
+import { ClockInInput, ClockOutInput, GetAttendanceQuery } from './attendance.schema';
 
 export const clockIn = catchAsync(async (req: Request, res: Response, next: NextFunction) => {
-    // Only employees can clock in for themselves
-    // If we support Admin clocking in for others, we need logic.
-    // For "check-in" route, it's usually "me".
-    const employeeId = req.user!.employeeId;
+    const organizationId = getOrganizationContext(req, next);
+    // Employee must be linked to the user
+    const employeeId = req.user?.employeeId;
+    if (!employeeId) return next(new AppError('User is not linked to an employee record', 400));
 
-    if (!employeeId) {
-        return next(new AppError('User is not linked to an employee record', 400));
-    }
-
-    const { gpsCoords, method } = req.body;
-
-    const record = await AttendanceService.clockIn(employeeId, gpsCoords, method);
-    sendResponse(res, 201, record, 'Clocked in successfully');
+    const result = await AttendanceService.clockIn(organizationId, employeeId, req.body as ClockInInput);
+    sendResponse(res, 201, result, 'Clocked in successfully');
 });
 
 export const clockOut = catchAsync(async (req: Request, res: Response, next: NextFunction) => {
-    const employeeId = req.user!.employeeId;
+    const organizationId = getOrganizationContext(req, next);
+    const employeeId = req.user?.employeeId;
+    if (!employeeId) return next(new AppError('User is not linked to an employee record', 400));
 
-    if (!employeeId) {
-        return next(new AppError('User is not linked to an employee record', 400));
-    }
-
-    const { gpsCoords, method } = req.body;
-
-    const record = await AttendanceService.clockOut(employeeId, gpsCoords, method);
-    sendResponse(res, 200, record, 'Clocked out successfully');
+    const result = await AttendanceService.clockOut(organizationId, employeeId, req.body as ClockOutInput);
+    sendResponse(res, 200, result, 'Clocked out successfully');
 });
 
 export const getMyAttendance = catchAsync(async (req: Request, res: Response, next: NextFunction) => {
-    const employeeId = req.user!.employeeId;
-    if (!employeeId) {
-        return next(new AppError('User is not linked to an employee record', 400));
-    }
+    const organizationId = getOrganizationContext(req, next);
+    const employeeId = req.user?.employeeId;
+    if (!employeeId) return next(new AppError('User is not linked to an employee record', 400));
 
-    const today = new Date();
-    const result = await AttendanceService.getDailyLogs(employeeId, today);
+    // Default to today
+    const dateQuery = req.query.date as string;
+    const date = dateQuery ? new Date(dateQuery) : new Date();
+
+    const result = await AttendanceService.getDailyLogs(organizationId, employeeId, date);
     sendResponse(res, 200, result, 'Attendance retrieved successfully');
 });
 
-export const getAttendanceLogs = catchAsync(async (req: Request, res: Response, next: NextFunction) => {
-    const employeeId = req.user!.employeeId;
-    // Check Date query
-    const dateQuery = req.query.date as string;
+export const getAllAttendance = catchAsync(async (req: Request, res: Response, next: NextFunction) => {
+    const organizationId = getOrganizationContext(req, next);
+    const pagination = getPaginationParams(req, 'date', 'desc');
 
-    if (!employeeId) {
-        // If Admin, maybe query param employeeId? 
-        // For now, let's treat this as "My Logs" or "Specific Logs"
-    }
+    // Extract Filters
+    const filters = req.query as unknown as GetAttendanceQuery;
 
-    // Fallback logic
-    const targetEmployeeId = employeeId; // Only allow self specific for now in this route.
-    if (!targetEmployeeId) return next(new AppError('Employee context missing', 400));
-
-    const date = dateQuery ? new Date(dateQuery) : new Date();
-
-    const result = await AttendanceService.getDailyLogs(targetEmployeeId, date);
-    sendResponse(res, 200, result, 'Attendance logs retrieved successfully');
+    const result = await AttendanceService.getAttendance(organizationId, pagination, filters);
+    sendResponse(res, 200, result, 'Attendance records retrieved successfully');
 });

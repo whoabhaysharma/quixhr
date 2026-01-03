@@ -1,48 +1,32 @@
 import { prisma } from '@/utils/prisma';
 import { AppError } from '@/utils/appError';
-import { getQueryOptions } from '@/utils/apiFeatures';
-import { AuthContext, EmployeeFilters, EmployeeCreateData, EmployeeUpdateData } from './employees.types';
-import { Role } from '@prisma/client';
+import { Role, Prisma } from '@prisma/client';
+import { CreateEmployeeInput, UpdateEmployeeInput, GetEmployeesQuery } from './employees.schema';
+import { ParsedPagination } from '@/utils/pagination';
+import { buildOrderBy, validateOrganizationResource } from '@/utils/prismaHelpers';
 
-/**
- * Employee Service Layer
- * Handles all business logic for employee management
- */
 export class EmployeeService {
   /**
-   * Get all employees for a organization with pagination and filtering
+   * Get all employees with pagination, sorting, and filtering
    */
-  static async getEmployees({
-    authContext,
-    organizationId,
-    page = 1,
-    limit = 20,
-    search,
-    status,
-    calendarId,
-    leaveGradeId,
-  }: {
-    authContext: AuthContext;
-    organizationId: string;
-    page?: number;
-    limit?: number;
-    search?: string;
-    status?: string;
-    calendarId?: string;
-    leaveGradeId?: string;
-  }) {
-    // Validate organization access
-    await this.validateOrganizationAccess(authContext, organizationId);
+  static async getEmployees(
+    organizationId: string,
+    query: ParsedPagination,
+    filters: Pick<GetEmployeesQuery, 'status' | 'calendarId' | 'leaveGradeId' | 'role'>
+  ) {
+    const { page, limit, skip, search, sortBy, sortOrder } = query;
 
-    const skip = (page - 1) * limit;
-
-    // Build where clause
-    const whereClause: any = {
+    // 1. Build Where Clause
+    const where: Prisma.EmployeeWhereInput = {
       organizationId,
+      ...(filters.status && { status: filters.status }),
+      ...(filters.calendarId && { calendarId: filters.calendarId }),
+      ...(filters.leaveGradeId && { leaveGradeId: filters.leaveGradeId }),
+      ...(filters.role && { user: { role: filters.role } }),
     };
 
     if (search) {
-      whereClause.OR = [
+      where.OR = [
         { firstName: { contains: search, mode: 'insensitive' } },
         { lastName: { contains: search, mode: 'insensitive' } },
         { code: { contains: search, mode: 'insensitive' } },
@@ -50,60 +34,46 @@ export class EmployeeService {
       ];
     }
 
-    if (status) whereClause.status = status;
-    if (calendarId) whereClause.calendarId = calendarId;
-    if (leaveGradeId) whereClause.leaveGradeId = leaveGradeId;
+    // 2. Build Order By Clause
+    const orderBy = buildOrderBy(sortBy, sortOrder, {
+      allowedFields: ['firstName', 'lastName', 'code', 'status', 'joiningDate', 'createdAt', 'updatedAt'],
+      mappings: {
+        email: (order) => ({ user: { email: order } }),
+        role: (order) => ({ user: { role: order } }),
+        calendar: (order) => ({ calendar: { name: order } }),
+        leaveGrade: (order) => ({ leaveGrade: { name: order } }),
+        fullName: (order) => ([{ firstName: order }, { lastName: order }])
+      },
+      defaultSort: { firstName: 'asc' }
+    });
 
+    // 3. Execute Query
     const [employees, total] = await Promise.all([
       prisma.employee.findMany({
-        where: whereClause,
+        where,
         skip,
         take: limit,
-        orderBy: [
-          { firstName: 'asc' },
-          { lastName: 'asc' },
-        ],
+        orderBy: orderBy as any, // Cast due to dynamic helper types
         include: {
-          user: {
-            select: {
-              id: true,
-              email: true,
-              role: true,
-              isEmailVerified: true,
-            },
-          },
-          calendar: {
-            select: {
-              id: true,
-              name: true,
-            },
-          },
-          leaveGrade: {
-            select: {
-              id: true,
-              name: true,
-            },
-          },
+          user: { select: { id: true, email: true, role: true, isEmailVerified: true } },
+          calendar: { select: { id: true, name: true } },
+          leaveGrade: { select: { id: true, name: true } },
         },
       }),
-      prisma.employee.count({ where: whereClause }),
+      prisma.employee.count({ where }),
     ]);
 
+    // 4. Transform Result
+    const data = employees.map(emp => ({
+      ...emp,
+      fullName: `${emp.firstName} ${emp.lastName}`,
+      email: emp.user?.email,
+      role: emp.user?.role,
+      user: undefined,
+    }));
+
     return {
-      employees: employees.map((employee) => ({
-        id: employee.id,
-        organizationId: employee.organizationId,
-        firstName: employee.firstName,
-        lastName: employee.lastName,
-        fullName: `${employee.firstName} ${employee.lastName}`,
-        code: employee.code,
-        status: employee.status,
-        joiningDate: employee.joiningDate,
-        email: employee.user?.email,
-        role: employee.user?.role,
-        calendar: employee.calendar,
-        leaveGrade: employee.leaveGrade,
-      })),
+      data,
       pagination: {
         total,
         page,
@@ -114,416 +84,132 @@ export class EmployeeService {
   }
 
   /**
-   * Get employee by ID with detailed information
+   * Get Single Employee by ID
    */
-  static async getEmployeeById({
-    authContext,
-    organizationId,
-    employeeId,
-  }: {
-    authContext: AuthContext;
-    organizationId: string;
-    employeeId: string;
-  }) {
-    // Validate organization access
-    await this.validateOrganizationAccess(authContext, organizationId);
-
+  static async getEmployee(organizationId: string, id: string) {
     const employee = await prisma.employee.findUnique({
-      where: { id: employeeId },
+      where: { id },
       include: {
-        user: {
-          select: {
-            id: true,
-            email: true,
-            role: true,
-            isEmailVerified: true,
-          },
-        },
-        calendar: {
-          select: {
-            id: true,
-            name: true,
-            dayStartTime: true,
-            dayEndTime: true,
-          },
-        },
-        leaveGrade: {
-          select: {
-            id: true,
-            name: true,
-            policies: {
-              select: {
-                leaveType: true,
-                totalDays: true,
-                carryForward: true,
-              },
-            },
-          },
-        },
+        user: { select: { id: true, email: true, role: true, isEmailVerified: true } },
+        calendar: true,
+        leaveGrade: { include: { policies: true } },
       },
     });
 
-    if (!employee) {
-      throw new AppError('Employee not found', 404);
-    }
+    if (!employee) throw new AppError('Employee not found', 404);
+    if (employee.organizationId !== organizationId) throw new AppError('Access denied', 403);
 
-    if (employee.organizationId !== organizationId) {
-      throw new AppError('Access denied. Employee belongs to different organization.', 403);
-    }
-
-    return {
-      id: employee.id,
-      organizationId: employee.organizationId,
-      firstName: employee.firstName,
-      lastName: employee.lastName,
-      fullName: `${employee.firstName} ${employee.lastName}`,
-      code: employee.code,
-      status: employee.status,
-      joiningDate: employee.joiningDate,
-      user: employee.user,
-      calendar: employee.calendar,
-      leaveGrade: employee.leaveGrade,
-    };
+    return employee;
   }
 
   /**
-   * Create a new employee
+   * Create Employee
    */
-  static async createEmployee({
-    authContext,
-    organizationId,
-    data,
-  }: {
-    authContext: AuthContext;
-    organizationId: string;
-    data: EmployeeCreateData;
-  }) {
-    // Validate permissions (only admins can create employees)
-    this.requireAdminPermissions(authContext.role);
-
-    // Validate organization access
-    await this.validateOrganizationAccess(authContext, organizationId);
-
-    // Check if employee code is unique within organization
+  static async createEmployee(organizationId: string, data: CreateEmployeeInput) {
+    // 1. Validation: Code Uniqueness
     if (data.code) {
-      const existingEmployee = await prisma.employee.findFirst({
-        where: {
-          organizationId,
-          code: data.code,
-        },
-      });
-
-      if (existingEmployee) {
-        throw new AppError('Employee code already exists in this organization', 400);
-      }
+      const exists = await prisma.employee.findFirst({ where: { organizationId, code: data.code } });
+      if (exists) throw new AppError('Employee code already exists', 400);
     }
 
-    // Validate calendar and leave grade belong to the organization
-    await this.validateResourcesAccess(organizationId, data.calendarId, data.leaveGradeId);
+    // 2. Validation: Resources
+    if (data.calendarId) await validateOrganizationResource('calendar', data.calendarId, organizationId, 'Calendar');
+    if (data.leaveGradeId) await validateOrganizationResource('leaveGrade', data.leaveGradeId, organizationId, 'Leave Grade');
 
-    let userId: string | undefined;
+    // 3. Transaction
+    return await prisma.$transaction(async (tx) => {
+      let userId: string | undefined;
 
-    // Create user account if email is provided
-    if (data.email) {
-      const existingUser = await prisma.user.findUnique({
-        where: { email: data.email },
-      });
-
-      if (existingUser) {
-        // Check if user already has an employee profile
-        const existingEmployee = await prisma.employee.findUnique({
-          where: { userId: existingUser.id },
-        });
-
-        if (existingEmployee) {
-          throw new AppError('User already has an employee profile', 400);
+      if (data.email) {
+        let user = await tx.user.findUnique({ where: { email: data.email } });
+        if (user) {
+          const linked = await tx.employee.findUnique({ where: { userId: user.id } });
+          if (linked) throw new AppError('User already linked', 400);
+        } else {
+          user = await tx.user.create({
+            data: {
+              email: data.email,
+              password: 'temporary-password',
+              role: data.role || Role.EMPLOYEE,
+              isEmailVerified: false,
+            }
+          });
         }
-
-        userId = existingUser.id;
-      } else {
-        // Create new user
-        const user = await prisma.user.create({
-          data: {
-            email: data.email,
-            password: 'temporary-password', // User will reset on first login
-            role: data.role || Role.EMPLOYEE,
-            isEmailVerified: false,
-          },
-        });
-
         userId = user.id;
       }
-    }
 
-    const employee = await prisma.employee.create({
-      data: {
-        organizationId,
-        userId,
-        firstName: data.firstName,
-        lastName: data.lastName,
-        code: data.code,
-        status: data.status,
-        joiningDate: new Date(data.joiningDate),
-        calendarId: data.calendarId,
-        leaveGradeId: data.leaveGradeId,
-      },
-      include: {
-        user: {
-          select: {
-            id: true,
-            email: true,
-            role: true,
-            isEmailVerified: true,
-          },
-        },
-        calendar: {
-          select: {
-            id: true,
-            name: true,
-          },
-        },
-        leaveGrade: {
-          select: {
-            id: true,
-            name: true,
-          },
-        },
-      },
-    });
-
-    return {
-      id: employee.id,
-      organizationId: employee.organizationId,
-      firstName: employee.firstName,
-      lastName: employee.lastName,
-      fullName: `${employee.firstName} ${employee.lastName}`,
-      code: employee.code,
-      status: employee.status,
-      joiningDate: employee.joiningDate,
-      email: employee.user?.email,
-      role: employee.user?.role,
-      calendar: employee.calendar,
-      leaveGrade: employee.leaveGrade,
-    };
-  }
-
-  /**
-   * Update an employee
-   */
-  static async updateEmployee({
-    authContext,
-    organizationId,
-    employeeId,
-    data,
-  }: {
-    authContext: AuthContext;
-    organizationId: string;
-    employeeId: string;
-    data: EmployeeUpdateData;
-  }) {
-    // Validate permissions
-    this.requireAdminPermissions(authContext.role);
-
-    // Validate organization access
-    await this.validateOrganizationAccess(authContext, organizationId);
-
-    const employee = await prisma.employee.findUnique({
-      where: { id: employeeId },
-    });
-
-    if (!employee) {
-      throw new AppError('Employee not found', 404);
-    }
-
-    if (employee.organizationId !== organizationId) {
-      throw new AppError('Access denied. Employee belongs to different organization.', 403);
-    }
-
-    // Check if new employee code is unique
-    if (data.code && data.code !== employee.code) {
-      const existingEmployee = await prisma.employee.findFirst({
-        where: {
+      return await tx.employee.create({
+        data: {
           organizationId,
+          userId,
+          firstName: data.firstName,
+          lastName: data.lastName,
           code: data.code,
-          id: { not: employeeId },
+          status: data.status as any,
+          joiningDate: new Date(data.joiningDate),
+          calendarId: data.calendarId,
+          leaveGradeId: data.leaveGradeId,
         },
+        include: { user: { select: { email: true, role: true } } }
       });
+    });
+  }
 
-      if (existingEmployee) {
-        throw new AppError('Employee code already exists in this organization', 400);
+  /**
+   * Update Employee
+   */
+  static async updateEmployee(organizationId: string, id: string, data: UpdateEmployeeInput) {
+    const employee = await validateOrganizationResource('employee', id, organizationId, 'Employee');
+
+    if (data.code && data.code !== (employee as any).code) {
+      // We might need to fetch code if validateOrganizationResource didn't return it.
+      // Current validateOrganizationResource only selects ID. 
+      // So for update logic relying on previous values, we might need a fetch.
+      // Let's optimize: validateOrganizationResource is great for FKs, but main resource update needs data.
+      const current = await prisma.employee.findUnique({ where: { id } });
+      if (current && data.code !== current.code) {
+        const exists = await prisma.employee.findFirst({ where: { organizationId, code: data.code } });
+        if (exists) throw new AppError('Employee code already taken', 400);
       }
     }
 
-    // Validate calendar and leave grade belong to the organization
-    await this.validateResourcesAccess(organizationId, data.calendarId, data.leaveGradeId);
+    if (data.calendarId) await validateOrganizationResource('calendar', data.calendarId, organizationId, 'Calendar');
+    if (data.leaveGradeId) await validateOrganizationResource('leaveGrade', data.leaveGradeId, organizationId, 'Leave Grade');
 
-    const updateData: any = { ...data };
-    if (updateData.joiningDate) {
-      updateData.joiningDate = new Date(updateData.joiningDate);
-    }
-
-    const updatedEmployee = await prisma.employee.update({
-      where: { id: employeeId },
-      data: updateData,
-      include: {
-        user: {
-          select: {
-            id: true,
-            email: true,
-            role: true,
-            isEmailVerified: true,
-          },
-        },
-        calendar: {
-          select: {
-            id: true,
-            name: true,
-          },
-        },
-        leaveGrade: {
-          select: {
-            id: true,
-            name: true,
-          },
-        },
+    return await prisma.employee.update({
+      where: { id },
+      data: {
+        ...data,
+        joiningDate: data.joiningDate ? new Date(data.joiningDate) : undefined,
+        status: data.status as any,
       },
+      include: { user: { select: { email: true, role: true } } }
     });
-
-    return {
-      id: updatedEmployee.id,
-      organizationId: updatedEmployee.organizationId,
-      firstName: updatedEmployee.firstName,
-      lastName: updatedEmployee.lastName,
-      fullName: `${updatedEmployee.firstName} ${updatedEmployee.lastName}`,
-      code: updatedEmployee.code,
-      status: updatedEmployee.status,
-      joiningDate: updatedEmployee.joiningDate,
-      email: updatedEmployee.user?.email,
-      role: updatedEmployee.user?.role,
-      calendar: updatedEmployee.calendar,
-      leaveGrade: updatedEmployee.leaveGrade,
-    };
   }
 
   /**
-   * Delete an employee
+   * Delete Employee
    */
-  static async deleteEmployee({
-    authContext,
-    organizationId,
-    employeeId,
-  }: {
-    authContext: AuthContext;
-    organizationId: string;
-    employeeId: string;
-  }) {
-    // Validate permissions (only super admin and org admin can delete employees)
-    this.requireSuperAdminPermissions(authContext.role);
-
-    // Validate organization access
-    await this.validateOrganizationAccess(authContext, organizationId);
-
-    const employee = await prisma.employee.findUnique({
-      where: { id: employeeId },
+  static async deleteEmployee(organizationId: string, id: string) {
+    /* validateOrganizationResource is enough for access check, 
+       but we need relations to check constraints. */
+    const employee = await prisma.employee.findFirst({
+      where: { id, organizationId },
       include: {
-        attendance: true,
-        leaveRequests: true,
-        leaveAllocations: true,
-        leaveLedger: true,
-      },
+        attendance: { take: 1 },
+        leaveRequests: { take: 1 },
+        leaveAllocations: { take: 1 }
+      }
     });
 
-    if (!employee) {
-      throw new AppError('Employee not found', 404);
+    if (!employee) throw new AppError('Employee not found', 404);
+
+    if (employee.attendance.length > 0 || employee.leaveRequests.length > 0 || employee.leaveAllocations.length > 0) {
+      throw new AppError('Cannot delete employee with existing history. Deactivate instead.', 400);
     }
 
-    if (employee.organizationId !== organizationId) {
-      throw new AppError('Access denied. Employee belongs to different organization.', 403);
-    }
-
-    // Check if employee has related data that prevents deletion
-    const hasAttendance = employee.attendance.length > 0;
-    const hasLeaveRequests = employee.leaveRequests.length > 0;
-    const hasLeaveData = employee.leaveAllocations.length > 0 || employee.leaveLedger.length > 0;
-
-    if (hasAttendance || hasLeaveRequests || hasLeaveData) {
-      throw new AppError(
-        'Cannot delete employee. Employee has attendance records, leave requests, or leave data. Consider deactivating the employee instead.',
-        400
-      );
-    }
-
-    await prisma.employee.delete({
-      where: { id: employeeId },
-    });
-
-    return { message: 'Employee deleted successfully' };
+    await prisma.employee.delete({ where: { id } });
   }
 
-  // =========================================================================
-  // HELPER METHODS
-  // =========================================================================
 
-  /**
-   * Validate organization access for the user
-   */
-  private static async validateOrganizationAccess(authContext: AuthContext, organizationId: string) {
-    // SUPER_ADMIN can access any organization
-    if (authContext.role === Role.SUPER_ADMIN) {
-      return;
-    }
-
-    // For other roles, check if user belongs to the organization
-    if (authContext.organizationId !== organizationId) {
-      throw new AppError('Access denied. You do not have permission to access this organization.', 403);
-    }
-  }
-
-  /**
-   * Check if user has admin permissions
-   */
-  private static requireAdminPermissions(role: Role) {
-    const adminRoles: Role[] = [Role.SUPER_ADMIN, Role.ORG_ADMIN, Role.HR_ADMIN];
-    if (!adminRoles.includes(role)) {
-      throw new AppError('Insufficient permissions. Admin access required.', 403);
-    }
-  }
-
-  /**
-   * Check if user has super admin permissions
-   */
-  private static requireSuperAdminPermissions(role: Role) {
-    if (role !== Role.SUPER_ADMIN) {
-      throw new AppError('Insufficient permissions. Super Admin access required.', 403);
-    }
-  }
-
-  /**
-   * Validate that calendar and leave grade belong to the organization
-   */
-  private static async validateResourcesAccess(
-    organizationId: string,
-    calendarId?: string,
-    leaveGradeId?: string
-  ) {
-    if (calendarId) {
-      const calendar = await prisma.calendar.findUnique({
-        where: { id: calendarId },
-      });
-
-      if (!calendar || calendar.organizationId !== organizationId) {
-        throw new AppError('Invalid calendar. Calendar does not belong to this organization.', 400);
-      }
-    }
-
-    if (leaveGradeId) {
-      const leaveGrade = await prisma.leaveGrade.findUnique({
-        where: { id: leaveGradeId },
-      });
-
-      if (!leaveGrade || leaveGrade.organizationId !== organizationId) {
-        throw new AppError('Invalid leave grade. Leave grade does not belong to this organization.', 400);
-      }
-    }
-  }
 }

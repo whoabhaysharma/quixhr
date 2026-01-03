@@ -1,202 +1,76 @@
 import { Request, Response, NextFunction } from 'express';
 import { catchAsync } from '@/utils/catchAsync';
 import { sendResponse } from '@/utils/sendResponse';
+import { getOrganizationContext } from '@/utils/tenantContext';
+import { getPaginationParams } from '@/utils/pagination';
 import { EmployeeService } from './employees.service';
-import { AuthContext } from './employees.types';
-import { AppError } from '@/utils/appError';
-import {
-  EmployeeResponseDto,
-  EmployeeDetailsResponseDto,
-  EmployeesListResponseDto,
-} from './employees.schema';
-
-// =========================================================================
-// HELPER FUNCTIONS
-// =========================================================================
+import { CreateEmployeeInput, UpdateEmployeeInput, GetEmployeesQuery } from './employees.schema';
 
 /**
- * Get auth context from request
+ * Get Employees List
  */
-const getAuthContext = (req: Request): AuthContext => {
-  const user = (req as any).user;
-  if (!user) {
-    throw new AppError('User not authenticated', 401);
-  }
-  return user as AuthContext;
-};
+export const getEmployees = catchAsync(async (req: Request, res: Response, next: NextFunction) => {
+  const organizationId = getOrganizationContext(req, next);
 
-// =========================================================================
-// EMPLOYEE ENDPOINTS
-// =========================================================================
+  // 1. Pagination Params
+  const pagination = getPaginationParams(req, 'firstName', 'asc'); // Default sort by firstName ASC
+
+  // 2. Filter Params (Manually extract from casting rq.query or use helper if complicated)
+  // Since we validated with Zod, we trust the types but req.query values are strings mostly.
+  // However, our validation schema handles some coercions if setup, but here we just extract key fields.
+  const filters = {
+    status: req.query.status as any,
+    role: req.query.role as any,
+    calendarId: req.query.calendarId as string,
+    leaveGradeId: req.query.leaveGradeId as string,
+  };
+
+  const result = await EmployeeService.getEmployees(organizationId, pagination, filters);
+  sendResponse(res, 200, result, 'Employees retrieved successfully');
+});
 
 /**
- * @desc    Get all employees (Scoped by tenant)
- * @route   GET /api/v1/employees
- * @access  Protected (ORG_ADMIN, HR_ADMIN, SUPER_ADMIN)
+ * Get Single Employee
  */
-export const getEmployees = catchAsync(
-  async (req: Request, res: Response, next: NextFunction) => {
-    const authContext = getAuthContext(req);
-    // targetOrganizationId is set by resolveTenant middleware
-    const organizationId = req.targetOrganizationId;
+export const getEmployee = catchAsync(async (req: Request, res: Response, next: NextFunction) => {
+  const organizationId = getOrganizationContext(req, next);
+  const { id } = req.params;
 
-    if (!organizationId) {
-      return next(new AppError('Organization context is required', 400));
-    }
-
-    // We will pass the raw query to the service, or use ApiFeatures there.
-    // Ideally, the service should handle the "business logic" of filtering.
-    // We already have specific params: page, limit, search...
-    // Let's pass query + organizationId.
-
-    const page = parseInt(req.query.page as string) || 1;
-    const limit = parseInt(req.query.limit as string) || 20;
-
-    // Filters
-    const filters = {
-      search: req.query.search as string,
-      status: req.query.status as string,
-      calendarId: req.query.calendarId as string,
-      leaveGradeId: req.query.leaveGradeId as string,
-    };
-
-    const result = await EmployeeService.getEmployees({
-      authContext,
-      organizationId,
-      page,
-      limit,
-      ...filters
-    });
-
-    const responseData: EmployeesListResponseDto = {
-      success: true,
-      message: 'Employees retrieved successfully',
-      data: {
-        employees: result.employees,
-        pagination: result.pagination,
-      },
-    };
-
-    sendResponse(res, 200, responseData);
-  }
-);
+  const result = await EmployeeService.getEmployee(organizationId, id);
+  sendResponse(res, 200, result, 'Employee retrieved successfully');
+});
 
 /**
- * @desc    Get employee details by ID
- * @route   GET /api/v1/employees/:id
- * @access  Protected (ORG_ADMIN, HR_ADMIN, MANAGER, SUPER_ADMIN, or own profile)
+ * Create Employee
  */
-export const getEmployeeById = catchAsync(
-  async (req: Request, res: Response, next: NextFunction) => {
-    const authContext = getAuthContext(req);
-    const { id } = req.params;
-    const organizationId = req.targetOrganizationId;
+export const createEmployee = catchAsync(async (req: Request, res: Response, next: NextFunction) => {
+  const organizationId = getOrganizationContext(req, next);
+  // Payload is validated by middleware against createEmployeeSchema
+  const payload = req.body as CreateEmployeeInput;
 
-    if (!organizationId) {
-      return next(new AppError('Organization context is required', 400));
-    }
-
-    const employee = await EmployeeService.getEmployeeById({
-      authContext,
-      organizationId,
-      employeeId: id,
-    });
-
-    const responseData: EmployeeDetailsResponseDto = {
-      success: true,
-      message: 'Employee details retrieved successfully',
-      data: employee,
-    };
-
-    sendResponse(res, 200, responseData);
-  }
-);
+  const result = await EmployeeService.createEmployee(organizationId, payload);
+  sendResponse(res, 201, result, 'Employee created successfully');
+});
 
 /**
- * @desc    Create a new employee
- * @route   POST /api/v1/org/:organizationId/employees
- * @access  Protected (ORG_ADMIN, HR_ADMIN, SUPER_ADMIN)
+ * Update Employee
  */
-export const createEmployee = catchAsync(
-  async (req: Request, res: Response, next: NextFunction) => {
-    const authContext = getAuthContext(req);
-    const { organizationId } = req.params;
+export const updateEmployee = catchAsync(async (req: Request, res: Response, next: NextFunction) => {
+  const organizationId = getOrganizationContext(req, next);
+  const { id } = req.params;
+  const payload = req.body as UpdateEmployeeInput;
 
-    const employee = await EmployeeService.createEmployee({
-      authContext,
-      organizationId,
-      data: req.body,
-    });
-
-    const responseData: EmployeeResponseDto = {
-      success: true,
-      message: 'Employee created successfully',
-      data: employee,
-    };
-
-    sendResponse(res, 201, responseData);
-  }
-);
+  const result = await EmployeeService.updateEmployee(organizationId, id, payload);
+  sendResponse(res, 200, result, 'Employee updated successfully');
+});
 
 /**
- * @desc    Update employee
- * @route   PATCH /api/v1/employees/:id
- * @access  Protected (ORG_ADMIN, HR_ADMIN, SUPER_ADMIN)
+ * Delete Employee
  */
-export const updateEmployee = catchAsync(
-  async (req: Request, res: Response, next: NextFunction) => {
-    const authContext = getAuthContext(req);
-    const { id } = req.params;
-    const organizationId = req.targetOrganizationId;
+export const deleteEmployee = catchAsync(async (req: Request, res: Response, next: NextFunction) => {
+  const organizationId = getOrganizationContext(req, next);
+  const { id } = req.params;
 
-    if (!organizationId) {
-      return next(new AppError('Organization context is required', 400));
-    }
-
-    const employee = await EmployeeService.updateEmployee({
-      authContext,
-      organizationId,
-      employeeId: id,
-      data: req.body,
-    });
-
-    const responseData: EmployeeResponseDto = {
-      success: true,
-      message: 'Employee updated successfully',
-      data: employee,
-    };
-
-    sendResponse(res, 200, responseData);
-  }
-);
-
-/**
- * @desc    Delete employee
- * @route   DELETE /api/v1/employees/:id
- * @access  Protected (SUPER_ADMIN only)
- */
-export const deleteEmployee = catchAsync(
-  async (req: Request, res: Response, next: NextFunction) => {
-    const authContext = getAuthContext(req);
-    const { id } = req.params;
-    const organizationId = req.targetOrganizationId;
-
-    if (!organizationId) {
-      return next(new AppError('Organization context is required', 400));
-    }
-
-    await EmployeeService.deleteEmployee({
-      authContext,
-      organizationId,
-      employeeId: id,
-    });
-
-    const responseData = {
-      success: true,
-      message: 'Employee deleted successfully',
-      data: null,
-    };
-
-    sendResponse(res, 200, responseData);
-  }
-);
+  await EmployeeService.deleteEmployee(organizationId, id);
+  sendResponse(res, 200, null, 'Employee deleted successfully');
+});

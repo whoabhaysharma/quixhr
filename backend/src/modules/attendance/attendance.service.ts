@@ -1,156 +1,213 @@
 import { prisma } from '@/utils/prisma';
 import { AttendanceStatus } from '@prisma/client';
-import { CreateAttendanceInput, UpdateAttendanceInput, AttendanceLogInput } from './attendance.types';
+import { AppError } from '@/utils/appError';
+import { ParsedPagination } from '@/utils/pagination';
+import { buildOrderBy, validateOrganizationResource } from '@/utils/prismaHelpers';
+import {
+    ClockInInput,
+    ClockOutInput,
+    GetAttendanceQuery,
+    ManualEntryInput
+} from './attendance.schema';
 
-export const clockIn = async (employeeId: string, gpsCoords?: any, method: string = 'WEB') => {
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
+export class AttendanceService {
 
-    // Check if already clocked in
-    const existing = await prisma.attendance.findUnique({
-        where: {
-            employeeId_date: {
-                employeeId,
-                date: today
+    /**
+     * Clock In Logic
+     */
+    static async clockIn(
+        organizationId: string,
+        employeeId: string,
+        data: ClockInInput
+    ) {
+        // Validate Employee belongs to Organization
+        await validateOrganizationResource('employee', employeeId, organizationId, 'Employee');
+
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+
+        // Check if already clocked in
+        const existing = await prisma.attendance.findUnique({
+            where: {
+                employeeId_date: {
+                    employeeId,
+                    date: today
+                }
             }
-        }
-    });
+        });
 
-    if (existing && existing.checkIn) {
-        throw new Error('Already clocked in for today');
+        if (existing && existing.checkIn) {
+            throw new AppError('Already clocked in for today', 400);
+        }
+
+        const now = new Date();
+        // TODO: Late logic based on calendar linked to employee
+
+        return await prisma.$transaction(async (tx) => {
+            const attendance = await tx.attendance.upsert({
+                where: {
+                    employeeId_date: {
+                        employeeId,
+                        date: today
+                    }
+                },
+                update: {
+                    checkIn: now,
+                    status: AttendanceStatus.PRESENT
+                },
+                create: {
+                    employeeId,
+                    date: today,
+                    status: AttendanceStatus.PRESENT,
+                    checkIn: now,
+                    isLate: false // Placeholder
+                }
+            });
+
+            await tx.attendanceLog.create({
+                data: {
+                    attendanceId: attendance.id,
+                    timestamp: now,
+                    type: 'IN',
+                    method: data.method,
+                    gpsCoords: data.gpsCoords ? (data.gpsCoords as any) : undefined
+                }
+            });
+
+            return attendance;
+        });
     }
 
-    // Determine status logic (e.g. Late?) - simplified for now
-    const now = new Date();
-    let isLate = false;
-    // TODO: Compare with Calendar start time
+    /**
+     * Clock Out Logic
+     */
+    static async clockOut(
+        organizationId: string,
+        employeeId: string,
+        data: ClockOutInput
+    ) {
+        await validateOrganizationResource('employee', employeeId, organizationId, 'Employee');
 
-    const data: CreateAttendanceInput = {
-        employeeId,
-        date: today,
-        status: AttendanceStatus.PRESENT,
-        checkIn: now,
-        isLate
-    };
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
 
-    // Upsert attendance record
-    const attendance = await prisma.attendance.upsert({
-        where: {
-            employeeId_date: {
-                employeeId,
-                date: today
+        const attendance = await prisma.attendance.findUnique({
+            where: {
+                employeeId_date: { employeeId, date: today }
             }
-        },
-        update: {
-            checkIn: now,
-            status: AttendanceStatus.PRESENT
-        },
-        create: data
-    });
+        });
 
-    // Create Log
-    await prisma.attendanceLog.create({
-        data: {
-            attendanceId: attendance.id,
-            timestamp: now,
-            type: 'IN',
-            method,
-            gpsCoords: gpsCoords ?? undefined
+        if (!attendance || !attendance.checkIn) {
+            throw new AppError('No check-in record found for today. Please clock in first.', 400);
         }
-    });
 
-    return attendance;
-};
+        const now = new Date();
+        const workMinutes = Math.floor((now.getTime() - attendance.checkIn.getTime()) / 60000);
 
-export const clockOut = async (employeeId: string, gpsCoords?: any, method: string = 'WEB') => {
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
+        return await prisma.$transaction(async (tx) => {
+            const updated = await tx.attendance.update({
+                where: { id: attendance.id },
+                data: {
+                    checkOut: now,
+                    workMinutes, // Simple accumulated calculation?
+                    // Should theoretically add to previous workMinutes if multiple sessions allowed
+                    // But for simple IN/OUT model, this replaces.
+                }
+            });
 
-    const attendance = await prisma.attendance.findUnique({
-        where: {
-            employeeId_date: {
-                employeeId,
-                date: today
-            }
-        }
-    });
+            await tx.attendanceLog.create({
+                data: {
+                    attendanceId: attendance.id,
+                    timestamp: now,
+                    type: 'OUT',
+                    method: data.method,
+                    gpsCoords: data.gpsCoords ? (data.gpsCoords as any) : undefined
+                }
+            });
 
-    if (!attendance) {
-        throw new Error('No attendance record found for today. Please clock in first.');
+            return updated;
+        });
     }
 
-    if (attendance.checkOut) {
-        // Allow multiple clock outs? Usually just update the last one.
-        // For simplicity, we update it.
+    /**
+     * Get Daily Logs (Detail View)
+     */
+    static async getDailyLogs(organizationId: string, employeeId: string, date: Date) {
+        await validateOrganizationResource('employee', employeeId, organizationId, 'Employee');
+
+        const queryDate = new Date(date);
+        queryDate.setHours(0, 0, 0, 0);
+
+        return await prisma.attendance.findUnique({
+            where: {
+                employeeId_date: { employeeId, date: queryDate }
+            },
+            include: {
+                logs: { orderBy: { timestamp: 'asc' } }
+            }
+        });
     }
 
-    const now = new Date();
+    /**
+     * Admin/Manager List View
+     */
+    static async getAttendance(
+        organizationId: string,
+        query: ParsedPagination,
+        filters: GetAttendanceQuery
+    ) {
+        const { page, limit, skip, sortBy, sortOrder } = query;
+        const { employeeId, status, date, startDate, endDate, month, year } = filters;
 
-    // Calculate work duration
-    const checkIn = attendance.checkIn!;
-    const diffMs = now.getTime() - checkIn.getTime();
-    const workMinutes = Math.floor(diffMs / 60000);
+        const where: any = {
+            employee: { organizationId } // Explicit scoping via relation
+        };
 
-    // Update Attendance
-    const updated = await prisma.attendance.update({
-        where: { id: attendance.id },
-        data: {
-            checkOut: now,
-            workMinutes
-            // TODO: Calculate Early Out / Overtime based on Calendar
+        if (employeeId) where.employeeId = employeeId;
+        if (status) where.status = status;
+
+        // Date Filtering
+        if (date) {
+            const d = new Date(date);
+            d.setHours(0, 0, 0, 0);
+            where.date = d;
+        } else if (startDate && endDate) {
+            where.date = {
+                gte: new Date(startDate),
+                lte: new Date(endDate)
+            };
+        } else if (month && year) {
+            const start = new Date(year, month - 1, 1);
+            const end = new Date(year, month, 0);
+            where.date = { gte: start, lte: end };
         }
-    });
 
-    // Create Log
-    await prisma.attendanceLog.create({
-        data: {
-            attendanceId: attendance.id,
-            timestamp: now,
-            type: 'OUT',
-            method,
-            gpsCoords: gpsCoords ?? undefined
-        }
-    });
+        const orderBy = buildOrderBy(sortBy, sortOrder, {
+            allowedFields: ['date', 'status', 'checkIn', 'checkOut', 'workMinutes'],
+            defaultSort: { date: 'desc' }
+        });
 
-    return updated;
-};
+        const [data, total] = await Promise.all([
+            prisma.attendance.findMany({
+                where,
+                skip,
+                take: limit,
+                orderBy: orderBy as any,
+                include: {
+                    employee: { select: { firstName: true, lastName: true, code: true } }
+                }
+            }),
+            prisma.attendance.count({ where })
+        ]);
 
-export const getDailyLogs = async (employeeId: string, date: Date) => {
-    // Ensure date is start of day
-    const start = new Date(date);
-    start.setHours(0, 0, 0, 0);
-
-    const attendance = await prisma.attendance.findUnique({
-        where: {
-            employeeId_date: {
-                employeeId,
-                date: start
+        return {
+            data,
+            pagination: {
+                total,
+                page,
+                limit,
+                totalPages: Math.ceil(total / limit)
             }
-        },
-        include: {
-            logs: {
-                orderBy: { timestamp: 'asc' }
-            }
-        }
-    });
-
-    return attendance;
-};
-
-export const getMonthlySummary = async (employeeId: string, month: number, year: number) => {
-    const startDate = new Date(year, month - 1, 1);
-    const endDate = new Date(year, month, 0);
-
-    const records = await prisma.attendance.findMany({
-        where: {
-            employeeId,
-            date: {
-                gte: startDate,
-                lte: endDate
-            }
-        },
-        orderBy: { date: 'asc' }
-    });
-
-    return records;
-};
+        };
+    }
+}
