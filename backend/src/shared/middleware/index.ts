@@ -17,11 +17,6 @@ export { protect, restrictTo } from './auth.middleware';
 export { resolveTenant } from './tenant.middleware';
 
 // ============================================================================
-// VALIDATION MIDDLEWARE
-// ============================================================================
-export { default as validate } from './validate-resource.middleware';
-
-// ============================================================================
 // ERROR HANDLING MIDDLEWARE
 // ============================================================================
 export { globalErrorHandler } from './error.middleware';
