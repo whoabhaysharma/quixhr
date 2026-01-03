@@ -1,45 +1,10 @@
 {
     "info": {
+        "_postman_id": "e52ef155-3dc0-47b8-85c9-b5a50e096e61",
         "name": "QuixHR API - Complete Collection",
         "description": "Comprehensive Postman collection for QuixHR Backend API with all refactored endpoints",
-        "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
-    },
-    "variable": [
-        {
-            "key": "baseUrl",
-            "value": "http://localhost:5000/api/v1",
-            "type": "string"
-        },
-        {
-            "key": "token",
-            "value": "",
-            "type": "string"
-        },
-        {
-            "key": "organizationId",
-            "value": "",
-            "type": "string"
-        },
-        {
-            "key": "employeeId",
-            "value": "",
-            "type": "string"
-        },
-        {
-            "key": "calendarId",
-            "value": "",
-            "type": "string"
-        }
-    ],
-    "auth": {
-        "type": "bearer",
-        "bearer": [
-            {
-                "key": "token",
-                "value": "{{token}}",
-                "type": "string"
-            }
-        ]
+        "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+        "_exporter_id": "45101824"
     },
     "item": [
         {
@@ -58,7 +23,8 @@
                                     "        pm.collectionVariables.set('token', jsonData.data.token);",
                                     "    }",
                                     "}"
-                                ]
+                                ],
+                                "type": "text/javascript"
                             }
                         }
                     ],
@@ -84,7 +50,8 @@
                                 "register"
                             ]
                         }
-                    }
+                    },
+                    "response": []
                 },
                 {
                     "name": "Login",
@@ -99,7 +66,8 @@
                                     "        pm.collectionVariables.set('token', jsonData.data.token);",
                                     "    }",
                                     "}"
-                                ]
+                                ],
+                                "type": "text/javascript"
                             }
                         }
                     ],
@@ -125,7 +93,8 @@
                                 "login"
                             ]
                         }
-                    }
+                    },
+                    "response": []
                 },
                 {
                     "name": "Get Profile",
@@ -142,7 +111,8 @@
                                 "me"
                             ]
                         }
-                    }
+                    },
+                    "response": []
                 },
                 {
                     "name": "Refresh Token",
@@ -168,7 +138,8 @@
                                 "refresh"
                             ]
                         }
-                    }
+                    },
+                    "response": []
                 },
                 {
                     "name": "Verify Email",
@@ -194,7 +165,8 @@
                                 "verify-email"
                             ]
                         }
-                    }
+                    },
+                    "response": []
                 }
             ]
         },
@@ -237,7 +209,8 @@
                                 }
                             ]
                         }
-                    }
+                    },
+                    "response": []
                 },
                 {
                     "name": "Get Organization",
@@ -254,7 +227,8 @@
                                 "{{organizationId}}"
                             ]
                         }
-                    }
+                    },
+                    "response": []
                 },
                 {
                     "name": "Create Organization (Super Admin)",
@@ -279,7 +253,8 @@
                                 "org"
                             ]
                         }
-                    }
+                    },
+                    "response": []
                 },
                 {
                     "name": "Update Organization",
@@ -305,7 +280,8 @@
                                 "{{organizationId}}"
                             ]
                         }
-                    }
+                    },
+                    "response": []
                 },
                 {
                     "name": "Get Dashboard Stats",
@@ -323,7 +299,8 @@
                                 "dashboard"
                             ]
                         }
-                    }
+                    },
+                    "response": []
                 },
                 {
                     "name": "Get Audit Logs",
@@ -351,22 +328,23 @@
                                 }
                             ]
                         }
-                    }
+                    },
+                    "response": []
                 },
                 {
-                    "name": "List Members (Restricted)",
+                    "name": "List Invitations (Nested)",
                     "request": {
                         "method": "GET",
                         "header": [],
                         "url": {
-                            "raw": "{{baseUrl}}/org/{{organizationId}}/members?page=1&limit=20&sortBy=firstName&sortOrder=asc&role=EMPLOYEE",
+                            "raw": "{{baseUrl}}/org/{{organizationId}}/invitations?page=1&limit=20&status=PENDING&sortBy=createdAt&sortOrder=desc",
                             "host": [
                                 "{{baseUrl}}"
                             ],
                             "path": [
                                 "org",
                                 "{{organizationId}}",
-                                "members"
+                                "invitations"
                             ],
                             "query": [
                                 {
@@ -378,16 +356,21 @@
                                     "value": "20"
                                 },
                                 {
+                                    "key": "status",
+                                    "value": "PENDING"
+                                },
+                                {
                                     "key": "sortBy",
-                                    "value": "firstName"
+                                    "value": "createdAt"
                                 },
                                 {
                                     "key": "sortOrder",
-                                    "value": "asc"
+                                    "value": "desc"
                                 }
                             ]
                         }
-                    }
+                    },
+                    "response": []
                 },
                 {
                     "name": "Remove Member (RBAC)",
@@ -406,7 +389,44 @@
                                 "{{employeeId}}"
                             ]
                         }
-                    }
+                    },
+                    "response": []
+                },
+                {
+                    "name": "Invite Members",
+                    "request": {
+                        "method": "POST",
+                        "header": [],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"email\" : \"p6vat@airsworld.net\",\n    \"role\" : \"EMPLOYEE\"\n}",
+                            "options": {
+                                "raw": {
+                                    "language": "json"
+                                }
+                            }
+                        },
+                        "url": {
+                            "raw": "{{baseUrl}}/org/{{organizationId}}/invitations",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "org",
+                                "{{organizationId}}",
+                                "invitations"
+                            ]
+                        }
+                    },
+                    "response": []
+                },
+                {
+                    "name": "Members List",
+                    "request": {
+                        "method": "GET",
+                        "header": []
+                    },
+                    "response": []
                 }
             ]
         },
@@ -453,7 +473,8 @@
                                 }
                             ]
                         }
-                    }
+                    },
+                    "response": []
                 },
                 {
                     "name": "Create Employee",
@@ -468,7 +489,8 @@
                                     "        pm.collectionVariables.set('employeeId', jsonData.data.id);",
                                     "    }",
                                     "}"
-                                ]
+                                ],
+                                "type": "text/javascript"
                             }
                         }
                     ],
@@ -495,7 +517,8 @@
                                 "employees"
                             ]
                         }
-                    }
+                    },
+                    "response": []
                 },
                 {
                     "name": "Get Employee",
@@ -512,7 +535,8 @@
                                 "{{employeeId}}"
                             ]
                         }
-                    }
+                    },
+                    "response": []
                 },
                 {
                     "name": "Update Employee",
@@ -538,7 +562,8 @@
                                 "{{employeeId}}"
                             ]
                         }
-                    }
+                    },
+                    "response": []
                 },
                 {
                     "name": "Delete Employee",
@@ -555,7 +580,8 @@
                                 "{{employeeId}}"
                             ]
                         }
-                    }
+                    },
+                    "response": []
                 }
             ]
         },
@@ -594,7 +620,8 @@
                                 }
                             ]
                         }
-                    }
+                    },
+                    "response": []
                 },
                 {
                     "name": "Create Calendar",
@@ -609,7 +636,8 @@
                                     "        pm.collectionVariables.set('calendarId', jsonData.data.id);",
                                     "    }",
                                     "}"
-                                ]
+                                ],
+                                "type": "text/javascript"
                             }
                         }
                     ],
@@ -636,7 +664,8 @@
                                 "calendars"
                             ]
                         }
-                    }
+                    },
+                    "response": []
                 },
                 {
                     "name": "Get Calendar",
@@ -653,7 +682,8 @@
                                 "{{calendarId}}"
                             ]
                         }
-                    }
+                    },
+                    "response": []
                 },
                 {
                     "name": "Update Calendar",
@@ -679,7 +709,8 @@
                                 "{{calendarId}}"
                             ]
                         }
-                    }
+                    },
+                    "response": []
                 },
                 {
                     "name": "Delete Calendar",
@@ -696,7 +727,8 @@
                                 "{{calendarId}}"
                             ]
                         }
-                    }
+                    },
+                    "response": []
                 },
                 {
                     "name": "Create Holiday",
@@ -723,7 +755,8 @@
                                 "holidays"
                             ]
                         }
-                    }
+                    },
+                    "response": []
                 },
                 {
                     "name": "List Holidays",
@@ -741,7 +774,8 @@
                                 "holidays"
                             ]
                         }
-                    }
+                    },
+                    "response": []
                 }
             ]
         },
@@ -772,7 +806,8 @@
                                 "check-in"
                             ]
                         }
-                    }
+                    },
+                    "response": []
                 },
                 {
                     "name": "Clock Out",
@@ -798,7 +833,8 @@
                                 "check-out"
                             ]
                         }
-                    }
+                    },
+                    "response": []
                 },
                 {
                     "name": "Get My Attendance",
@@ -821,7 +857,8 @@
                                 }
                             ]
                         }
-                    }
+                    },
+                    "response": []
                 },
                 {
                     "name": "List All Attendance (Admin)",
@@ -871,7 +908,8 @@
                                 }
                             ]
                         }
-                    }
+                    },
+                    "response": []
                 }
             ]
         },
@@ -918,7 +956,8 @@
                                 }
                             ]
                         }
-                    }
+                    },
+                    "response": []
                 },
                 {
                     "name": "Create Allocation for Employee",
@@ -945,7 +984,8 @@
                                 "allocations"
                             ]
                         }
-                    }
+                    },
+                    "response": []
                 },
                 {
                     "name": "Get Employee Allocations",
@@ -969,7 +1009,8 @@
                                 }
                             ]
                         }
-                    }
+                    },
+                    "response": []
                 },
                 {
                     "name": "Bulk Allocate",
@@ -995,7 +1036,8 @@
                                 "bulk"
                             ]
                         }
-                    }
+                    },
+                    "response": []
                 },
                 {
                     "name": "Update Allocation",
@@ -1019,9 +1061,15 @@
                             "path": [
                                 "allocations",
                                 ":allocationId"
+                            ],
+                            "variable": [
+                                {
+                                    "key": "allocationId"
+                                }
                             ]
                         }
-                    }
+                    },
+                    "response": []
                 },
                 {
                     "name": "Delete Allocation",
@@ -1036,9 +1084,15 @@
                             "path": [
                                 "allocations",
                                 ":allocationId"
+                            ],
+                            "variable": [
+                                {
+                                    "key": "allocationId"
+                                }
                             ]
                         }
-                    }
+                    },
+                    "response": []
                 }
             ]
         },
@@ -1086,7 +1140,8 @@
                                 }
                             ]
                         }
-                    }
+                    },
+                    "response": []
                 },
                 {
                     "name": "Create Leave Request",
@@ -1113,7 +1168,8 @@
                                 "leaves"
                             ]
                         }
-                    }
+                    },
+                    "response": []
                 },
                 {
                     "name": "Update Leave Status",
@@ -1139,9 +1195,15 @@
                                 "requests",
                                 ":requestId",
                                 "status"
+                            ],
+                            "variable": [
+                                {
+                                    "key": "requestId"
+                                }
                             ]
                         }
-                    }
+                    },
+                    "response": []
                 },
                 {
                     "name": "List Leave Grades",
@@ -1168,7 +1230,8 @@
                                 }
                             ]
                         }
-                    }
+                    },
+                    "response": []
                 },
                 {
                     "name": "Create Leave Grade",
@@ -1195,53 +1258,14 @@
                                 "leave-grades"
                             ]
                         }
-                    }
+                    },
+                    "response": []
                 }
             ]
         },
         {
             "name": "Invitations",
             "item": [
-                {
-                    "name": "List Invitations (Nested)",
-                    "request": {
-                        "method": "GET",
-                        "header": [],
-                        "url": {
-                            "raw": "{{baseUrl}}/org/{{organizationId}}/invitations?page=1&limit=20&status=PENDING&sortBy=createdAt&sortOrder=desc",
-                            "host": [
-                                "{{baseUrl}}"
-                            ],
-                            "path": [
-                                "org",
-                                "{{organizationId}}",
-                                "invitations"
-                            ],
-                            "query": [
-                                {
-                                    "key": "page",
-                                    "value": "1"
-                                },
-                                {
-                                    "key": "limit",
-                                    "value": "20"
-                                },
-                                {
-                                    "key": "status",
-                                    "value": "PENDING"
-                                },
-                                {
-                                    "key": "sortBy",
-                                    "value": "createdAt"
-                                },
-                                {
-                                    "key": "sortOrder",
-                                    "value": "desc"
-                                }
-                            ]
-                        }
-                    }
-                },
                 {
                     "name": "List Invitations",
                     "request": {
@@ -1278,7 +1302,8 @@
                                 }
                             ]
                         }
-                    }
+                    },
+                    "response": []
                 },
                 {
                     "name": "Create Invitation",
@@ -1305,7 +1330,8 @@
                                 "invitations"
                             ]
                         }
-                    }
+                    },
+                    "response": []
                 },
                 {
                     "name": "Verify Invitation Token",
@@ -1321,9 +1347,15 @@
                                 "invitations",
                                 "verify",
                                 ":token"
+                            ],
+                            "variable": [
+                                {
+                                    "key": "token"
+                                }
                             ]
                         }
-                    }
+                    },
+                    "response": []
                 },
                 {
                     "name": "Accept Invitation",
@@ -1349,7 +1381,8 @@
                                 "accept"
                             ]
                         }
-                    }
+                    },
+                    "response": []
                 },
                 {
                     "name": "Resend Invitation",
@@ -1365,9 +1398,15 @@
                                 "invitations",
                                 ":invitationId",
                                 "resend"
+                            ],
+                            "variable": [
+                                {
+                                    "key": "invitationId"
+                                }
                             ]
                         }
-                    }
+                    },
+                    "response": []
                 },
                 {
                     "name": "Cancel Invitation",
@@ -1383,9 +1422,15 @@
                                 "invitations",
                                 ":invitationId",
                                 "cancel"
+                            ],
+                            "variable": [
+                                {
+                                    "key": "invitationId"
+                                }
                             ]
                         }
-                    }
+                    },
+                    "response": []
                 }
             ]
         },
@@ -1406,7 +1451,8 @@
                                 "me"
                             ]
                         }
-                    }
+                    },
+                    "response": []
                 },
                 {
                     "name": "Get My Attendance",
@@ -1433,7 +1479,8 @@
                                 }
                             ]
                         }
-                    }
+                    },
+                    "response": []
                 },
                 {
                     "name": "Get My Leaves",
@@ -1450,7 +1497,8 @@
                                 "leaves"
                             ]
                         }
-                    }
+                    },
+                    "response": []
                 },
                 {
                     "name": "Get My Allocations",
@@ -1473,7 +1521,8 @@
                                 }
                             ]
                         }
-                    }
+                    },
+                    "response": []
                 }
             ]
         },
@@ -1516,7 +1565,8 @@
                                 }
                             ]
                         }
-                    }
+                    },
+                    "response": []
                 },
                 {
                     "name": "Get User by ID",
@@ -1531,11 +1581,54 @@
                             "path": [
                                 "users",
                                 ":userId"
+                            ],
+                            "variable": [
+                                {
+                                    "key": "userId"
+                                }
                             ]
                         }
-                    }
+                    },
+                    "response": []
                 }
             ]
+        }
+    ],
+    "auth": {
+        "type": "bearer",
+        "bearer": [
+            {
+                "key": "token",
+                "value": "{{token}}",
+                "type": "string"
+            }
+        ]
+    },
+    "variable": [
+        {
+            "key": "baseUrl",
+            "value": "http://localhost:5000/api/v1",
+            "type": "string"
+        },
+        {
+            "key": "token",
+            "value": "",
+            "type": "string"
+        },
+        {
+            "key": "organizationId",
+            "value": "",
+            "type": "string"
+        },
+        {
+            "key": "employeeId",
+            "value": "",
+            "type": "string"
+        },
+        {
+            "key": "calendarId",
+            "value": "",
+            "type": "string"
         }
     ]
 }
