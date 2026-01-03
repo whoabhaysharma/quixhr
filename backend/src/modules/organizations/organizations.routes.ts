@@ -1,11 +1,11 @@
 import { Router } from 'express';
 import { Role } from '@prisma/client';
 import * as OrganizationController from './organization.controller';
-import { updateOrganizationSchema, auditLogQuerySchema } from './organization.schema';
+import { updateOrganizationSchema, auditLogQuerySchema, getOrganizationsQuerySchema } from './organization.schema';
 
 // --- Cross-Module Imports ---
 import * as CalendarController from '../calendars/calendars.controller';
-import { createCalendarSchema, calendarQuerySchema } from '../calendars/calendars.schema';
+import { createCalendarSchema } from '../calendars/calendars.schema';
 
 import * as LeaveController from '../leaves/leaves.controller';
 import { createLeaveGradeSchema } from '../leaves/leaves.schema';
@@ -121,6 +121,7 @@ router.get(
     '/',
     resolveTenant,
     restrictTo(Role.SUPER_ADMIN),
+    validate(getOrganizationsQuerySchema),
     OrganizationController.getOrganizations
 );
 

@@ -6,11 +6,10 @@ import * as OrganizationService from './organization.service';
 import { UpdateOrganizationInput } from './organization.types';
 
 export const getOrganization = catchAsync(async (req: Request, res: Response, next: NextFunction) => {
-    const { organizationId } = req.params;
+    const organizationId = req.targetOrganizationId;
 
-    // Authorization matches resolveTenant + restrictTo + manual check if needed
-    if (req.user!.role !== 'SUPER_ADMIN' && req.user!.organizationId !== organizationId) {
-        return next(new AppError('You do not have permission to view this organization', 403));
+    if (!organizationId) {
+        return next(new AppError('Organization context is required', 400));
     }
 
     const organization = await OrganizationService.findById(organizationId);
@@ -22,37 +21,35 @@ export const getOrganization = catchAsync(async (req: Request, res: Response, ne
 });
 
 export const createOrganization = catchAsync(async (req: Request, res: Response, next: NextFunction) => {
-    // Only Super Admin
-    if (req.user!.role !== 'SUPER_ADMIN') {
-        return next(new AppError('Permission denied', 403));
-    }
-
+    // Authorization handled by restrictTo middleware
     const organization = await OrganizationService.create(req.body);
     sendResponse(res, 201, organization, 'Organization created successfully');
 });
 
 export const getOrganizations = catchAsync(async (req: Request, res: Response, next: NextFunction) => {
-    // Only Super Admin
-    if (req.user!.role !== 'SUPER_ADMIN') {
-        return next(new AppError('Permission denied', 403));
-    }
-
-    const { page = 1, limit = 10, search } = req.query;
+    // Authorization handled by restrictTo middleware
+    const page = parseInt(req.query.page as string) || 1;
+    const limit = parseInt(req.query.limit as string) || 10;
+    const search = req.query.search as string;
+    const sortBy = req.query.sortBy as string || 'createdAt';
+    const sortOrder = (req.query.sortOrder as string || 'desc') as 'asc' | 'desc';
 
     const result = await OrganizationService.findAll({
-        page: Number(page),
-        limit: Number(limit),
-        search: search as string
+        page,
+        limit,
+        search,
+        sortBy,
+        sortOrder
     });
 
     sendResponse(res, 200, result, 'Organizations retrieved successfully');
 });
 
 export const updateOrganization = catchAsync(async (req: Request, res: Response, next: NextFunction) => {
-    const { organizationId } = req.params;
+    const organizationId = req.targetOrganizationId;
 
-    if (req.user!.role !== 'SUPER_ADMIN' && req.user!.organizationId !== organizationId) {
-        return next(new AppError('You do not have permission to update this organization', 403));
+    if (!organizationId) {
+        return next(new AppError('Organization context is required', 400));
     }
 
     const updatedOrganization = await OrganizationService.update(organizationId, req.body as UpdateOrganizationInput);
@@ -60,10 +57,10 @@ export const updateOrganization = catchAsync(async (req: Request, res: Response,
 });
 
 export const getDashboardStats = catchAsync(async (req: Request, res: Response, next: NextFunction) => {
-    const { organizationId } = req.params;
+    const organizationId = req.targetOrganizationId;
 
-    if (req.user!.role !== 'SUPER_ADMIN' && req.user!.organizationId !== organizationId) {
-        return next(new AppError('Permission denied', 403));
+    if (!organizationId) {
+        return next(new AppError('Organization context is required', 400));
     }
 
     const stats = await OrganizationService.getDashboardStats(organizationId);
@@ -72,15 +69,17 @@ export const getDashboardStats = catchAsync(async (req: Request, res: Response, 
 });
 
 export const getOrganizationAuditLogs = catchAsync(async (req: Request, res: Response, next: NextFunction) => {
-    const { organizationId } = req.params;
+    const organizationId = req.targetOrganizationId;
 
-    if (req.user!.role !== 'SUPER_ADMIN' && req.user!.organizationId !== organizationId) {
-        return next(new AppError('Permission denied', 403));
+    if (!organizationId) {
+        return next(new AppError('Organization context is required', 400));
     }
 
-    const page = req.query.page ? parseInt(req.query.page as string) : 1;
-    const limit = req.query.limit ? parseInt(req.query.limit as string) : 20;
+    const page = parseInt(req.query.page as string) || 1;
+    const limit = parseInt(req.query.limit as string) || 20;
+    const sortBy = req.query.sortBy as string || 'createdAt';
+    const sortOrder = (req.query.sortOrder as string || 'desc') as 'asc' | 'desc';
 
-    const logs = await OrganizationService.getAuditLogs(organizationId, { page, limit });
+    const logs = await OrganizationService.getAuditLogs(organizationId, { page, limit, sortBy, sortOrder });
     sendResponse(res, 200, logs, 'Audit logs retrieved');
 });

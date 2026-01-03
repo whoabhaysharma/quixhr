@@ -36,8 +36,10 @@ const ERROR_MESSAGES = {
  * should be accessed based on user role and request parameters.
  * 
  * Behavior:
- * - SUPER_ADMIN: Can access any organization via ?organizationId=xxx query param,
- *   or view all organizations if no param provided
+ * - SUPER_ADMIN: Can access any organization via:
+ *   1. :organizationId param in URL (e.g., /org/:organizationId/employees)
+ *   2. ?organizationId=xxx query param
+ *   3. View all organizations if no param provided
  * - Others: Strictly limited to their own organization from JWT token
  * 
  * Attaches 'targetOrganizationId' to request object for downstream handlers.
@@ -58,10 +60,12 @@ export const resolveTenant = (req: Request, res: Response, next: NextFunction): 
         return;
     }
 
-    // SUPER_ADMIN: Allow organization impersonation via query param
+    // SUPER_ADMIN: Allow organization impersonation via params or query
     if (user.role === Role.SUPER_ADMIN) {
+        // Priority: params > query (for nested routes like /org/:organizationId/employees)
+        const paramsOrganizationId = req.params.organizationId as string | undefined;
         const queryOrganizationId = req.query.organizationId as string | undefined;
-        req.targetOrganizationId = queryOrganizationId;
+        req.targetOrganizationId = paramsOrganizationId || queryOrganizationId;
     } else {
         // Regular users: Strictly limited to their own organization
         req.targetOrganizationId = user.organizationId;

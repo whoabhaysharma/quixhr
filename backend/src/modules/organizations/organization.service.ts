@@ -18,13 +18,29 @@ export const findById = async (id: string) => {
     });
 };
 
-export const findAll = async ({ page, limit, search }: { page: number, limit: number, search?: string }) => {
+export const findAll = async ({
+    page,
+    limit,
+    search,
+    sortBy = 'createdAt',
+    sortOrder = 'desc'
+}: {
+    page: number;
+    limit: number;
+    search?: string;
+    sortBy?: string;
+    sortOrder?: 'asc' | 'desc';
+}) => {
     const skip = (page - 1) * limit;
 
     const where: any = {};
     if (search) {
         where.name = { contains: search, mode: 'insensitive' };
     }
+
+    // Validate sortBy field to prevent SQL injection
+    const allowedSortFields = ['name', 'createdAt', 'updatedAt'];
+    const validSortBy = allowedSortFields.includes(sortBy) ? sortBy : 'createdAt';
 
     const [organizations, total] = await Promise.all([
         prisma.organization.findMany({
@@ -36,7 +52,7 @@ export const findAll = async ({ page, limit, search }: { page: number, limit: nu
                     select: { employees: true }
                 }
             },
-            orderBy: { createdAt: 'desc' }
+            orderBy: { [validSortBy]: sortOrder }
         }),
         prisma.organization.count({ where })
     ]);
@@ -195,7 +211,15 @@ export const getDashboardStats = async (organizationId: string) => {
     };
 };
 
-export const getAuditLogs = async (organizationId: string, { page, limit }: { page: number, limit: number }) => {
+export const getAuditLogs = async (
+    organizationId: string,
+    { page, limit, sortBy = 'createdAt', sortOrder = 'desc' }: {
+        page: number;
+        limit: number;
+        sortBy?: string;
+        sortOrder?: 'asc' | 'desc';
+    }
+) => {
     const skip = (page - 1) * limit;
 
     const employees = await prisma.employee.findMany({
@@ -205,13 +229,17 @@ export const getAuditLogs = async (organizationId: string, { page, limit }: { pa
 
     const userIds = employees.map(e => e.userId).filter(Boolean) as string[];
 
+    // Validate sortBy field to prevent SQL injection
+    const allowedSortFields = ['createdAt', 'action', 'entity'];
+    const validSortBy = allowedSortFields.includes(sortBy) ? sortBy : 'createdAt';
+
     const [logs, total] = await Promise.all([
         prisma.auditLog.findMany({
             where: {
                 userId: { in: userIds }
             },
             include: { user: { include: { employee: true } } },
-            orderBy: { createdAt: 'desc' },
+            orderBy: { [validSortBy]: sortOrder },
             skip,
             take: limit
         }),
