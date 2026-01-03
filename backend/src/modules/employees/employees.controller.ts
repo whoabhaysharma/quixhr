@@ -37,17 +37,17 @@ const getAuthContext = (req: Request): AuthContext => {
 export const getEmployees = catchAsync(
   async (req: Request, res: Response, next: NextFunction) => {
     const authContext = getAuthContext(req);
-    // targetCompanyId is set by resolveTenant middleware
-    const companyId = req.targetCompanyId;
+    // targetOrganizationId is set by resolveTenant middleware
+    const organizationId = req.targetOrganizationId;
 
-    if (!companyId) {
-      return next(new AppError('Company context is required', 400));
+    if (!organizationId) {
+      return next(new AppError('Organization context is required', 400));
     }
 
     // We will pass the raw query to the service, or use ApiFeatures there.
     // Ideally, the service should handle the "business logic" of filtering.
     // We already have specific params: page, limit, search...
-    // Let's pass query + companyId.
+    // Let's pass query + organizationId.
 
     const page = parseInt(req.query.page as string) || 1;
     const limit = parseInt(req.query.limit as string) || 20;
@@ -62,7 +62,7 @@ export const getEmployees = catchAsync(
 
     const result = await EmployeeService.getEmployees({
       authContext,
-      companyId,
+      organizationId,
       page,
       limit,
       ...filters
@@ -90,15 +90,15 @@ export const getEmployeeById = catchAsync(
   async (req: Request, res: Response, next: NextFunction) => {
     const authContext = getAuthContext(req);
     const { id } = req.params;
-    const companyId = req.targetCompanyId;
+    const organizationId = req.targetOrganizationId;
 
-    if (!companyId) {
-      return next(new AppError('Company context is required', 400));
+    if (!organizationId) {
+      return next(new AppError('Organization context is required', 400));
     }
 
     const employee = await EmployeeService.getEmployeeById({
       authContext,
-      companyId,
+      organizationId,
       employeeId: id,
     });
 
@@ -114,17 +114,17 @@ export const getEmployeeById = catchAsync(
 
 /**
  * @desc    Create a new employee
- * @route   POST /api/v1/companies/:companyId/employees
+ * @route   POST /api/v1/org/:organizationId/employees
  * @access  Protected (ORG_ADMIN, HR_ADMIN, SUPER_ADMIN)
  */
 export const createEmployee = catchAsync(
   async (req: Request, res: Response, next: NextFunction) => {
     const authContext = getAuthContext(req);
-    const { companyId } = req.params;
+    const { organizationId } = req.params;
 
     const employee = await EmployeeService.createEmployee({
       authContext,
-      companyId,
+      organizationId,
       data: req.body,
     });
 
@@ -147,15 +147,15 @@ export const updateEmployee = catchAsync(
   async (req: Request, res: Response, next: NextFunction) => {
     const authContext = getAuthContext(req);
     const { id } = req.params;
-    const companyId = req.targetCompanyId;
+    const organizationId = req.targetOrganizationId;
 
-    if (!companyId) {
-      return next(new AppError('Company context is required', 400));
+    if (!organizationId) {
+      return next(new AppError('Organization context is required', 400));
     }
 
     const employee = await EmployeeService.updateEmployee({
       authContext,
-      companyId,
+      organizationId,
       employeeId: id,
       data: req.body,
     });
@@ -179,15 +179,15 @@ export const deleteEmployee = catchAsync(
   async (req: Request, res: Response, next: NextFunction) => {
     const authContext = getAuthContext(req);
     const { id } = req.params;
-    const companyId = req.targetCompanyId;
+    const organizationId = req.targetOrganizationId;
 
-    if (!companyId) {
-      return next(new AppError('Company context is required', 400));
+    if (!organizationId) {
+      return next(new AppError('Organization context is required', 400));
     }
 
     await EmployeeService.deleteEmployee({
       authContext,
-      companyId,
+      organizationId,
       employeeId: id,
     });
 

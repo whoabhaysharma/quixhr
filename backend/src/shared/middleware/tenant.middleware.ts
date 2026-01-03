@@ -9,7 +9,7 @@ declare global {
     namespace Express {
         interface Request {
             user?: TokenPayload;
-            targetCompanyId?: string;
+            targetOrganizationId?: string;
         }
     }
 }
@@ -32,20 +32,20 @@ const ERROR_MESSAGES = {
 /**
  * Resolve Tenant Middleware
  * 
- * Multi-tenant data isolation middleware. Determines which company's data
+ * Multi-tenant data isolation middleware. Determines which organization's data
  * should be accessed based on user role and request parameters.
  * 
  * Behavior:
- * - SUPER_ADMIN: Can access any company via ?companyId=xxx query param,
- *   or view all companies if no param provided
- * - Others: Strictly limited to their own company from JWT token
+ * - SUPER_ADMIN: Can access any organization via ?organizationId=xxx query param,
+ *   or view all organizations if no param provided
+ * - Others: Strictly limited to their own organization from JWT token
  * 
- * Attaches 'targetCompanyId' to request object for downstream handlers.
+ * Attaches 'targetOrganizationId' to request object for downstream handlers.
  * Must be preceded by 'protect' middleware to ensure user is authenticated.
  * 
  * @example
  * router.use(protect, resolveTenant); // All routes have tenant context
- * router.get('/:companyId/employees', protect, resolveTenant, getEmployees);
+ * router.get('/:organizationId/employees', protect, resolveTenant, getEmployees);
  */
 export const resolveTenant = (req: Request, res: Response, next: NextFunction): void => {
     const user = req.user;
@@ -58,13 +58,13 @@ export const resolveTenant = (req: Request, res: Response, next: NextFunction): 
         return;
     }
 
-    // SUPER_ADMIN: Allow company impersonation via query param
+    // SUPER_ADMIN: Allow organization impersonation via query param
     if (user.role === Role.SUPER_ADMIN) {
-        const queryCompanyId = req.query.companyId as string | undefined;
-        req.targetCompanyId = queryCompanyId;
+        const queryOrganizationId = req.query.organizationId as string | undefined;
+        req.targetOrganizationId = queryOrganizationId;
     } else {
-        // Regular users: Strictly limited to their own company
-        req.targetCompanyId = user.companyId;
+        // Regular users: Strictly limited to their own organization
+        req.targetOrganizationId = user.organizationId;
     }
 
     next();

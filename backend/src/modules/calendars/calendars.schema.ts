@@ -23,7 +23,7 @@ export const updateCalendarSchema = {
 
 export const calendarQuerySchema = {
     query: z.object({
-        companyId: z.string().uuid().optional(),
+        organizationId: z.string().uuid().optional(),
         page: z.string().regex(/^\d+$/).transform(Number).optional(),
         limit: z.string().regex(/^\d+$/).transform(Number).optional(),
         search: z.string().optional(),

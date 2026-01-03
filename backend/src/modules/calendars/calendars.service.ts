@@ -26,15 +26,15 @@ export const findById = async (id: string) => {
 };
 
 interface CalendarFilter extends PaginationParams {
-    companyId?: string;
+    organizationId?: string;
 }
 
 export const findAll = async (filter: CalendarFilter = {}) => {
-    const { companyId, page = 1, limit = 10, search } = filter;
+    const { organizationId, page = 1, limit = 10, search } = filter;
     const skip = (page - 1) * limit;
 
     const where: any = {};
-    if (companyId) where.companyId = companyId;
+    if (organizationId) where.organizationId = organizationId;
     if (search) {
         where.name = { contains: search, mode: 'insensitive' };
     }

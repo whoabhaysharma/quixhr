@@ -67,7 +67,7 @@ enum LeaveType {
 // 3. ORGANIZATION & USERS
 // ==========================================
 
-model Company {
+model Organization {
   id               String       @id @default(uuid())
   name             String
   
@@ -78,7 +78,7 @@ model Company {
   logoUrl          String?
   
   // Simple link to their membership record
-  // subscription     Subscription?
+  subscription     Subscription?
   
   // planId           String?
   // plan             Plan?        @relation(fields: [planId], references: [id])
@@ -89,6 +89,19 @@ model Company {
   invitations      Invitation[]
 
   createdAt        DateTime     @default(now())
+}
+
+model Subscription {
+  id             String       @id @default(uuid())
+  organizationId String       @unique
+  planId         String
+  status         String       // ACTIVE, EXPIRED, CANCELLED
+  validUntil     DateTime
+
+  organization   Organization @relation(fields: [organizationId], references: [id])
+
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
 }
 
 // model Plan {
@@ -102,23 +115,23 @@ model Company {
 //   maxEmployees Int     @default(5)
 //   isActive    Boolean  @default(true)
 //
-//   companies   Company[]
+//   organizations Organization[]
 //
 //   createdAt   DateTime @default(now())
 //   updatedAt   DateTime @updatedAt
 // }
 
 model Invitation {
-  id        String   @id @default(uuid())
-  companyId String
-  email     String
-  role      Role
+  id              String   @id @default(uuid())
+  organizationId  String
+  email           String
+  role            Role
   
   token     String   @unique
   expiresAt DateTime
   status    String   @default("PENDING")
 
-  company   Company  @relation(fields: [companyId], references: [id])
+  organization   Organization  @relation(fields: [organizationId], references: [id])
 }
 
 model User {
@@ -144,7 +157,7 @@ model User {
 
 model Employee {
   id           String    @id @default(uuid())
-  companyId    String
+  organizationId    String
   userId       String?   @unique
 
   // 1. Schedule Config
@@ -159,7 +172,7 @@ model Employee {
   joiningDate  DateTime
   
   user         User?       @relation(fields: [userId], references: [id])
-  company      Company     @relation(fields: [companyId], references: [id])
+  organization      Organization     @relation(fields: [organizationId], references: [id])
   calendar     Calendar?   @relation(fields: [calendarId], references: [id])
   leaveGrade   LeaveGrade? @relation(fields: [leaveGradeId], references: [id])
 
@@ -175,7 +188,7 @@ model Employee {
 
 model Calendar {
   id           String             @id @default(uuid())
-  companyId    String
+  organizationId    String
   name         String             // "General Shift"
 
   dayStartTime Int                // Minutes from midnight
@@ -185,7 +198,7 @@ model Calendar {
   holidays     CalendarHoliday[]
   employees    Employee[]
 
-  company      Company            @relation(fields: [companyId], references: [id])
+  organization      Organization            @relation(fields: [organizationId], references: [id])
 }
 
 model CalendarWeeklyRule {
@@ -223,12 +236,12 @@ model CalendarHoliday {
 
 model LeaveGrade {
   id          String        @id @default(uuid())
-  companyId   String
+  organizationId   String
   name        String        // "Full Time Staff"
   
   policies    LeavePolicy[]
   employees   Employee[]
-  company     Company       @relation(fields: [companyId], references: [id])
+  organization     Organization       @relation(fields: [organizationId], references: [id])
 }
 
 model LeavePolicy {

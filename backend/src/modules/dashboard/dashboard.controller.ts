@@ -3,26 +3,26 @@ import { catchAsync } from '@/utils/catchAsync';
 import { sendResponse } from '@/utils/sendResponse';
 import { AppError } from '@/utils/appError';
 import { Role } from '@prisma/client';
-import * as CompanyService from '../companies/company.service';
+import * as OrganizationService from '../organizations/organization.service';
 import { MeService } from '../me/me.service';
 import prisma from '@/utils/prisma';
 
 export const getDashboardStats = catchAsync(async (req: Request, res: Response, next: NextFunction) => {
     const user = req.user!;
-    const { role, companyId } = user;
+    const { role, organizationId } = user;
 
     let stats: any = {};
 
     switch (role) {
         case Role.SUPER_ADMIN:
             // Super Admin Stats
-            const [companiesCount, usersCount, activeSubscriptions] = await Promise.all([
-                prisma.company.count(),
+            const [organizationsCount, usersCount, activeSubscriptions] = await Promise.all([
+                prisma.organization.count(),
                 prisma.user.count(),
                 prisma.subscription.count({ where: { status: 'ACTIVE' } })
             ]);
             stats = {
-                companiesCount,
+                organizationsCount,
                 usersCount,
                 activeSubscriptions
             };
@@ -30,11 +30,11 @@ export const getDashboardStats = catchAsync(async (req: Request, res: Response, 
 
         case Role.ORG_ADMIN:
         case Role.HR_ADMIN:
-            // Company Admin Stats
-            if (!companyId) {
-                return next(new AppError('No company associated with admin user', 400));
+            // Organization Admin Stats
+            if (!organizationId) {
+                return next(new AppError('No organization associated with admin user', 400));
             }
-            stats = await CompanyService.getDashboardStats(companyId);
+            stats = await OrganizationService.getDashboardStats(organizationId);
             break;
 
         case Role.EMPLOYEE:

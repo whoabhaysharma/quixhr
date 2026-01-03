@@ -7,8 +7,8 @@ export interface PaginationParams {
 }
 
 // --- Leave Grades ---
-export type CreateLeaveGradeInput = Pick<LeaveGrade, 'companyId' | 'name'>;
-export type UpdateLeaveGradeInput = Partial<Omit<CreateLeaveGradeInput, 'companyId'>>;
+export type CreateLeaveGradeInput = Pick<LeaveGrade, 'organizationId' | 'name'>;
+export type UpdateLeaveGradeInput = Partial<Omit<CreateLeaveGradeInput, 'organizationId'>>;
 
 // --- Leave Policies ---
 export type CreateLeavePolicyInput = Omit<LeavePolicy, 'id'>;

@@ -9,7 +9,7 @@ import {
     CheckInRequestDto,
     CheckOutRequestDto,
     CompleteProfileResponseDto,
-    CompanyProfileResponseDto,
+    CompanyProfileResponseDto, // We'll keep the DTO name compatible for now but map to organization
     UserProfileResponseDto,
     EmployeeProfileResponseDto,
     MyLeavesResponseDto,
@@ -37,7 +37,7 @@ export class MeService {
 
         return {
             id: employee.id,
-            companyId: employee.companyId,
+            organizationId: employee.organizationId,
             userId: employee.userId || '',
             firstName: employee.firstName,
             lastName: employee.lastName,
@@ -62,21 +62,21 @@ export class MeService {
             where: { userId },
         });
 
-        let company: CompanyProfileResponseDto | undefined;
+        let company: CompanyProfileResponseDto | undefined; // Mapping organization to "company" in response for now
         if (employee) {
-            const companyData = await prisma.company.findUnique({
-                where: { id: employee.companyId },
+            const organization = await prisma.organization.findUnique({
+                where: { id: employee.organizationId },
             });
 
-            if (companyData) {
+            if (organization) {
                 company = {
-                    id: companyData.id,
-                    name: companyData.name,
-                    timezone: companyData.timezone,
-                    currency: companyData.currency,
-                    dateFormat: companyData.dateFormat,
-                    logoUrl: companyData.logoUrl || undefined,
-                    createdAt: companyData.createdAt,
+                    id: organization.id,
+                    name: organization.name,
+                    timezone: organization.timezone,
+                    currency: organization.currency,
+                    dateFormat: organization.dateFormat,
+                    logoUrl: organization.logoUrl || undefined,
+                    createdAt: organization.createdAt,
                 };
             }
         }
@@ -91,7 +91,7 @@ export class MeService {
         const employeeProfile: EmployeeProfileResponseDto | undefined = employee
             ? {
                 id: employee.id,
-                companyId: employee.companyId,
+                companyId: employee.organizationId, // Keeping response key as companyId for frontend compatibility if needed, but value is orgId
                 userId: employee.userId || '',
                 firstName: employee.firstName,
                 lastName: employee.lastName,

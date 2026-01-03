@@ -1,6 +1,6 @@
 import { z } from 'zod';
 
-export const updateCompanySchema = {
+export const updateOrganizationSchema = {
     body: z.object({
         name: z.string().optional(),
         timezone: z.string().optional(),

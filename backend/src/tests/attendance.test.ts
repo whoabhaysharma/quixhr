@@ -13,7 +13,7 @@ describe('Attendance Module', () => {
 
     const setupEmployee = async () => {
         const { user, token, employee } = await createTestEmployee(undefined, Role.EMPLOYEE);
-        return { user, token, companyId: employee.companyId, employee };
+        return { user, token, organizationId: employee.organizationId, employee };
     };
 
     describe('Clock In/Out Lifecycle', () => {

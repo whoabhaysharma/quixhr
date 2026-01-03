@@ -31,10 +31,10 @@ const getAuthContext = (req: Request) => {
 export const getAllocations = catchAsync(
     async (req: Request, res: Response, next: NextFunction) => {
         const authContext = getAuthContext(req);
-        const companyId = req.targetCompanyId;
+        const organizationId = req.targetOrganizationId;
 
-        if (!companyId) {
-            return next(new AppError('Company context is required', 400));
+        if (!organizationId) {
+            return next(new AppError('Organization context is required', 400));
         }
 
         const year = req.query.year ? parseInt(req.query.year as string) : undefined;
@@ -42,19 +42,7 @@ export const getAllocations = catchAsync(
         const page = parseInt(req.query.page as string) || 1;
         const limit = parseInt(req.query.limit as string) || 20;
 
-        // Use existing service but without employeeId filter if intended for global list.
-        // However, LeaveAllocationService likely expects employeeId or handles "all".
-        // I need to check LeaveAllocationService. If getEmployeeAllocations is strictly for employee.
-        // I might need a new service method `getAllocations` in service.
-        // For now, I will assume I need to create it.
-
-        // Let's check if we can reuse `getEmployeeAllocations` with null employeeId?
-        // Looking at service (not viewed yet, but safely assuming we need a proper findMany).
-
-        // I will call `LeaveAllocationService.getAllocations(companyId, ...)`
-        // I will define this method in the next step.
-
-        const result = await LeaveAllocationService.getAllocations(companyId, {
+        const result = await LeaveAllocationService.getAllocations(organizationId, {
             year,
             leaveType,
             page,
@@ -78,11 +66,11 @@ export const getAllocationById = catchAsync(
     async (req: Request, res: Response, next: NextFunction) => {
         const authContext = getAuthContext(req);
         const { allocationId } = req.params;
-        const companyId = req.targetCompanyId || authContext.companyId || '';
+        const organizationId = req.targetOrganizationId || authContext.organizationId || '';
 
         const allocation = await LeaveAllocationService.getAllocationById(
             allocationId,
-            companyId,
+            organizationId,
             authContext.role
         );
 
@@ -105,12 +93,12 @@ export const updateAllocation = catchAsync(
     async (req: Request, res: Response, next: NextFunction) => {
         const authContext = getAuthContext(req);
         const { allocationId } = req.params;
-        const companyId = req.targetCompanyId || authContext.companyId || '';
+        const organizationId = req.targetOrganizationId || authContext.organizationId || '';
 
         const allocation = await LeaveAllocationService.updateAllocation(
             allocationId,
             req.body,
-            companyId,
+            organizationId,
             authContext.role
         );
 
@@ -133,11 +121,11 @@ export const deleteAllocation = catchAsync(
     async (req: Request, res: Response, next: NextFunction) => {
         const authContext = getAuthContext(req);
         const { allocationId } = req.params;
-        const companyId = req.targetCompanyId || authContext.companyId || '';
+        const organizationId = req.targetOrganizationId || authContext.organizationId || '';
 
         await LeaveAllocationService.deleteAllocation(
             allocationId,
-            companyId,
+            organizationId,
             authContext.role
         );
 
@@ -165,9 +153,8 @@ export const getEmployeeAllocations = catchAsync(
         const authContext = getAuthContext(req);
         // In the employees route, it is /api/v1/employees/:id/allocations
         // So req.params.id is the employeeId.
-        // Wait, employees.routes.ts has: router.get('/:id/allocations', ...)
         const employeeId = req.params.id || req.params.employeeId;
-        const companyId = req.targetCompanyId || authContext.companyId || '';
+        const organizationId = req.targetOrganizationId || authContext.organizationId || '';
 
         const year = req.query.year ? parseInt(req.query.year as string) : undefined;
         const leaveType = req.query.leaveType as any;
@@ -176,7 +163,7 @@ export const getEmployeeAllocations = catchAsync(
 
         const result = await LeaveAllocationService.getEmployeeAllocations(
             employeeId,
-            companyId,
+            organizationId,
             authContext.role,
             authContext.employeeId,
             {
@@ -206,7 +193,7 @@ export const createEmployeeAllocation = catchAsync(
     async (req: Request, res: Response, next: NextFunction) => {
         const authContext = getAuthContext(req);
         const employeeId = req.params.id || req.params.employeeId;
-        const companyId = req.targetCompanyId || authContext.companyId || '';
+        const organizationId = req.targetOrganizationId || authContext.organizationId || '';
 
         // Override employeeId from body with URL param
         const allocationData = {
@@ -216,7 +203,7 @@ export const createEmployeeAllocation = catchAsync(
 
         const allocation = await LeaveAllocationService.createAllocation(
             allocationData,
-            companyId
+            organizationId
         );
 
         const responseData = {

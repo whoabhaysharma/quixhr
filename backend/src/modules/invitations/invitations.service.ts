@@ -14,7 +14,7 @@ export class InvitationService {
      * Create a new invitation
      */
     static async createInvitation(
-        companyId: string,
+        organizationId: string,
         data: CreateInvitationInput
     ) {
         // Check if user already exists
@@ -29,7 +29,7 @@ export class InvitationService {
         // Check if there's already a pending invitation
         const existingInvitation = await prisma.invitation.findFirst({
             where: {
-                companyId,
+                organizationId,
                 email: data.email,
                 status: 'PENDING',
             },
@@ -48,7 +48,7 @@ export class InvitationService {
 
         const invitation = await prisma.invitation.create({
             data: {
-                companyId,
+                organizationId,
                 email: data.email,
                 role: data.role,
                 token,
@@ -58,23 +58,23 @@ export class InvitationService {
         });
 
         // TODO: Send invitation email with token
-        // await sendInvitationEmail(data.email, token, companyId);
+        // await sendInvitationEmail(data.email, token, organizationId);
 
         return invitation;
     }
 
     /**
-     * Get all invitations for a company
+     * Get all invitations for a organization
      */
     static async getInvitations(
-        companyId: string,
+        organizationId: string,
         filters: InvitationFilters
     ) {
         const { page = 1, limit = 20, status, email } = filters;
         const skip = (page - 1) * limit;
 
         const whereClause: any = {
-            companyId,
+            organizationId,
         };
 
         if (status) {
@@ -116,7 +116,7 @@ export class InvitationService {
         const invitation = await prisma.invitation.findUnique({
             where: { token },
             include: {
-                company: {
+                organization: {
                     select: {
                         id: true,
                         name: true,
@@ -140,8 +140,8 @@ export class InvitationService {
         return {
             email: invitation.email,
             role: invitation.role,
-            companyName: invitation.company.name,
-            companyId: invitation.company.id,
+            organizationName: invitation.organization.name,
+            organizationId: invitation.organization.id,
             expiresAt: invitation.expiresAt,
         };
     }
@@ -160,7 +160,7 @@ export class InvitationService {
         const invitation = await prisma.invitation.findUnique({
             where: { token },
             include: {
-                company: true,
+                organization: true,
             },
         });
 
@@ -203,7 +203,7 @@ export class InvitationService {
             // Create employee profile
             const employee = await tx.employee.create({
                 data: {
-                    companyId: invitation.companyId,
+                    organizationId: invitation.organizationId,
                     userId: user.id,
                     firstName: userData.firstName,
                     lastName: userData.lastName,
@@ -227,7 +227,7 @@ export class InvitationService {
     /**
      * Resend invitation
      */
-    static async resendInvitation(invitationId: string, userCompanyId: string, userRole: string) {
+    static async resendInvitation(invitationId: string, userOrganizationId: string, userRole: string) {
         const invitation = await prisma.invitation.findUnique({
             where: { id: invitationId },
         });
@@ -236,8 +236,8 @@ export class InvitationService {
             throw new AppError('Invitation not found', 404);
         }
 
-        // Validate company access
-        if (userRole !== 'SUPER_ADMIN' && invitation.companyId !== userCompanyId) {
+        // Validate organization access
+        if (userRole !== 'SUPER_ADMIN' && invitation.organizationId !== userOrganizationId) {
             throw new AppError('Access denied', 403);
         }
 
@@ -259,7 +259,7 @@ export class InvitationService {
         });
 
         // TODO: Send new invitation email
-        // await sendInvitationEmail(updatedInvitation.email, token, invitation.companyId);
+        // await sendInvitationEmail(updatedInvitation.email, token, invitation.organizationId);
 
         return updatedInvitation;
     }
@@ -267,7 +267,7 @@ export class InvitationService {
     /**
      * Cancel invitation
      */
-    static async cancelInvitation(invitationId: string, userCompanyId: string, userRole: string) {
+    static async cancelInvitation(invitationId: string, userOrganizationId: string, userRole: string) {
         const invitation = await prisma.invitation.findUnique({
             where: { id: invitationId },
         });
@@ -276,8 +276,8 @@ export class InvitationService {
             throw new AppError('Invitation not found', 404);
         }
 
-        // Validate company access
-        if (userRole !== 'SUPER_ADMIN' && invitation.companyId !== userCompanyId) {
+        // Validate organization access
+        if (userRole !== 'SUPER_ADMIN' && invitation.organizationId !== userOrganizationId) {
             throw new AppError('Access denied', 403);
         }
 
@@ -296,7 +296,7 @@ export class InvitationService {
     /**
      * Delete invitation
      */
-    static async deleteInvitation(invitationId: string, userCompanyId: string, userRole: string) {
+    static async deleteInvitation(invitationId: string, userOrganizationId: string, userRole: string) {
         const invitation = await prisma.invitation.findUnique({
             where: { id: invitationId },
         });
@@ -305,8 +305,8 @@ export class InvitationService {
             throw new AppError('Invitation not found', 404);
         }
 
-        // Validate company access
-        if (userRole !== 'SUPER_ADMIN' && invitation.companyId !== userCompanyId) {
+        // Validate organization access
+        if (userRole !== 'SUPER_ADMIN' && invitation.organizationId !== userOrganizationId) {
             throw new AppError('Access denied', 403);
         }
 

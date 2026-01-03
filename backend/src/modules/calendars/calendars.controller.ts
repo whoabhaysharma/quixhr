@@ -10,16 +10,16 @@ import { CreateCalendarInput, UpdateCalendarInput, CreateWeeklyRuleInput, Update
 // =========================================================================
 
 export const createCalendar = catchAsync(async (req: Request, res: Response, next: NextFunction) => {
-    const { companyId } = req.params;
+    const { organizationId } = req.params;
 
-    // Authorization: User must belong to this company (or be Super Admin)
-    if (req.user!.role !== 'SUPER_ADMIN' && req.user!.companyId !== companyId) {
-        return next(new AppError('You do not have permission to create a calendar for this company', 403));
+    // Authorization: User must belong to this organization (or be Super Admin)
+    if (req.user!.role !== 'SUPER_ADMIN' && req.user!.organizationId !== organizationId) {
+        return next(new AppError('You do not have permission to create a calendar for this organization', 403));
     }
 
     const input: CreateCalendarInput = {
         ...req.body,
-        companyId
+        organizationId
     };
 
     const calendar = await CalendarService.create(input);
@@ -29,7 +29,7 @@ export const createCalendar = catchAsync(async (req: Request, res: Response, nex
 export const getCalendarById = catchAsync(async (req: Request, res: Response, next: NextFunction) => {
     // Supports both :id and :calendarId param names
     const id = req.params.id || req.params.calendarId;
-    const companyId = req.targetCompanyId;
+    const organizationId = req.targetOrganizationId;
 
     const calendar = await CalendarService.findById(id);
 
@@ -38,7 +38,7 @@ export const getCalendarById = catchAsync(async (req: Request, res: Response, ne
     }
 
     // Authorization
-    if (req.user!.role !== 'SUPER_ADMIN' && companyId && calendar.companyId !== companyId) {
+    if (req.user!.role !== 'SUPER_ADMIN' && organizationId && calendar.organizationId !== organizationId) {
         return next(new AppError('You do not have permission to view this calendar', 403));
     }
 
@@ -49,15 +49,15 @@ export const getCalendarById = catchAsync(async (req: Request, res: Response, ne
 export const getCalendar = getCalendarById;
 
 export const getCalendars = catchAsync(async (req: Request, res: Response, next: NextFunction) => {
-    // targetCompanyId is set by resolveTenant middleware
-    const companyId = req.targetCompanyId;
+    // targetOrganizationId is set by resolveTenant middleware
+    const organizationId = req.targetOrganizationId;
 
-    if (!companyId) {
-        return next(new AppError('Company context is required', 400));
+    if (!organizationId) {
+        return next(new AppError('Organization context is required', 400));
     }
 
-    let filter: { companyId: string; page?: number; limit?: number; search?: string } = {
-        companyId,
+    let filter: { organizationId: string; page?: number; limit?: number; search?: string } = {
+        organizationId,
         page: req.query.page ? Number(req.query.page) : 1,
         limit: req.query.limit ? Number(req.query.limit) : 10,
         search: req.query.search as string
@@ -72,7 +72,7 @@ export const updateCalendar = catchAsync(async (req: Request, res: Response, nex
     const existing = await CalendarService.findById(id);
     if (!existing) { return next(new AppError('Calendar not found', 404)); }
 
-    if (req.user!.role !== 'SUPER_ADMIN' && existing.companyId !== req.user!.companyId) {
+    if (req.user!.role !== 'SUPER_ADMIN' && existing.organizationId !== req.user!.organizationId) {
         return next(new AppError('You do not have permission to update this calendar', 403));
     }
 
@@ -85,7 +85,7 @@ export const deleteCalendar = catchAsync(async (req: Request, res: Response, nex
     const existing = await CalendarService.findById(id);
     if (!existing) { return next(new AppError('Calendar not found', 404)); }
 
-    if (req.user!.role !== 'SUPER_ADMIN' && existing.companyId !== req.user!.companyId) {
+    if (req.user!.role !== 'SUPER_ADMIN' && existing.organizationId !== req.user!.organizationId) {
         return next(new AppError('You do not have permission to delete this calendar', 403));
     }
 
@@ -105,7 +105,7 @@ export const getWeeklyRules = catchAsync(async (req: Request, res: Response, nex
     if (!calendar) return next(new AppError('Calendar not found', 404));
 
     // Auth check
-    if (req.user!.role !== 'SUPER_ADMIN' && calendar.companyId !== req.user!.companyId) {
+    if (req.user!.role !== 'SUPER_ADMIN' && calendar.organizationId !== req.user!.organizationId) {
         return next(new AppError('Permission denied', 403));
     }
 
@@ -121,7 +121,7 @@ export const createWeeklyRule = catchAsync(async (req: Request, res: Response, n
     if (!calendar) return next(new AppError('Calendar not found', 404));
 
     // Auth check
-    if (req.user!.role !== 'SUPER_ADMIN' && calendar.companyId !== req.user!.companyId) {
+    if (req.user!.role !== 'SUPER_ADMIN' && calendar.organizationId !== req.user!.organizationId) {
         return next(new AppError('Permission denied', 403));
     }
 
@@ -136,7 +136,7 @@ export const updateWeeklyRule = catchAsync(async (req: Request, res: Response, n
     if (!existingRule) return next(new AppError('Rule not found', 404));
 
     // Auth check
-    if (req.user!.role !== 'SUPER_ADMIN' && existingRule.calendar.companyId !== req.user!.companyId) {
+    if (req.user!.role !== 'SUPER_ADMIN' && existingRule.calendar.organizationId !== req.user!.organizationId) {
         return next(new AppError('Permission denied', 403));
     }
 
@@ -150,7 +150,7 @@ export const deleteWeeklyRule = catchAsync(async (req: Request, res: Response, n
     if (!existingRule) return next(new AppError('Rule not found', 404));
 
     // Auth check
-    if (req.user!.role !== 'SUPER_ADMIN' && existingRule.calendar.companyId !== req.user!.companyId) {
+    if (req.user!.role !== 'SUPER_ADMIN' && existingRule.calendar.organizationId !== req.user!.organizationId) {
         return next(new AppError('Permission denied', 403));
     }
 
@@ -173,7 +173,7 @@ export const getHolidays = catchAsync(async (req: Request, res: Response, next: 
     if (!calendar) return next(new AppError('Calendar not found', 404));
 
     // Auth check
-    if (req.user!.role !== 'SUPER_ADMIN' && calendar.companyId !== req.user!.companyId) {
+    if (req.user!.role !== 'SUPER_ADMIN' && calendar.organizationId !== req.user!.organizationId) {
         return next(new AppError('Permission denied', 403));
     }
 
@@ -189,7 +189,7 @@ export const createHoliday = catchAsync(async (req: Request, res: Response, next
     if (!calendar) return next(new AppError('Calendar not found', 404));
 
     // Auth check
-    if (req.user!.role !== 'SUPER_ADMIN' && calendar.companyId !== req.user!.companyId) {
+    if (req.user!.role !== 'SUPER_ADMIN' && calendar.organizationId !== req.user!.organizationId) {
         return next(new AppError('Permission denied', 403));
     }
 
@@ -207,7 +207,7 @@ export const updateHoliday = catchAsync(async (req: Request, res: Response, next
     if (!existingHoliday) return next(new AppError('Holiday not found', 404));
 
     // Auth check
-    if (req.user!.role !== 'SUPER_ADMIN' && existingHoliday.calendar.companyId !== req.user!.companyId) {
+    if (req.user!.role !== 'SUPER_ADMIN' && existingHoliday.calendar.organizationId !== req.user!.organizationId) {
         return next(new AppError('Permission denied', 403));
     }
 
@@ -226,7 +226,7 @@ export const deleteHoliday = catchAsync(async (req: Request, res: Response, next
     if (!existingHoliday) return next(new AppError('Holiday not found', 404));
 
     // Auth check
-    if (req.user!.role !== 'SUPER_ADMIN' && existingHoliday.calendar.companyId !== req.user!.companyId) {
+    if (req.user!.role !== 'SUPER_ADMIN' && existingHoliday.calendar.organizationId !== req.user!.organizationId) {
         return next(new AppError('Permission denied', 403));
     }
 

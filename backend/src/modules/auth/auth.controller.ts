@@ -73,7 +73,7 @@ const buildUserResponse = (user: any): UserResponseDto => {
         code: user.employee.code,
         status: user.employee.status,
         joiningDate: user.employee.joiningDate,
-        companyId: user.employee.companyId,
+        organizationId: user.employee.organizationId,
       }
       : undefined,
   };
@@ -84,14 +84,14 @@ const buildUserResponse = (user: any): UserResponseDto => {
 // =========================================================================
 
 /**
- * @desc    Register new company + super admin
+ * @desc    Register new organization + super admin
  * @route   POST /api/v1/auth/register
  * @access  Public
  */
 export const register = catchAsync(
   async (req: Request, res: Response, next: NextFunction) => {
     const {
-      companyName,
+      companyName, // Keeping the field name as companyName to avoid breaking frontend immediately, but mapping to organization name
       timezone = 'Asia/Kolkata',
       currency = 'INR',
       dateFormat = 'DD/MM/YYYY',
@@ -111,10 +111,10 @@ export const register = catchAsync(
     // Hash password
     const hashedPassword = await hashPassword(password);
 
-    // Create user, company, employee, and subscription in a transaction
+    // Create user, organization, employee in a transaction
     const result = await prisma.$transaction(async (tx) => {
-      // 1. Create Company
-      const company = await tx.company.create({
+      // 1. Create Organization
+      const organization = await tx.organization.create({
         data: {
           name: companyName,
           timezone,
@@ -136,7 +136,7 @@ export const register = catchAsync(
       // 3. Create Employee for Super Admin
       const employee = await tx.employee.create({
         data: {
-          companyId: company.id,
+          organizationId: organization.id,
           userId: user.id,
           firstName,
           lastName,
@@ -153,7 +153,7 @@ export const register = catchAsync(
 
       //   await tx.subscription.create({
       //     data: {
-      //       companyId: company.id,
+      //       organizationId: organization.id,
       //       planId: plan.id,
       //       status: 'ACTIVE',
       //       validUntil,
@@ -161,7 +161,7 @@ export const register = catchAsync(
       //   });
       // }
 
-      return { user, company, employee };
+      return { user, organization, employee };
     });
 
     // Generate tokens
@@ -170,7 +170,7 @@ export const register = catchAsync(
       email: result.user.email,
       role: result.user.role,
       employeeId: result.employee.id,
-      companyId: result.company.id,
+      organizationId: result.organization.id,
     };
 
     const accessToken = generateToken(tokenPayload, '1h');
@@ -198,7 +198,7 @@ export const register = catchAsync(
       user: buildUserResponse(userWithEmployee),
     };
 
-    sendResponse(res, 201, response, 'Company and user registered successfully');
+    sendResponse(res, 201, response, 'Organization and user registered successfully');
   }
 );
 
@@ -233,7 +233,7 @@ export const login = catchAsync(
       email: user.email,
       role: user.role,
       employeeId: user.employee?.id,
-      companyId: user.employee?.companyId,
+      organizationId: user.employee?.organizationId,
     };
 
     const accessToken = generateToken(tokenPayload, '1h');
@@ -294,7 +294,7 @@ export const refreshToken = catchAsync(
         email: user.email,
         role: user.role,
         employeeId: user.employee?.id,
-        companyId: user.employee?.companyId,
+        organizationId: user.employee?.organizationId,
       };
 
       const accessToken = generateToken(tokenPayload, '1h');

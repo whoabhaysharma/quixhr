@@ -1,14 +1,14 @@
 import prisma from '../../utils/prisma';
-import { Company, AttendanceStatus, LeaveStatus } from '@prisma/client';
+import { Organization, AttendanceStatus, LeaveStatus } from '@prisma/client';
 
 export const create = async (data: any) => {
-    return prisma.company.create({
+    return prisma.organization.create({
         data
     });
 };
 
 export const findById = async (id: string) => {
-    return prisma.company.findUnique({
+    return prisma.organization.findUnique({
         where: { id },
         include: {
             _count: {
@@ -26,8 +26,8 @@ export const findAll = async ({ page, limit, search }: { page: number, limit: nu
         where.name = { contains: search, mode: 'insensitive' };
     }
 
-    const [companies, total] = await Promise.all([
-        prisma.company.findMany({
+    const [organizations, total] = await Promise.all([
+        prisma.organization.findMany({
             where,
             skip,
             take: limit,
@@ -38,11 +38,11 @@ export const findAll = async ({ page, limit, search }: { page: number, limit: nu
             },
             orderBy: { createdAt: 'desc' }
         }),
-        prisma.company.count({ where })
+        prisma.organization.count({ where })
     ]);
 
     return {
-        companies,
+        organizations,
         meta: {
             total,
             page,
@@ -53,13 +53,13 @@ export const findAll = async ({ page, limit, search }: { page: number, limit: nu
 };
 
 export const update = async (id: string, data: any) => {
-    return prisma.company.update({
+    return prisma.organization.update({
         where: { id },
         data
     });
 };
 
-export const getDashboardStats = async (companyId: string) => {
+export const getDashboardStats = async (organizationId: string) => {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
     const tomorrow = new Date(today);
@@ -76,13 +76,13 @@ export const getDashboardStats = async (companyId: string) => {
     ] = await Promise.all([
         // 1. Total Active Employees
         prisma.employee.count({
-            where: { companyId, status: 'ACTIVE' }
+            where: { organizationId, status: 'ACTIVE' }
         }),
 
         // 2. Pending Leave Requests Count
         prisma.leaveRequest.count({
             where: {
-                employee: { companyId },
+                employee: { organizationId },
                 status: 'PENDING'
             }
         }),
@@ -91,7 +91,7 @@ export const getDashboardStats = async (companyId: string) => {
         prisma.attendance.groupBy({
             by: ['status'],
             where: {
-                employee: { companyId },
+                employee: { organizationId },
                 date: {
                     gte: today,
                     lt: tomorrow
@@ -102,7 +102,7 @@ export const getDashboardStats = async (companyId: string) => {
 
         // 4. Recent Joiners
         prisma.employee.findMany({
-            where: { companyId, status: 'ACTIVE' },
+            where: { organizationId, status: 'ACTIVE' },
             orderBy: { joiningDate: 'desc' },
             take: 5,
             include: { user: { select: { email: true } } }
@@ -111,7 +111,7 @@ export const getDashboardStats = async (companyId: string) => {
         // 5. Upcoming Holidays
         prisma.calendarHoliday.findMany({
             where: {
-                calendar: { companyId },
+                calendar: { organizationId },
                 date: { gte: today }
             },
             orderBy: { date: 'asc' },
@@ -122,7 +122,7 @@ export const getDashboardStats = async (companyId: string) => {
         prisma.leaveRequest.groupBy({
             by: ['type'],
             where: {
-                employee: { companyId },
+                employee: { organizationId },
                 status: 'APPROVED',
                 startDate: {
                     gte: new Date(new Date().getFullYear(), 0, 1)
@@ -134,7 +134,7 @@ export const getDashboardStats = async (companyId: string) => {
         // 7. Recent Pending Leaves (for Action Center)
         prisma.leaveRequest.findMany({
             where: {
-                employee: { companyId },
+                employee: { organizationId },
                 status: 'PENDING'
             },
             take: 5,
@@ -176,11 +176,11 @@ export const getDashboardStats = async (companyId: string) => {
     };
 };
 
-export const getAuditLogs = async (companyId: string, { page, limit }: { page: number, limit: number }) => {
+export const getAuditLogs = async (organizationId: string, { page, limit }: { page: number, limit: number }) => {
     const skip = (page - 1) * limit;
 
     const employees = await prisma.employee.findMany({
-        where: { companyId },
+        where: { organizationId },
         select: { userId: true }
     });
 

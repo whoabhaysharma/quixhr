@@ -29,15 +29,15 @@ export const findGradeById = async (id: string) => {
 };
 
 interface LeaveGradeFilter extends PaginationParams {
-    companyId?: string;
+    organizationId?: string;
 }
 
 export const findAllGrades = async (filter: LeaveGradeFilter = {}) => {
-    const { companyId, page = 1, limit = 10, search } = filter;
+    const { organizationId, page = 1, limit = 10, search } = filter;
     const skip = (page - 1) * limit;
 
     const where: any = {};
-    if (companyId) where.companyId = companyId;
+    if (organizationId) where.organizationId = organizationId;
     if (search) {
         where.name = { contains: search, mode: 'insensitive' };
     }
@@ -143,13 +143,13 @@ export const createRequest = async (data: CreateLeaveRequestInput) => {
 
 interface LeaveRequestFilter extends PaginationParams {
     employeeId?: string;
-    companyId?: string;
+    organizationId?: string;
     status?: LeaveStatus;
     type?: LeaveType;
 }
 
 export const findAllRequests = async (filter: LeaveRequestFilter = {}) => {
-    const { employeeId, companyId, status, type, page = 1, limit = 10 } = filter;
+    const { employeeId, organizationId, status, type, page = 1, limit = 10 } = filter;
     const skip = (page - 1) * limit;
 
     const where: any = {};
@@ -157,9 +157,9 @@ export const findAllRequests = async (filter: LeaveRequestFilter = {}) => {
     if (status) where.status = status;
     if (type) where.type = type;
 
-    // Admin view: Filter by company via relation
-    if (companyId) {
-        where.employee = { companyId };
+    // Admin view: Filter by organization via relation
+    if (organizationId) {
+        where.employee = { organizationId };
     }
 
     const [data, total] = await Promise.all([

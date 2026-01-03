@@ -14,11 +14,11 @@ export interface AuthContext extends TokenPayload {
 }
 
 /**
- * Employee context for company validation
+ * Employee context for organization validation
  */
 export interface EmployeeContext {
   id: string;
-  companyId: string;
+  organizationId: string;
   userId: string;
   role: Role;
 }
@@ -46,7 +46,7 @@ export interface EmployeeFilters extends PaginationParams {
  */
 export interface EmployeeData {
   id: string;
-  companyId: string;
+  organizationId: string;
   userId?: string;
   calendarId?: string;
   leaveGradeId?: string;

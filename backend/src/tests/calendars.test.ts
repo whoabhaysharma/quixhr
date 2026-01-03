@@ -10,16 +10,16 @@ describe('Calendars Module', () => {
     });
 
     const setupAdmin = async () => {
-        const { user: adminUser, token: adminToken, companyId } = await createTestUser(Role.ORG_ADMIN);
-        return { adminUser, adminToken, companyId: companyId! };
+        const { user: adminUser, token: adminToken, organizationId } = await createTestUser(Role.ORG_ADMIN);
+        return { adminUser, adminToken, organizationId: organizationId! };
     };
 
     describe('Calendar CRUD', () => {
         it('should allow admin to create a calendar', async () => {
-            const { adminToken, companyId } = await setupAdmin();
+            const { adminToken, organizationId } = await setupAdmin();
 
             const res = await request(app)
-                .post(`/api/v1/companies/${companyId}/calendars`)
+                .post(`/api/v1/org/${organizationId}/calendars`)
                 .set('Authorization', `Bearer ${adminToken}`)
                 .send({
                     name: 'General Shift',
@@ -29,15 +29,15 @@ describe('Calendars Module', () => {
 
             expect(res.body.status).toBe('success');
             expect(res.body.data.name).toBe('General Shift');
-            expect(res.body.data.companyId).toBe(companyId);
+            expect(res.body.data.organizationId).toBe(organizationId);
         });
 
-        it('should list calendars for the company', async () => {
-            const { adminToken, companyId } = await setupAdmin();
+        it('should list calendars for the organization', async () => {
+            const { adminToken, organizationId } = await setupAdmin();
 
             // Create one first
             await request(app)
-                .post(`/api/v1/companies/${companyId}/calendars`)
+                .post(`/api/v1/org/${organizationId}/calendars`)
                 .set('Authorization', `Bearer ${adminToken}`)
                 .send({
                     name: 'Shift A',
@@ -65,10 +65,10 @@ describe('Calendars Module', () => {
         });
 
         it('should get calendar details', async () => {
-            const { adminToken, companyId } = await setupAdmin();
+            const { adminToken, organizationId } = await setupAdmin();
 
             const createRes = await request(app)
-                .post(`/api/v1/companies/${companyId}/calendars`)
+                .post(`/api/v1/org/${organizationId}/calendars`)
                 .set('Authorization', `Bearer ${adminToken}`)
                 .send({
                     name: 'Detail Test',
@@ -87,10 +87,10 @@ describe('Calendars Module', () => {
         });
 
         it('should update a calendar', async () => {
-            const { adminToken, companyId } = await setupAdmin();
+            const { adminToken, organizationId } = await setupAdmin();
 
             const createRes = await request(app)
-                .post(`/api/v1/companies/${companyId}/calendars`)
+                .post(`/api/v1/org/${organizationId}/calendars`)
                 .set('Authorization', `Bearer ${adminToken}`)
                 .send({
                     name: 'To Update',
@@ -114,9 +114,9 @@ describe('Calendars Module', () => {
 
     describe('Weekly Rules', () => {
         it('should add a weekly rule', async () => {
-            const { adminToken, companyId } = await setupAdmin();
+            const { adminToken, organizationId } = await setupAdmin();
             const calRes = await request(app)
-                .post(`/api/v1/companies/${companyId}/calendars`)
+                .post(`/api/v1/org/${organizationId}/calendars`)
                 .set('Authorization', `Bearer ${adminToken}`)
                 .send({ name: 'Rules Cal', dayStartTime: 540, dayEndTime: 1080 });
 
@@ -139,9 +139,9 @@ describe('Calendars Module', () => {
 
     describe('Holidays', () => {
         it('should add a holiday', async () => {
-            const { adminToken, companyId } = await setupAdmin();
+            const { adminToken, organizationId } = await setupAdmin();
             const calRes = await request(app)
-                .post(`/api/v1/companies/${companyId}/calendars`)
+                .post(`/api/v1/org/${organizationId}/calendars`)
                 .set('Authorization', `Bearer ${adminToken}`)
                 .send({ name: 'Holiday Cal', dayStartTime: 540, dayEndTime: 1080 });
 
