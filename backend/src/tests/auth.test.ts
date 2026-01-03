@@ -13,7 +13,7 @@ describe('Auth Module', () => {
     describe('POST /api/v1/auth/register', () => {
         it('should register a new organization and super admin', async () => {
             const res = await request(app).post('/api/v1/auth/register').send({
-                companyName: 'Acme Corp',
+                organizationName: 'Acme Corp',
                 email: 'admin@acme.com',
                 password: 'Password123!',
                 confirmPassword: 'Password123!',
@@ -30,7 +30,7 @@ describe('Auth Module', () => {
             expect(res.body.status).toBe('success');
             expect(res.body.data.user.email).toBe('admin@acme.com');
             // Organization object is not returned in the new DTO structure
-            // expect(res.body.data.company.name).toBe('Acme Corp');
+            // expect(res.body.data.organization.name).toBe('Acme Corp');
 
             // Verify DB
             const user = await prisma.user.findUnique({ where: { email: 'admin@acme.com' } });
@@ -42,7 +42,7 @@ describe('Auth Module', () => {
         it('should fail if email already exists', async () => {
             // Register first user manually to control email
             await request(app).post('/api/v1/auth/register').send({
-                companyName: 'Acme Corp',
+                organizationName: 'Acme Corp',
                 email: 'duplicate@test.com',
                 password: 'Password123!',
                 confirmPassword: 'Password123!',
@@ -54,7 +54,7 @@ describe('Auth Module', () => {
 
             // Try again
             const res = await request(app).post('/api/v1/auth/register').send({
-                companyName: 'Other Corp',
+                organizationName: 'Other Corp',
                 email: 'duplicate@test.com',
                 password: 'Password123!',
                 confirmPassword: 'Password123!',

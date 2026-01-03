@@ -31,7 +31,7 @@ const getAuthContext = (req: Request) => {
 export const getAllocations = catchAsync(
     async (req: Request, res: Response, next: NextFunction) => {
         const authContext = getAuthContext(req);
-        const organizationId = req.targetOrganizationId;
+        const organizationId = req.targetOrganizationId || authContext.organizationId || '';
 
         if (!organizationId) {
             return next(new AppError('Organization context is required', 400));
@@ -213,6 +213,31 @@ export const createEmployeeAllocation = catchAsync(
                 ...allocation,
                 remaining: allocation.allocated - allocation.used,
             },
+        };
+
+        sendResponse(res, 201, responseData);
+    }
+);
+
+/**
+ * @desc    Bulk allocate leaves
+ * @route   POST /api/v1/org/:organizationId/allocations/bulk
+ * @access  Protected (HR_ADMIN, ORG_ADMIN, SUPER_ADMIN)
+ */
+export const bulkAllocate = catchAsync(
+    async (req: Request, res: Response, next: NextFunction) => {
+        const authContext = getAuthContext(req);
+        const organizationId = req.targetOrganizationId || authContext.organizationId || '';
+
+        const result = await LeaveAllocationService.bulkAllocate(
+            organizationId,
+            req.body
+        );
+
+        const responseData: BulkAllocationResponseDto = {
+            success: true,
+            message: `Successfully allocated leaves to ${result.employees.length} employees`,
+            data: result,
         };
 
         sendResponse(res, 201, responseData);

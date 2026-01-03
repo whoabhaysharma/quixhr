@@ -14,12 +14,12 @@ Complete implementation of Leave Allocation APIs following shallow routing patte
 
 ## API Endpoints
 
-### Nested Routes (Company Context)
-**Base Path:** `/api/v1/companies/:companyId/allocations`
+### Nested Routes (Organization Context)
+**Base Path:** `/api/v1/org/:organizationId/allocations`
 
 #### 1. List Allocations
 - **Method:** GET
-- **Path:** `/api/v1/companies/:companyId/allocations`
+- **Path:** `/api/v1/org/:organizationId/allocations`
 - **Access:** HR_ADMIN, ORG_ADMIN, MANAGER, SUPER_ADMIN
 - **Query Params:**
   - `employeeId` (optional) - Filter by employee
@@ -62,7 +62,7 @@ Complete implementation of Leave Allocation APIs following shallow routing patte
 
 #### 2. Create Allocation
 - **Method:** POST
-- **Path:** `/api/v1/companies/:companyId/allocations`
+- **Path:** `/api/v1/org/:organizationId/allocations`
 - **Access:** HR_ADMIN, ORG_ADMIN, SUPER_ADMIN
 - **Body:**
   ```json
@@ -74,14 +74,14 @@ Complete implementation of Leave Allocation APIs following shallow routing patte
   }
   ```
 - **Validations:**
-  - Employee must belong to the company
+  - Employee must belong to the organization
   - No duplicate allocation for same employee/year/type
   - Year must be between 2000-2100
   - Allocated must be >= 0
 
 #### 3. Bulk Allocate
 - **Method:** POST
-- **Path:** `/api/v1/companies/:companyId/allocations/bulk`
+- **Path:** `/api/v1/org/:organizationId/allocations/bulk`
 - **Access:** HR_ADMIN, ORG_ADMIN, SUPER_ADMIN
 - **Body:**
   ```json
@@ -111,7 +111,7 @@ Complete implementation of Leave Allocation APIs following shallow routing patte
 - **Method:** GET
 - **Path:** `/api/v1/allocations/:allocationId`
 - **Access:** HR_ADMIN, ORG_ADMIN, MANAGER, SUPER_ADMIN
-- **Authorization:** Validates company access via allocation's employee
+- **Authorization:** Validates organization access via allocation's employee
 
 #### 5. Update Allocation
 - **Method:** PATCH
@@ -126,7 +126,7 @@ Complete implementation of Leave Allocation APIs following shallow routing patte
   ```
 - **Validations:**
   - Used cannot exceed allocated
-  - Company access validation
+  - Organization access validation
 
 #### 6. Delete Allocation
 - **Method:** DELETE
@@ -134,13 +134,13 @@ Complete implementation of Leave Allocation APIs following shallow routing patte
 - **Access:** HR_ADMIN, ORG_ADMIN, SUPER_ADMIN
 - **Validations:**
   - Cannot delete if allocation has been used (used > 0)
-  - Company access validation
+  - Organization access validation
 
 ## Features
 
 ### Authorization
-- **Company Isolation:** Users can only manage allocations for their company
-- **SUPER_ADMIN Override:** Can manage allocations across all companies
+- **Organization Isolation:** Users can only manage allocations for their organization
+- **SUPER_ADMIN Override:** Can manage allocations across all organizations
 - **Role-based Access:** Different permissions for different roles
 
 ### Business Logic
@@ -148,17 +148,17 @@ Complete implementation of Leave Allocation APIs following shallow routing patte
 2. **Bulk Allocation:** Creates allocations based on leave grade policies
 3. **Upsert Logic:** Bulk allocation updates existing allocations if found
 4. **Validation:** Prevents invalid states (used > allocated)
-5. **Employee Verification:** Ensures employee belongs to company
+5. **Employee Verification:** Ensures employee belongs to organization
 
 ### Data Integrity
 - Unique constraint: `employeeId + year + leaveType`
 - Prevents duplicate allocations
-- Validates employee-company relationship
+- Validates employee-organization relationship
 - Protects against deleting used allocations
 
 ## Integration
 
-### Companies Router
+### Organizations Router
 Added nested routes for:
 - Listing allocations (with filters)
 - Creating individual allocations
@@ -171,7 +171,7 @@ Registered flat routes at `/api/v1/allocations`
 
 ### Create Allocation for Employee
 ```bash
-POST /api/v1/companies/company-uuid/allocations
+POST /api/v1/org/org-uuid/allocations
 {
   "employeeId": "emp-uuid",
   "year": 2024,
@@ -182,7 +182,7 @@ POST /api/v1/companies/company-uuid/allocations
 
 ### Bulk Allocate by Leave Grade
 ```bash
-POST /api/v1/companies/company-uuid/allocations/bulk
+POST /api/v1/org/org-uuid/allocations/bulk
 {
   "year": 2024,
   "leaveGradeId": "grade-uuid"
@@ -199,7 +199,7 @@ PATCH /api/v1/allocations/allocation-uuid
 
 ### List All Allocations for 2024
 ```bash
-GET /api/v1/companies/company-uuid/allocations?year=2024&page=1&limit=50
+GET /api/v1/org/org-uuid/allocations?year=2024&page=1&limit=50
 ```
 
 ## TypeScript Compilation

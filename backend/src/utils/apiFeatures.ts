@@ -14,7 +14,7 @@ export const getQueryOptions = (
     const where: any = {};
 
     // Standard exclusions
-    const excludedFields = ['page', 'sort', 'limit', 'fields', 'companyId']; // companyId handled by middleware
+    const excludedFields = ['page', 'sort', 'limit', 'fields', 'organizationId']; // organizationId handled by middleware
 
     Object.keys(query).forEach(key => {
         if (!excludedFields.includes(key) && allowedFilterFields.includes(key)) {
