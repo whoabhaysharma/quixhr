@@ -2,90 +2,79 @@ import { Request, Response, NextFunction } from 'express';
 import { catchAsync } from '@/utils/catchAsync';
 import { sendResponse } from '@/utils/sendResponse';
 import { AppError } from '@/utils/appError';
-import * as LeaveService from './leaves.service';
+import { LeaveService } from './leaves.service';
 import {
     CreateLeaveGradeInput, UpdateLeaveGradeInput,
     CreateLeavePolicyInput, UpdateLeavePolicyInput,
     CreateLeaveRequestInput, UpdateLeaveRequestStatusInput
-} from './leaves.types';
+} from './leaves.schema';
 import { LeaveStatus, LeaveType } from '@prisma/client';
+
+// =========================================================================
+// HELPER FUNCTIONS
+// =========================================================================
+
+const getOrganizationId = (req: Request): string => {
+    // Priority: targetOrganizationId (from tenant middleware) > user.organizationId
+    if (req.targetOrganizationId) return req.targetOrganizationId;
+    if (req.user?.organizationId) return req.user.organizationId;
+    throw new AppError('Organization context required', 400);
+};
 
 // =========================================================================
 // 1. LEAVE GRADE CONTROLLERS
 // =========================================================================
 
 export const createLeaveGrade = catchAsync(async (req: Request, res: Response, next: NextFunction) => {
-    const { organizationId } = req.params;
+    const organizationId = getOrganizationId(req);
+    const input: CreateLeaveGradeInput = req.body;
 
-    if (req.user!.role !== 'SUPER_ADMIN' && req.user!.organizationId !== organizationId) {
-        return next(new AppError('You do not have permission to create a leave grade for this organization', 403));
-    }
-
-    const input: CreateLeaveGradeInput = {
-        ...req.body,
-        organizationId
-    };
-
-    const grade = await LeaveService.createGrade(input);
+    const grade = await LeaveService.createGrade(organizationId, input);
     sendResponse(res, 201, grade, 'Leave grade created successfully');
 });
 
 export const getLeaveGradeById = catchAsync(async (req: Request, res: Response, next: NextFunction) => {
+    const organizationId = getOrganizationId(req);
     const id = req.params.id || req.params.gradeId;
-    const grade = await LeaveService.findGradeById(id);
+
+    const grade = await LeaveService.getGradeById(organizationId, id);
 
     if (!grade) {
         return next(new AppError('Leave grade not found', 404));
-    }
-
-    if (req.user!.role !== 'SUPER_ADMIN' && grade.organizationId !== req.user!.organizationId) {
-        return next(new AppError('You do not have permission to view this leave grade', 403));
     }
 
     sendResponse(res, 200, grade, 'Leave grade retrieved successfully');
 });
 
 export const getLeaveGrades = catchAsync(async (req: Request, res: Response, next: NextFunction) => {
-    const organizationId = req.targetOrganizationId || req.user?.organizationId;
+    const organizationId = getOrganizationId(req);
 
-    if (!organizationId) {
-        return next(new AppError('Organization context is required', 400));
-    }
+    const page = parseInt(req.query.page as string) || 1;
+    const limit = parseInt(req.query.limit as string) || 20;
+    const skip = (page - 1) * limit;
 
-    let filter: { organizationId: string; page?: number; limit?: number; search?: string } = {
-        organizationId,
-        page: req.query.page ? Number(req.query.page) : 1,
-        limit: req.query.limit ? Number(req.query.limit) : 10,
-        search: req.query.search as string
+    const filters = {
+         search: req.query.search as string
     };
+    const pagination = { page, limit, skip, sortBy: req.query.sortBy as string, sortOrder: req.query.sortOrder as 'asc' | 'desc', search: req.query.search as string };
 
-    const result = await LeaveService.findAllGrades(filter);
+    const result = await LeaveService.getGrades(organizationId, pagination, filters);
     sendResponse(res, 200, result, 'Leave grades retrieved successfully');
 });
 
 export const updateLeaveGrade = catchAsync(async (req: Request, res: Response, next: NextFunction) => {
+    const organizationId = getOrganizationId(req);
     const id = req.params.id || req.params.gradeId;
-    const existing = await LeaveService.findGradeById(id);
-    if (!existing) { return next(new AppError('Leave grade not found', 404)); }
 
-    if (req.user!.role !== 'SUPER_ADMIN' && existing.organizationId !== req.user!.organizationId) {
-        return next(new AppError('Permission denied', 403));
-    }
-
-    const grade = await LeaveService.updateGrade(id, req.body as UpdateLeaveGradeInput);
+    const grade = await LeaveService.updateGrade(organizationId, id, req.body as UpdateLeaveGradeInput);
     sendResponse(res, 200, grade, 'Leave grade updated successfully');
 });
 
 export const deleteLeaveGrade = catchAsync(async (req: Request, res: Response, next: NextFunction) => {
+    const organizationId = getOrganizationId(req);
     const id = req.params.id || req.params.gradeId;
-    const existing = await LeaveService.findGradeById(id);
-    if (!existing) { return next(new AppError('Leave grade not found', 404)); }
 
-    if (req.user!.role !== 'SUPER_ADMIN' && existing.organizationId !== req.user!.organizationId) {
-        return next(new AppError('Permission denied', 403));
-    }
-
-    await LeaveService.deleteGrade(id);
+    await LeaveService.deleteGrade(organizationId, id);
     sendResponse(res, 204, null, 'Leave grade deleted successfully');
 });
 
@@ -94,59 +83,45 @@ export const deleteLeaveGrade = catchAsync(async (req: Request, res: Response, n
 // =========================================================================
 
 export const getPolicies = catchAsync(async (req: Request, res: Response, next: NextFunction) => {
+    const organizationId = getOrganizationId(req);
     const { gradeId } = req.params;
 
-    // Parent check
-    const grade = await LeaveService.findGradeById(gradeId);
-    if (!grade) return next(new AppError('Leave grade not found', 404));
-
-    // Auth check
-    if (req.user!.role !== 'SUPER_ADMIN' && grade.organizationId !== req.user!.organizationId) {
-        return next(new AppError('Permission denied', 403));
-    }
-
-    const policies = await LeaveService.findPolicies(gradeId);
+    const policies = await LeaveService.getPolicies(organizationId, gradeId);
     sendResponse(res, 200, policies, 'Leave policies retrieved successfully');
 });
 
 export const createPolicy = catchAsync(async (req: Request, res: Response, next: NextFunction) => {
+    const organizationId = getOrganizationId(req);
     const { gradeId } = req.params;
 
-    const grade = await LeaveService.findGradeById(gradeId);
-    if (!grade) return next(new AppError('Leave grade not found', 404));
-
-    if (req.user!.role !== 'SUPER_ADMIN' && grade.organizationId !== req.user!.organizationId) {
-        return next(new AppError('Permission denied', 403));
-    }
-
-    const input: CreateLeavePolicyInput = { ...req.body, leaveGradeId: gradeId };
-    const policy = await LeaveService.createPolicy(input);
+    const input: CreateLeavePolicyInput = req.body;
+    const policy = await LeaveService.createPolicy(organizationId, gradeId, input);
     sendResponse(res, 201, policy, 'Leave policy created successfully');
 });
 
 export const updatePolicy = catchAsync(async (req: Request, res: Response, next: NextFunction) => {
+    const organizationId = getOrganizationId(req);
     const { policyId } = req.params;
-    const existingPolicy = await LeaveService.findPolicyById(policyId);
-    if (!existingPolicy) return next(new AppError('Policy not found', 404));
 
-    if (req.user!.role !== 'SUPER_ADMIN' && existingPolicy.grade.organizationId !== req.user!.organizationId) {
-        return next(new AppError('Permission denied', 403));
+    const existingPolicy = await LeaveService.getPolicyById(organizationId, policyId);
+    if (!existingPolicy) {
+        return next(new AppError('Leave policy not found', 404));
     }
 
-    const policy = await LeaveService.updatePolicy(policyId, req.body as UpdateLeavePolicyInput);
+    const policy = await LeaveService.updatePolicy(organizationId, existingPolicy.leaveGradeId, policyId, req.body as UpdateLeavePolicyInput);
     sendResponse(res, 200, policy, 'Leave policy updated successfully');
 });
 
 export const deletePolicy = catchAsync(async (req: Request, res: Response, next: NextFunction) => {
+    const organizationId = getOrganizationId(req);
     const { policyId } = req.params;
-    const existingPolicy = await LeaveService.findPolicyById(policyId);
-    if (!existingPolicy) return next(new AppError('Policy not found', 404));
 
-    if (req.user!.role !== 'SUPER_ADMIN' && existingPolicy.grade.organizationId !== req.user!.organizationId) {
-        return next(new AppError('Permission denied', 403));
+    const existingPolicy = await LeaveService.getPolicyById(organizationId, policyId);
+    if (!existingPolicy) {
+        return next(new AppError('Leave policy not found', 404));
     }
 
-    await LeaveService.deletePolicy(policyId);
+    await LeaveService.deletePolicy(organizationId, existingPolicy.leaveGradeId, policyId);
     sendResponse(res, 204, null, 'Leave policy deleted successfully');
 });
 
@@ -155,79 +130,50 @@ export const deletePolicy = catchAsync(async (req: Request, res: Response, next:
 // =========================================================================
 
 export const createLeaveRequest = catchAsync(async (req: Request, res: Response, next: NextFunction) => {
-    const { employeeId } = req.params;
+    const organizationId = getOrganizationId(req);
+    const employeeId = req.params.id || req.user?.employeeId;
 
-    // Only the employee themselves or HR/Admin can create requests
-    if (req.user!.role !== 'SUPER_ADMIN' && req.user!.userId !== employeeId && req.user!.employeeId !== employeeId) {
-        // NOTE: We need to verify if 'employeeId' param matches the logged in user's employeeId
-        // If the route is /employees/:employeeId/leave-requests, we check if req.user.employeeId === employeeId
-        // Or if user is admin of that organization.
+    if (!employeeId) {
+        return next(new AppError('Employee ID required', 400));
     }
 
-    // Simplified Auth for now:
-    // If not super admin, check if user belongs to same organization or is the employee
-    if (req.user!.role !== 'SUPER_ADMIN') {
-        // Validation logic typically happens in Middleware or Service if comprehensive.
-        // Here assuming user is authorized if they can access the parent route (protected by resolveTenant typically)
-    }
-
-    const input: CreateLeaveRequestInput = {
-        ...req.body,
-        employeeId
-    };
-
-    const request = await LeaveService.createRequest(input);
+    const input: CreateLeaveRequestInput = req.body;
+    const request = await LeaveService.createRequest(organizationId, employeeId, input);
     sendResponse(res, 201, request, 'Leave request created successfully');
 });
 
 export const getLeaveRequests = catchAsync(async (req: Request, res: Response, next: NextFunction) => {
-    // Determine context: Employee-Specific OR Organization-Wide (Admin)
-    const { employeeId } = req.params; // If nested under employee
+    const organizationId = getOrganizationId(req);
+    const { employeeId } = req.params;
 
-    let filter: any = {
-        page: req.query.page ? Number(req.query.page) : 1,
-        limit: req.query.limit ? Number(req.query.limit) : 10,
+    const page = parseInt(req.query.page as string) || 1;
+    const limit = parseInt(req.query.limit as string) || 20;
+    const skip = (page - 1) * limit;
+
+    let filters: any = {
         status: req.query.status as LeaveStatus,
         type: req.query.type as LeaveType,
+        employeeId: employeeId || req.query.employeeId as string,
+        startDate: req.query.startDate as string,
+        endDate: req.query.endDate as string
     };
 
-    if (employeeId) {
-        filter.employeeId = employeeId;
-        // Auth: User must be this employee or their manager/admin
-        if (req.user!.employeeId !== employeeId && !['SUPER_ADMIN', 'ORG_ADMIN', 'HR_ADMIN', 'MANAGER'].includes(req.user!.role)) {
-            return next(new AppError('Permission denied', 403));
-        }
-    } else {
-        // Flattened list (e.g. for Admin Dashboard)
-        if (req.user!.role !== 'SUPER_ADMIN') {
-            filter.organizationId = req.user!.organizationId;
-        }
-    }
+    const pagination = { page, limit, skip, sortBy: req.query.sortBy as string, sortOrder: req.query.sortOrder as 'asc' | 'desc' };
 
-    const result = await LeaveService.findAllRequests(filter);
+    const result = await LeaveService.getRequests(organizationId, pagination, filters);
     sendResponse(res, 200, result, 'Leave requests retrieved successfully');
 });
 
 export const updateLeaveRequestStatus = catchAsync(async (req: Request, res: Response, next: NextFunction) => {
+    const organizationId = getOrganizationId(req);
     const { requestId } = req.params;
-    const existing = await LeaveService.findRequestById(requestId);
-    if (!existing) return next(new AppError('Request not found', 404));
 
-    // Auth: Must be Admin/Manager of the organization
-    if (req.user!.role !== 'SUPER_ADMIN' && existing.employee.organizationId !== req.user!.organizationId) {
-        return next(new AppError('Permission denied', 403));
-    }
-
-    // Only certain roles can approve/reject
-    if (!['SUPER_ADMIN', 'ORG_ADMIN', 'HR_ADMIN', 'MANAGER'].includes(req.user!.role)) {
-        return next(new AppError('Insufficient permissions to update status', 403));
-    }
+    const approvedBy = req.user?.userId;
 
     const input: UpdateLeaveRequestStatusInput = {
         status: req.body.status,
-        approvedBy: req.user!.userId // Or employeeId, depending on schema preference. Using User ID here.
     };
 
-    const updated = await LeaveService.updateRequestStatus(requestId, input);
+    const updated = await LeaveService.updateRequestStatus(organizationId, requestId, input, approvedBy);
     sendResponse(res, 200, updated, `Leave request ${input.status.toLowerCase()} successfully`);
 });

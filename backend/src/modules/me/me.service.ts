@@ -38,6 +38,7 @@ export class MeService {
 
         return {
             id: employee.id,
+            employeeId: employee.id,
             organizationId: employee.organizationId,
             userId: employee.userId || '',
             firstName: employee.firstName,
