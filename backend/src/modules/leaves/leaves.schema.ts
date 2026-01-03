@@ -1,39 +1,45 @@
 import { z } from 'zod';
 import { LeaveType, LeaveStatus } from '@prisma/client';
+import { paginationSchema } from '@/utils/pagination';
 
-// --- Leave Grades ---
+// =========================================================================
+// LEAVE GRADES
+// =========================================================================
+
 export const createLeaveGradeSchema = {
     body: z.object({
-        name: z.string().min(1, 'Name is required'),
+        name: z.string().min(1, 'Name is required').max(100),
     }),
 };
 
 export const updateLeaveGradeSchema = {
-    params: z.object({
-        gradeId: z.string().uuid().optional(),
-        id: z.string().uuid().optional()
-    }),
     body: z.object({
-        name: z.string().optional(),
+        name: z.string().min(1).max(100).optional(),
+    }),
+};
+
+export const leaveGradeIdSchema = {
+    params: z.object({
+        gradeId: z.string().uuid(),
     }),
 };
 
 export const leaveGradeQuerySchema = {
-    query: z.object({
-        organizationId: z.string().uuid().optional(),
-        page: z.string().regex(/^\d+$/).transform(Number).optional(),
-        limit: z.string().regex(/^\d+$/).transform(Number).optional(),
-        search: z.string().optional(),
+    query: paginationSchema.extend({
+        sortBy: z.enum(['name', 'createdAt']).optional(),
     }),
 };
 
-// --- Leave Policies ---
+// =========================================================================
+// LEAVE POLICIES
+// =========================================================================
+
 export const createLeavePolicySchema = {
     body: z.object({
         leaveType: z.nativeEnum(LeaveType),
         totalDays: z.number().min(0),
-        carryForward: z.boolean().optional(),
-        maxCarryAmount: z.number().min(0).optional(),
+        carryForward: z.boolean().optional().default(false),
+        maxCarryAmount: z.number().min(0).optional().default(0),
     }),
 };
 
@@ -46,14 +52,26 @@ export const updateLeavePolicySchema = {
     }),
 };
 
-// --- Leave Requests ---
+export const policyIdSchema = {
+    params: z.object({
+        policyId: z.string().uuid(),
+    }),
+};
+
+// =========================================================================
+// LEAVE REQUESTS
+// =========================================================================
+
 export const createLeaveRequestSchema = {
     body: z.object({
-        startDate: z.string().datetime(),
-        endDate: z.string().datetime(),
+        startDate: z.string().datetime().or(z.string().regex(/^\d{4}-\d{2}-\d{2}$/)),
+        endDate: z.string().datetime().or(z.string().regex(/^\d{4}-\d{2}-\d{2}$/)),
         type: z.nativeEnum(LeaveType),
         reason: z.string().optional(),
-        dayDetails: z.any().optional(), // Can refine this schema based on complex logic needs
+        dayDetails: z.any().optional(),
+    }).refine(data => new Date(data.endDate) >= new Date(data.startDate), {
+        message: "End date must be after or equal to start date",
+        path: ["endDate"]
     }),
 };
 
@@ -63,13 +81,32 @@ export const updateLeaveRequestStatusSchema = {
     }),
 };
 
-export const leaveRequestQuerySchema = {
-    query: z.object({
-        employeeId: z.string().uuid().optional(),
-        organizationId: z.string().uuid().optional(), // For Admin to view all requests in organization
-        status: z.nativeEnum(LeaveStatus).optional(),
-        type: z.nativeEnum(LeaveType).optional(),
-        page: z.string().regex(/^\d+$/).transform(Number).optional(),
-        limit: z.string().regex(/^\d+$/).transform(Number).optional(),
+export const leaveRequestIdSchema = {
+    params: z.object({
+        requestId: z.string().uuid(),
     }),
 };
+
+export const leaveRequestQuerySchema = {
+    query: paginationSchema.extend({
+        employeeId: z.string().uuid().optional(),
+        status: z.nativeEnum(LeaveStatus).optional(),
+        type: z.nativeEnum(LeaveType).optional(),
+        startDate: z.string().optional(),
+        endDate: z.string().optional(),
+        sortBy: z.enum(['startDate', 'endDate', 'type', 'status', 'createdAt']).optional(),
+    }),
+};
+
+// =========================================================================
+// TYPES (Inferred)
+// =========================================================================
+
+export type CreateLeaveGradeInput = z.infer<typeof createLeaveGradeSchema.body>;
+export type UpdateLeaveGradeInput = z.infer<typeof updateLeaveGradeSchema.body>;
+export type CreateLeavePolicyInput = z.infer<typeof createLeavePolicySchema.body>;
+export type UpdateLeavePolicyInput = z.infer<typeof updateLeavePolicySchema.body>;
+export type CreateLeaveRequestInput = z.infer<typeof createLeaveRequestSchema.body>;
+export type UpdateLeaveRequestStatusInput = z.infer<typeof updateLeaveRequestStatusSchema.body>;
+export type LeaveRequestQuery = z.infer<typeof leaveRequestQuerySchema.query>;
+export type LeaveGradeQuery = z.infer<typeof leaveGradeQuerySchema.query>;

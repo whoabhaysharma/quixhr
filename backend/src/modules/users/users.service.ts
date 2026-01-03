@@ -1,71 +1,91 @@
 import { prisma } from '@/utils/prisma';
-import { Role } from '@prisma/client';
+import { AppError } from '@/utils/appError';
+import { ParsedPagination } from '@/utils/pagination';
+import { buildOrderBy } from '@/utils/prismaHelpers';
+import { GetUsersQuery } from './users.schema';
 
-export const findAll = async (params: {
-    page: number;
-    limit: number;
-    search?: string;
-    role?: Role;
-}) => {
-    const { page, limit, search, role } = params;
-    const skip = (page - 1) * limit;
+export class UserService {
+    static async getUsers(
+        pagination: ParsedPagination,
+        filters: GetUsersQuery
+    ) {
+        const { page, limit, skip, sortBy, sortOrder, search } = pagination;
+        const { role, email } = filters;
 
-    const where: any = {};
+        const where: any = {};
 
-    if (role) {
-        where.role = role;
+        if (role) where.role = role;
+        if (email || search) {
+            where.email = {
+                contains: email || search,
+                mode: 'insensitive',
+            };
+        }
+
+        const orderBy = buildOrderBy(sortBy, sortOrder, {
+            allowedFields: ['email', 'role', 'createdAt'],
+            defaultSort: { createdAt: 'desc' },
+        });
+
+        const [data, total] = await Promise.all([
+            prisma.user.findMany({
+                where,
+                skip,
+                take: limit,
+                orderBy: orderBy as any,
+                select: {
+                    id: true,
+                    email: true,
+                    role: true,
+                    isEmailVerified: true,
+                    employee: {
+                        select: {
+                            id: true,
+                            firstName: true,
+                            lastName: true,
+                            organizationId: true,
+                        },
+                    },
+                },
+            }),
+            prisma.user.count({ where }),
+        ]);
+
+        return {
+            data,
+            pagination: {
+                total,
+                page,
+                limit,
+                totalPages: Math.ceil(total / limit),
+            },
+        };
     }
 
-    if (search) {
-        where.OR = [
-            { email: { contains: search, mode: 'insensitive' } },
-            {
-                employee: {
-                    OR: [
-                        { firstName: { contains: search, mode: 'insensitive' } },
-                        { lastName: { contains: search, mode: 'insensitive' } }
-                    ]
-                }
-            }
-        ];
-    }
-
-    const [users, total] = await Promise.all([
-        prisma.user.findMany({
-            where,
+    static async getUserById(userId: string) {
+        const user = await prisma.user.findUnique({
+            where: { id: userId },
             select: {
                 id: true,
                 email: true,
                 role: true,
                 isEmailVerified: true,
-                lastPasswordResetRequest: true,
                 employee: {
                     select: {
+                        id: true,
                         firstName: true,
                         lastName: true,
-                        status: true
-                    }
+                        organizationId: true,
+                        status: true,
+                    },
                 },
-                auditLogs: {
-                    take: 1,
-                    orderBy: { createdAt: 'desc' },
-                    select: { createdAt: true } // Last active approximate
-                }
             },
-            skip,
-            take: limit,
-            orderBy: { email: 'asc' },
-        }),
-        prisma.user.count({ where }),
-    ]);
+        });
 
-    return {
-        users,
-        meta: {
-            total,
-            page,
-            limit,
-            totalPages: Math.ceil(total / limit),
-        },
-    };
-};
+        if (!user) {
+            throw new AppError('User not found', 404);
+        }
+
+        return user;
+    }
+}

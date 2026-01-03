@@ -1,28 +1,27 @@
 import { Request, Response, NextFunction } from 'express';
 import { catchAsync } from '@/utils/catchAsync';
 import { sendResponse } from '@/utils/sendResponse';
-import { AppError } from '@/utils/appError';
-import * as UserService from './users.service';
-import { Role } from '@prisma/client';
+import { getPaginationParams } from '@/utils/pagination';
+import { UserService } from './users.service';
+import { GetUsersQuery } from './users.schema';
 
-export const getUsers = catchAsync(async (req: Request, res: Response, next: NextFunction) => {
-    // Only Super Admin should access this for now, or maybe Org Admin for their own users (future)
-    // For now, let's assume Super Admin accessing global users list
-    if (req.user!.role !== 'SUPER_ADMIN') {
-        return next(new AppError('Permission denied', 403));
+export const getUsers = catchAsync(
+    async (req: Request, res: Response, next: NextFunction) => {
+        const pagination = getPaginationParams(req, 'createdAt', 'desc');
+        const filters = req.query as unknown as GetUsersQuery;
+
+        const result = await UserService.getUsers(pagination, filters);
+
+        sendResponse(res, 200, result, 'Users retrieved successfully');
     }
+);
 
-    const page = parseInt(req.query.page as string) || 1;
-    const limit = parseInt(req.query.limit as string) || 10;
-    const search = req.query.search as string;
-    const role = req.query.role as Role;
+export const getUserById = catchAsync(
+    async (req: Request, res: Response, next: NextFunction) => {
+        const { userId } = req.params;
 
-    const result = await UserService.findAll({
-        page,
-        limit,
-        search,
-        role
-    });
+        const user = await UserService.getUserById(userId);
 
-    sendResponse(res, 200, result, 'Users retrieved successfully');
-});
+        sendResponse(res, 200, user, 'User retrieved successfully');
+    }
+);

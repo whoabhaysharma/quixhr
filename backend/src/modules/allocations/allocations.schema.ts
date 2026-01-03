@@ -1,13 +1,11 @@
 import { z } from 'zod';
 import { LeaveType } from '@prisma/client';
+import { paginationSchema } from '@/utils/pagination';
 
 // =========================================================================
-// VALIDATION SCHEMAS
+// INPUT SCHEMAS
 // =========================================================================
 
-/**
- * Create leave allocation schema
- */
 export const createLeaveAllocationSchema = {
     body: z.object({
         employeeId: z.string().uuid().optional(), // Optional when creating via employee route
@@ -17,10 +15,6 @@ export const createLeaveAllocationSchema = {
     }),
 };
 
-
-/**
- * Update leave allocation schema
- */
 export const updateLeaveAllocationSchema = {
     body: z.object({
         allocated: z.number().min(0).optional(),
@@ -28,9 +22,6 @@ export const updateLeaveAllocationSchema = {
     }),
 };
 
-/**
- * Bulk allocate schema
- */
 export const bulkAllocateSchema = {
     body: z.object({
         year: z.number().int().min(2000).max(2100),
@@ -39,58 +30,30 @@ export const bulkAllocateSchema = {
     }),
 };
 
-/**
- * Get allocations query schema
- */
-export const getAllocationsSchema = {
-    query: z.object({
-        employeeId: z.string().uuid().optional(),
-        year: z.string().regex(/^\d{4}$/).transform(Number).optional(),
-        leaveType: z.nativeEnum(LeaveType).optional(),
-        page: z.string().regex(/^\d+$/).transform(Number).optional(),
-        limit: z.string().regex(/^\d+$/).transform(Number).optional(),
+export const allocationIdSchema = {
+    params: z.object({
+        allocationId: z.string().uuid(),
     }),
 };
 
 // =========================================================================
-// RESPONSE DTOs
+// QUERY SCHEMAS
 // =========================================================================
 
-export interface LeaveAllocationResponseDto {
-    id: string;
-    employeeId: string;
-    year: number;
-    leaveType: LeaveType;
-    allocated: number;
-    used: number;
-    remaining: number;
-    employee?: {
-        id: string;
-        firstName: string;
-        lastName: string;
-        code: string | null;
-    };
-}
+export const getAllocationsQuerySchema = {
+    query: paginationSchema.extend({
+        employeeId: z.string().uuid().optional(),
+        year: z.string().regex(/^\d{4}$/).transform(Number).optional(),
+        leaveType: z.nativeEnum(LeaveType).optional(),
+        sortBy: z.enum(['year', 'leaveType', 'allocated', 'used', 'createdAt']).optional(),
+    }),
+};
 
-export interface LeaveAllocationsListResponseDto {
-    success: boolean;
-    message: string;
-    data: {
-        allocations: LeaveAllocationResponseDto[];
-        pagination: {
-            total: number;
-            page: number;
-            limit: number;
-            totalPages: number;
-        };
-    };
-}
+// =========================================================================
+// TYPES (Inferred)
+// =========================================================================
 
-export interface BulkAllocationResponseDto {
-    success: boolean;
-    message: string;
-    data: {
-        allocated: number;
-        employees: string[];
-    };
-}
+export type CreateLeaveAllocationInput = z.infer<typeof createLeaveAllocationSchema.body>;
+export type UpdateLeaveAllocationInput = z.infer<typeof updateLeaveAllocationSchema.body>;
+export type BulkAllocateInput = z.infer<typeof bulkAllocateSchema.body>;
+export type GetAllocationsQuery = z.infer<typeof getAllocationsQuerySchema.query>;

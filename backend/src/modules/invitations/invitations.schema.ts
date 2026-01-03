@@ -1,13 +1,11 @@
 import { z } from 'zod';
 import { Role } from '@prisma/client';
+import { paginationSchema } from '@/utils/pagination';
 
 // =========================================================================
-// VALIDATION SCHEMAS
+// INPUT SCHEMAS
 // =========================================================================
 
-/**
- * Create invitation schema
- */
 export const createInvitationSchema = {
     body: z.object({
         email: z.string().email('Invalid email format'),
@@ -15,92 +13,43 @@ export const createInvitationSchema = {
     }),
 };
 
-/**
- * Accept invitation schema
- */
 export const acceptInvitationSchema = {
     body: z.object({
         token: z.string().min(1, 'Token is required'),
-        firstName: z.string().min(1, 'First name is required'),
-        lastName: z.string().min(1, 'Last name is required'),
+        firstName: z.string().min(1, 'First name is required').max(100),
+        lastName: z.string().min(1, 'Last name is required').max(100),
         password: z.string().min(8, 'Password must be at least 8 characters'),
     }),
 };
 
-/**
- * Resend invitation schema
- */
-export const resendInvitationSchema = {
+export const invitationIdSchema = {
     params: z.object({
         invitationId: z.string().uuid(),
     }),
 };
 
-/**
- * Cancel invitation schema
- */
-export const cancelInvitationSchema = {
-    params: z.object({
-        invitationId: z.string().uuid(),
-    }),
-};
-
-/**
- * Get invitations query schema
- */
-export const getInvitationsSchema = {
-    query: z.object({
-        status: z.string().optional(),
-        email: z.string().optional(),
-        page: z.string().regex(/^\d+$/).transform(Number).optional(),
-        limit: z.string().regex(/^\d+$/).transform(Number).optional(),
-    }),
-};
-
-/**
- * Verify invitation token schema
- */
-export const verifyInvitationSchema = {
+export const tokenSchema = {
     params: z.object({
         token: z.string().min(1),
     }),
 };
 
 // =========================================================================
-// RESPONSE DTOs
+// QUERY SCHEMAS
 // =========================================================================
 
-export interface InvitationResponseDto {
-    id: string;
-    organizationId: string;
-    email: string;
-    role: Role;
-    status: string;
-    expiresAt: Date;
-    createdAt?: Date;
-}
+export const getInvitationsQuerySchema = {
+    query: paginationSchema.extend({
+        status: z.enum(['PENDING', 'ACCEPTED', 'CANCELLED', 'EXPIRED']).optional(),
+        email: z.string().optional(),
+        sortBy: z.enum(['email', 'role', 'status', 'expiresAt', 'createdAt']).optional(),
+    }),
+};
 
-export interface InvitationsListResponseDto {
-    success: boolean;
-    message: string;
-    data: {
-        invitations: InvitationResponseDto[];
-        pagination: {
-            total: number;
-            page: number;
-            limit: number;
-            totalPages: number;
-        };
-    };
-}
+// =========================================================================
+// TYPES (Inferred)
+// =========================================================================
 
-export interface InvitationDetailsResponseDto {
-    success: boolean;
-    message: string;
-    data: {
-        email: string;
-        role: Role;
-        organizationName: string;
-        expiresAt: Date;
-    };
-}
+export type CreateInvitationInput = z.infer<typeof createInvitationSchema.body>;
+export type AcceptInvitationInput = z.infer<typeof acceptInvitationSchema.body>;
+export type GetInvitationsQuery = z.infer<typeof getInvitationsQuerySchema.query>;

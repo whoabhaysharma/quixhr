@@ -1,36 +1,31 @@
 import { prisma } from '@/utils/prisma';
 import { AppError } from '@/utils/appError';
 import { LeaveType } from '@prisma/client';
+import { ParsedPagination } from '@/utils/pagination';
+import { buildOrderBy, validateOrganizationResource } from '@/utils/prismaHelpers';
 import {
     CreateLeaveAllocationInput,
     UpdateLeaveAllocationInput,
     BulkAllocateInput,
-    LeaveAllocationFilters,
-} from './allocations.types';
+    GetAllocationsQuery,
+} from './allocations.schema';
 
 export class LeaveAllocationService {
     /**
      * Create a leave allocation
      */
-    static async createAllocation(data: CreateLeaveAllocationInput, organizationId: string) {
-        // Verify employee belongs to organization
-        const employee = await prisma.employee.findUnique({
-            where: { id: data.employeeId },
-        });
-
-        if (!employee) {
-            throw new AppError('Employee not found', 404);
-        }
-
-        if (employee.organizationId !== organizationId) {
-            throw new AppError('Employee does not belong to this organization', 403);
-        }
+    static async createAllocation(
+        organizationId: string,
+        data: CreateLeaveAllocationInput
+    ) {
+        // Validate employee belongs to organization
+        await validateOrganizationResource('employee', data.employeeId!, organizationId, 'Employee');
 
         // Check if allocation already exists
         const existing = await prisma.leaveAllocation.findUnique({
             where: {
                 employeeId_year_leaveType: {
-                    employeeId: data.employeeId,
+                    employeeId: data.employeeId!,
                     year: data.year,
                     leaveType: data.leaveType,
                 },
@@ -41,9 +36,9 @@ export class LeaveAllocationService {
             throw new AppError('Allocation already exists for this employee, year, and leave type', 400);
         }
 
-        const allocation = await prisma.leaveAllocation.create({
+        return await prisma.leaveAllocation.create({
             data: {
-                employeeId: data.employeeId,
+                employeeId: data.employeeId!,
                 year: data.year,
                 leaveType: data.leaveType,
                 allocated: data.allocated,
@@ -60,41 +55,38 @@ export class LeaveAllocationService {
                 },
             },
         });
-
-        return allocation;
     }
 
     /**
      * Get allocations with filters
      */
-    static async getAllocations(organizationId: string, filters: LeaveAllocationFilters) {
-        const { employeeId, year, leaveType, page = 1, limit = 20 } = filters;
-        const skip = (page - 1) * limit;
+    static async getAllocations(
+        organizationId: string,
+        pagination: ParsedPagination,
+        filters: GetAllocationsQuery
+    ) {
+        const { page, limit, skip, sortBy, sortOrder } = pagination;
+        const { employeeId, year, leaveType } = filters;
 
-        const whereClause: any = {
-            employee: {
-                organizationId,
-            },
+        const where: any = {
+            employee: { organizationId },
         };
 
-        if (employeeId) {
-            whereClause.employeeId = employeeId;
-        }
+        if (employeeId) where.employeeId = employeeId;
+        if (year) where.year = year;
+        if (leaveType) where.leaveType = leaveType;
 
-        if (year) {
-            whereClause.year = year;
-        }
-
-        if (leaveType) {
-            whereClause.leaveType = leaveType;
-        }
+        const orderBy = buildOrderBy(sortBy, sortOrder, {
+            allowedFields: ['year', 'leaveType', 'allocated', 'used', 'createdAt'],
+            defaultSort: { year: 'desc' },
+        });
 
         const [allocations, total] = await Promise.all([
             prisma.leaveAllocation.findMany({
-                where: whereClause,
+                where,
                 skip,
                 take: limit,
-                orderBy: [{ year: 'desc' }, { employeeId: 'asc' }],
+                orderBy: orderBy as any,
                 include: {
                     employee: {
                         select: {
@@ -106,11 +98,11 @@ export class LeaveAllocationService {
                     },
                 },
             }),
-            prisma.leaveAllocation.count({ where: whereClause }),
+            prisma.leaveAllocation.count({ where }),
         ]);
 
         return {
-            allocations: allocations.map((alloc) => ({
+            data: allocations.map((alloc) => ({
                 ...alloc,
                 remaining: alloc.allocated - alloc.used,
             })),
@@ -126,7 +118,7 @@ export class LeaveAllocationService {
     /**
      * Get allocation by ID
      */
-    static async getAllocationById(allocationId: string, organizationId: string, userRole: string) {
+    static async getAllocationById(organizationId: string, allocationId: string) {
         const allocation = await prisma.leaveAllocation.findUnique({
             where: { id: allocationId },
             include: {
@@ -147,7 +139,7 @@ export class LeaveAllocationService {
         }
 
         // Validate organization access
-        if (userRole !== 'SUPER_ADMIN' && allocation.employee.organizationId !== organizationId) {
+        if (allocation.employee.organizationId !== organizationId) {
             throw new AppError('Access denied', 403);
         }
 
@@ -161,16 +153,13 @@ export class LeaveAllocationService {
      * Update allocation
      */
     static async updateAllocation(
-        allocationId: string,
-        data: UpdateLeaveAllocationInput,
         organizationId: string,
-        userRole: string
+        allocationId: string,
+        data: UpdateLeaveAllocationInput
     ) {
         const allocation = await prisma.leaveAllocation.findUnique({
             where: { id: allocationId },
-            include: {
-                employee: true,
-            },
+            include: { employee: true },
         });
 
         if (!allocation) {
@@ -178,7 +167,7 @@ export class LeaveAllocationService {
         }
 
         // Validate organization access
-        if (userRole !== 'SUPER_ADMIN' && allocation.employee.organizationId !== organizationId) {
+        if (allocation.employee.organizationId !== organizationId) {
             throw new AppError('Access denied', 403);
         }
 
@@ -214,12 +203,10 @@ export class LeaveAllocationService {
     /**
      * Delete allocation
      */
-    static async deleteAllocation(allocationId: string, organizationId: string, userRole: string) {
+    static async deleteAllocation(organizationId: string, allocationId: string) {
         const allocation = await prisma.leaveAllocation.findUnique({
             where: { id: allocationId },
-            include: {
-                employee: true,
-            },
+            include: { employee: true },
         });
 
         if (!allocation) {
@@ -227,7 +214,7 @@ export class LeaveAllocationService {
         }
 
         // Validate organization access
-        if (userRole !== 'SUPER_ADMIN' && allocation.employee.organizationId !== organizationId) {
+        if (allocation.employee.organizationId !== organizationId) {
             throw new AppError('Access denied', 403);
         }
 
@@ -250,26 +237,17 @@ export class LeaveAllocationService {
         const { year, leaveGradeId, employeeIds } = data;
 
         // Build employee filter
-        const employeeWhere: any = {
-            organizationId,
-        };
+        const employeeWhere: any = { organizationId };
 
-        if (leaveGradeId) {
-            employeeWhere.leaveGradeId = leaveGradeId;
-        }
-
-        if (employeeIds && employeeIds.length > 0) {
-            employeeWhere.id = { in: employeeIds };
-        }
+        if (leaveGradeId) employeeWhere.leaveGradeId = leaveGradeId;
+        if (employeeIds && employeeIds.length > 0) employeeWhere.id = { in: employeeIds };
 
         // Get employees with their leave grades
         const employees = await prisma.employee.findMany({
             where: employeeWhere,
             include: {
                 leaveGrade: {
-                    include: {
-                        policies: true,
-                    },
+                    include: { policies: true },
                 },
             },
         });
@@ -283,9 +261,7 @@ export class LeaveAllocationService {
 
         // Process each employee
         for (const employee of employees) {
-            if (!employee.leaveGrade) {
-                continue; // Skip employees without leave grade
-            }
+            if (!employee.leaveGrade) continue;
 
             // Create allocations for each policy
             for (const policy of employee.leaveGrade.policies) {
@@ -311,7 +287,6 @@ export class LeaveAllocationService {
                     });
                     allocatedCount++;
                 } catch (error) {
-                    // Continue on error for individual allocations
                     console.error(`Failed to allocate for employee ${employee.id}:`, error);
                 }
             }
@@ -329,56 +304,33 @@ export class LeaveAllocationService {
      * Get allocations for a specific employee
      */
     static async getEmployeeAllocations(
+        organizationId: string,
         employeeId: string,
-        userOrganizationId: string,
-        userRole: string,
-        requestingEmployeeId?: string,
-        filters: Omit<LeaveAllocationFilters, 'employeeId'> = {}
+        pagination: ParsedPagination,
+        filters: Omit<GetAllocationsQuery, 'employeeId'>
     ) {
-        // Verify employee exists and get their organization
-        const employee = await prisma.employee.findUnique({
-            where: { id: employeeId },
-            select: { organizationId: true },
+        // Validate employee belongs to organization
+        await validateOrganizationResource('employee', employeeId, organizationId, 'Employee');
+
+        const { page, limit, skip, sortBy, sortOrder } = pagination;
+        const { year, leaveType } = filters;
+
+        const where: any = { employeeId };
+
+        if (year) where.year = year;
+        if (leaveType) where.leaveType = leaveType;
+
+        const orderBy = buildOrderBy(sortBy, sortOrder, {
+            allowedFields: ['year', 'leaveType', 'allocated', 'used'],
+            defaultSort: { year: 'desc' },
         });
-
-        if (!employee) {
-            throw new AppError('Employee not found', 404);
-        }
-
-        // Authorization: SUPER_ADMIN can access any, others only their organization
-        // EMPLOYEE role can only access their own allocations
-        if (userRole !== 'SUPER_ADMIN') {
-            if (employee.organizationId !== userOrganizationId) {
-                throw new AppError('Access denied', 403);
-            }
-
-            // If user is EMPLOYEE role, they can only view their own allocations
-            if (userRole === 'EMPLOYEE' && employeeId !== requestingEmployeeId) {
-                throw new AppError('Employees can only view their own allocations', 403);
-            }
-        }
-
-        const { year, leaveType, page = 1, limit = 20 } = filters;
-        const skip = (page - 1) * limit;
-
-        const whereClause: any = {
-            employeeId,
-        };
-
-        if (year) {
-            whereClause.year = year;
-        }
-
-        if (leaveType) {
-            whereClause.leaveType = leaveType;
-        }
 
         const [allocations, total] = await Promise.all([
             prisma.leaveAllocation.findMany({
-                where: whereClause,
+                where,
                 skip,
                 take: limit,
-                orderBy: [{ year: 'desc' }, { leaveType: 'asc' }],
+                orderBy: orderBy as any,
                 include: {
                     employee: {
                         select: {
@@ -390,11 +342,11 @@ export class LeaveAllocationService {
                     },
                 },
             }),
-            prisma.leaveAllocation.count({ where: whereClause }),
+            prisma.leaveAllocation.count({ where }),
         ]);
 
         return {
-            allocations: allocations.map((alloc) => ({
+            data: allocations.map((alloc) => ({
                 ...alloc,
                 remaining: alloc.allocated - alloc.used,
             })),

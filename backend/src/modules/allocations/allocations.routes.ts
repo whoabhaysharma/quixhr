@@ -1,25 +1,24 @@
 import { Router } from 'express';
 import { Role } from '@prisma/client';
+import { protect, resolveTenant, restrictTo, validate } from '@/shared/middleware';
 import * as AllocationController from './allocations.controller';
-import { protect, restrictTo, validate } from '@/shared/middleware';
 import {
     createLeaveAllocationSchema,
     updateLeaveAllocationSchema,
-    getAllocationsSchema,
+    getAllocationsQuerySchema,
+    bulkAllocateSchema,
+    allocationIdSchema,
 } from './allocations.schema';
 
 const router = Router();
 
-// All routes require authentication
+// Global Middleware
 router.use(protect);
-
-// =========================================================================
-// FLAT ALLOCATION ROUTES (Resource-based)
-// =========================================================================
-
-// Global Middleware: Resolve Tenant
-import { resolveTenant } from '@/shared/middleware';
 router.use(resolveTenant);
+
+// =========================================================================
+// FLAT ALLOCATION ROUTES
+// =========================================================================
 
 /**
  * @route   GET /api/v1/allocations
@@ -29,8 +28,20 @@ router.use(resolveTenant);
 router.get(
     '/',
     restrictTo(Role.SUPER_ADMIN, Role.ORG_ADMIN, Role.HR_ADMIN, Role.MANAGER),
-    validate(getAllocationsSchema),
+    validate(getAllocationsQuerySchema),
     AllocationController.getAllocations
+);
+
+/**
+ * @route   POST /api/v1/allocations/bulk
+ * @desc    Bulk allocate leaves
+ * @access  Protected (HR_ADMIN, ORG_ADMIN, SUPER_ADMIN)
+ */
+router.post(
+    '/bulk',
+    restrictTo(Role.SUPER_ADMIN, Role.ORG_ADMIN, Role.HR_ADMIN),
+    validate(bulkAllocateSchema),
+    AllocationController.bulkAllocate
 );
 
 /**
@@ -41,6 +52,7 @@ router.get(
 router.get(
     '/:allocationId',
     restrictTo(Role.SUPER_ADMIN, Role.ORG_ADMIN, Role.HR_ADMIN, Role.MANAGER),
+    validate(allocationIdSchema),
     AllocationController.getAllocationById
 );
 
@@ -52,6 +64,7 @@ router.get(
 router.patch(
     '/:allocationId',
     restrictTo(Role.SUPER_ADMIN, Role.ORG_ADMIN, Role.HR_ADMIN),
+    validate(allocationIdSchema),
     validate(updateLeaveAllocationSchema),
     AllocationController.updateAllocation
 );
@@ -64,6 +77,7 @@ router.patch(
 router.delete(
     '/:allocationId',
     restrictTo(Role.SUPER_ADMIN, Role.ORG_ADMIN, Role.HR_ADMIN),
+    validate(allocationIdSchema),
     AllocationController.deleteAllocation
 );
 
