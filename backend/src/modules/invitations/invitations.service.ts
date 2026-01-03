@@ -42,7 +42,17 @@ export class InvitationService {
         const expiresAt = new Date();
         expiresAt.setDate(expiresAt.getDate() + 7);
 
-        return await prisma.invitation.create({
+        // Fetch organization details for the email
+        const organization = await prisma.organization.findUnique({
+            where: { id: organizationId },
+            select: { name: true }
+        });
+
+        if (!organization) {
+            throw new AppError('Organization not found', 404);
+        }
+
+        const invitation = await prisma.invitation.create({
             data: {
                 organizationId,
                 email: data.email,
@@ -52,12 +62,33 @@ export class InvitationService {
                 status: 'PENDING',
             },
         });
+
+        // Send Invitation Email
+        const { sendEmail } = require('@/infra/email/email.service');
+        const { config } = require('@/config');
+
+        // Construct invite link (User will click this to accept)
+        // Adjust frontend URL as needed
+        const inviteLink = `${config.clientUrl}/accept-invite?token=${token}`;
+
+        await sendEmail({
+            to: data.email,
+            subject: `Invitation to join ${organization.name}`,
+            template: 'invite-user',
+            data: {
+                inviteLink,
+                organizationName: organization.name,
+                role: data.role
+            }
+        });
+
+        return invitation;
     }
 
     static async getInvitations(
         organizationId: string,
         pagination: ParsedPagination,
-        filters: GetInvitationsQuery
+        filters: Partial<GetInvitationsQuery>
     ) {
         const { page, limit, skip, sortBy, sortOrder, search } = pagination;
         const { status, email } = filters;
@@ -190,7 +221,7 @@ export class InvitationService {
         });
     }
 
-    static async resendInvitation(organizationId: string, invitationId: string) {
+    static async resendInvitation(invitationId: string, organizationId: string, userRole: Role) {
         const invitation = await prisma.invitation.findUnique({
             where: { id: invitationId },
         });
@@ -201,6 +232,14 @@ export class InvitationService {
 
         if (invitation.organizationId !== organizationId) {
             throw new AppError('Access denied', 403);
+        }
+
+        // Strict RBAC: Can only resend if user has higher rank than invitation role?
+        // Actually, logical requirement says "cannot manage upper role".
+        // Let's import role hierarchy check
+        const { canManageRole } = require('@/utils/roleHierarchy');
+        if (!canManageRole(userRole, invitation.role)) {
+            throw new AppError('You cannot manage this invitation. You can only manage invitations for roles lower than yours.', 403);
         }
 
         if (invitation.status !== 'PENDING') {
@@ -211,13 +250,39 @@ export class InvitationService {
         const expiresAt = new Date();
         expiresAt.setDate(expiresAt.getDate() + 7);
 
-        return await prisma.invitation.update({
+        await prisma.invitation.update({
             where: { id: invitationId },
             data: { token, expiresAt },
         });
+
+        // Fetch Organization for email (optimize: could rely on passed ID but need name)
+        const organization = await prisma.organization.findUnique({
+            where: { id: organizationId },
+            select: { name: true }
+        });
+
+        // Send Email
+        const { sendEmail } = require('@/infra/email/email.service');
+        const { config } = require('@/config');
+        const inviteLink = `${config.clientUrl}/accept-invite?token=${token}`;
+
+        if (organization) {
+            await sendEmail({
+                to: invitation.email,
+                subject: `Invitation to join ${organization.name}`,
+                template: 'invite-user',
+                data: {
+                    inviteLink,
+                    organizationName: organization.name,
+                    role: invitation.role
+                }
+            });
+        }
+
+        return await prisma.invitation.findUnique({ where: { id: invitationId } }) as any; // Re-fetch or return object
     }
 
-    static async cancelInvitation(organizationId: string, invitationId: string) {
+    static async cancelInvitation(invitationId: string, organizationId: string, userRole: Role) {
         const invitation = await prisma.invitation.findUnique({
             where: { id: invitationId },
         });
@@ -228,6 +293,12 @@ export class InvitationService {
 
         if (invitation.organizationId !== organizationId) {
             throw new AppError('Access denied', 403);
+        }
+
+        // Strict RBAC
+        const { canManageRole } = require('@/utils/roleHierarchy');
+        if (!canManageRole(userRole, invitation.role)) {
+            throw new AppError('You cannot manage this invitation. You can only manage invitations for roles lower than yours.', 403);
         }
 
         if (invitation.status !== 'PENDING') {
@@ -240,7 +311,7 @@ export class InvitationService {
         });
     }
 
-    static async deleteInvitation(organizationId: string, invitationId: string) {
+    static async deleteInvitation(invitationId: string, organizationId: string, userRole: Role) {
         const invitation = await prisma.invitation.findUnique({
             where: { id: invitationId },
         });
@@ -251,6 +322,12 @@ export class InvitationService {
 
         if (invitation.organizationId !== organizationId) {
             throw new AppError('Access denied', 403);
+        }
+
+        // Strict RBAC
+        const { canManageRole } = require('@/utils/roleHierarchy');
+        if (!canManageRole(userRole, invitation.role)) {
+            throw new AppError('You cannot manage this invitation. You can only manage invitations for roles lower than yours.', 403);
         }
 
         await prisma.invitation.delete({

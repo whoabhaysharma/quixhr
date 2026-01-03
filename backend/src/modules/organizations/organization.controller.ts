@@ -62,3 +62,67 @@ export const getOrganizationAuditLogs = catchAsync(async (req: Request, res: Res
     const logs = await OrganizationService.getAuditLogs(organizationId, { page, limit, sortBy, sortOrder });
     sendResponse(res, 200, logs, 'Audit logs retrieved');
 });
+
+// =========================================================================
+// MEMBER MANAGEMENT (Restricted Strict RBAC)
+// =========================================================================
+
+export const getMembers = catchAsync(async (req: Request, res: Response, next: NextFunction) => {
+    const organizationId = getOrganizationContext(req, next);
+    const pagination = getPaginationParams(req, 'firstName', 'asc');
+
+    const user = (req as any).user;
+    if (!user) return next(new AppError('User not authenticated', 401));
+
+    // Import dynamically to avoid circular dependency
+    const { EmployeeService } = require('../employees/employees.service');
+    const { getViewableRoles } = require('@/utils/roleHierarchy');
+
+    // 1. Determine Access
+    // "Higher rank role can get the lower rank role list"
+    // We interpret this as: Viewer can see roles <= Viewer Role.
+    const allowedRoles = getViewableRoles(user.role);
+
+    // 2. Extract Filters
+    const filters = {
+        status: req.query.status as any,
+        role: req.query.role as any, // User might specifically request "SHOW ME MANAGERS"
+        // Pass allowedRoles to restrict the query
+        allowedRoles
+    };
+
+    // 3. Query
+    const result = await EmployeeService.getEmployees(organizationId, pagination, filters);
+    sendResponse(res, 200, result, 'Members retrieved successfully');
+});
+
+export const removeMember = catchAsync(async (req: Request, res: Response, next: NextFunction) => {
+    const organizationId = getOrganizationContext(req, next);
+    const { employeeId } = req.params;
+
+    const user = (req as any).user;
+    if (!user) return next(new AppError('User not authenticated', 401));
+    const currentUserRole = user.role;
+
+    const { EmployeeService } = require('../employees/employees.service');
+    const { canManageRole } = require('@/utils/roleHierarchy');
+
+    // 1. Get the target employee to find their user role
+    const targetEmployee = await EmployeeService.getEmployee(organizationId, employeeId);
+
+    if (!targetEmployee) {
+        return next(new AppError('Employee not found', 404));
+    }
+
+    const targetUserRole = targetEmployee.user.role;
+
+    // 2. Strict Hierarchy Check
+    if (!canManageRole(currentUserRole, targetUserRole)) {
+        return next(new AppError('You cannot remove this member. You can only remove members with a role lower than yours.', 403));
+    }
+
+    // 3. Proceed to delete
+    await EmployeeService.deleteEmployee(organizationId, employeeId);
+
+    sendResponse(res, 200, null, 'Member removed successfully');
+});

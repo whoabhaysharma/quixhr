@@ -13,7 +13,7 @@ export const createEmployeeSchema = {
     email: z.string().email('Invalid email format').optional(),
     code: z.string().max(20).optional(),
     status: z.enum(['ACTIVE', 'INACTIVE', 'TERMINATED']).default('ACTIVE'), // Explicit enum is better than string
-    joiningDate: z.string().datetime().or(z.date()),
+    joiningDate: z.coerce.date(),
     role: z.nativeEnum(Role).default(Role.EMPLOYEE),
 
     // Relations (Optional during creation, can be assigned later)
@@ -31,7 +31,7 @@ export const updateEmployeeSchema = {
     lastName: z.string().min(1).max(50).optional(),
     code: z.string().max(20).optional(),
     status: z.enum(['ACTIVE', 'INACTIVE', 'TERMINATED']).optional(),
-    joiningDate: z.string().datetime().or(z.date()).optional(),
+    joiningDate: z.coerce.date().optional(),
 
     // Relations
     calendarId: z.string().uuid().optional(),

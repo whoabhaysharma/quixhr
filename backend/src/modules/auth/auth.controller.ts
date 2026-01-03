@@ -105,7 +105,7 @@ export const register = catchAsync(
     // Check if user already exists
     const existingUser = await prisma.user.findUnique({ where: { email } });
     if (existingUser) {
-      return next(new AppError('User with this email already exists', 400));
+      return sendResponse(res, 400, null, 'User with this email already exists');
     }
 
     // Hash password
@@ -145,26 +145,10 @@ export const register = catchAsync(
         },
       });
 
-      // 4. Create Subscription (Start with free plan or trial)
-      // const plan = await tx.plan.findFirst({ where: { isActive: true } });
-      // if (plan) {
-      //   const validUntil = new Date();
-      //   validUntil.setDate(validUntil.getDate() + 30); // 30 days trial
-
-      //   await tx.subscription.create({
-      //     data: {
-      //       organizationId: organization.id,
-      //       planId: plan.id,
-      //       status: 'ACTIVE',
-      //       validUntil,
-      //     },
-      //   });
-      // }
-
       return { user, organization, employee };
     });
 
-    // Generate tokens
+    // Generate verification token (short lived)
     const tokenPayload: TokenPayload = {
       userId: result.user.id,
       email: result.user.email,
@@ -173,8 +157,7 @@ export const register = catchAsync(
       organizationId: result.organization.id,
     };
 
-    const accessToken = generateToken(tokenPayload, '1h');
-    const refreshToken = generateToken(tokenPayload, '7d');
+    const verificationToken = generateToken(tokenPayload, '24h');
 
     // Send verification email
     await sendEmail({
@@ -183,22 +166,12 @@ export const register = catchAsync(
       template: 'verify-email',
       data: {
         name: firstName,
-        verificationLink: `${config.frontend.url}/verify-email?token=${accessToken}`,
+        verificationLink: `${config.frontend.url}/verify-email?token=${verificationToken}`,
       },
     });
 
-    const userWithEmployee = {
-      ...result.user,
-      employee: result.employee,
-    };
-
-    const response: AuthResponseDto = {
-      accessToken,
-      refreshToken,
-      user: buildUserResponse(userWithEmployee),
-    };
-
-    sendResponse(res, 201, response, 'Organization and user registered successfully');
+    // Return success WITHOUT tokens
+    sendResponse(res, 201, null, 'Registration successful. Please check your email to verify your account.');
   }
 );
 
@@ -225,6 +198,11 @@ export const login = catchAsync(
     const isPasswordValid = await comparePassword(password, user.password);
     if (!isPasswordValid) {
       return next(new AppError('Invalid email or password', 401));
+    }
+
+    // Check if email is verified
+    if (!user.isEmailVerified) {
+      return next(new AppError('Please verify your email to login', 401));
     }
 
     // Generate tokens

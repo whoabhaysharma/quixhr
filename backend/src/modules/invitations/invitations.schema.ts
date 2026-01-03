@@ -53,3 +53,39 @@ export const getInvitationsQuerySchema = {
 export type CreateInvitationInput = z.infer<typeof createInvitationSchema.body>;
 export type AcceptInvitationInput = z.infer<typeof acceptInvitationSchema.body>;
 export type GetInvitationsQuery = z.infer<typeof getInvitationsQuerySchema.query>;
+
+// Response DTOs
+export interface InvitationResponseDto {
+    id: string;
+    organizationId: string;
+    email: string;
+    role: Role;
+    status: string;
+    expiresAt: Date;
+}
+
+export interface InvitationsListResponseDto {
+    success: boolean;
+    message: string;
+    data: {
+        invitations: InvitationResponseDto[];
+        pagination: {
+            total: number;
+            page: number;
+            limit: number;
+            totalPages: number;
+        };
+    };
+}
+
+export interface InvitationDetailsResponseDto {
+    success: boolean;
+    message: string;
+    data: {
+        email: string;
+        role: Role;
+        organizationName: string;
+        organizationId: string;
+        expiresAt: Date;
+    };
+}

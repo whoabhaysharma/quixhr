@@ -130,6 +130,7 @@ model Invitation {
   token     String   @unique
   expiresAt DateTime
   status    String   @default("PENDING")
+  createdAt DateTime @default(now())
 
   organization   Organization  @relation(fields: [organizationId], references: [id])
 }

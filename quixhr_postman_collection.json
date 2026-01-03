@@ -1,17 +1,32 @@
 {
     "info": {
-        "name": "QuixHR API",
-        "description": "Postman collection for QuixHR Backend API",
+        "name": "QuixHR API - Complete Collection",
+        "description": "Comprehensive Postman collection for QuixHR Backend API with all refactored endpoints",
         "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
     },
     "variable": [
         {
             "key": "baseUrl",
-            "value": "http://localhost:3000/api",
+            "value": "http://localhost:5000/api/v1",
             "type": "string"
         },
         {
             "key": "token",
+            "value": "",
+            "type": "string"
+        },
+        {
+            "key": "organizationId",
+            "value": "",
+            "type": "string"
+        },
+        {
+            "key": "employeeId",
+            "value": "",
+            "type": "string"
+        },
+        {
+            "key": "calendarId",
             "value": "",
             "type": "string"
         }
@@ -37,15 +52,13 @@
                             "listen": "test",
                             "script": {
                                 "exec": [
-                                    "var jsonData = pm.response.json();",
-                                    "pm.test(\"Status code is 201\", function () {",
-                                    "    pm.response.to.have.status(201);",
-                                    "});",
-                                    "if (jsonData.token) {",
-                                    "    pm.collectionVariables.set(\"token\", jsonData.token);",
+                                    "if (pm.response.code === 201) {",
+                                    "    const jsonData = pm.response.json();",
+                                    "    if (jsonData.data && jsonData.data.token) {",
+                                    "        pm.collectionVariables.set('token', jsonData.data.token);",
+                                    "    }",
                                     "}"
-                                ],
-                                "type": "text/javascript"
+                                ]
                             }
                         }
                     ],
@@ -54,7 +67,7 @@
                         "header": [],
                         "body": {
                             "mode": "raw",
-                            "raw": "{\n  \"email\": \"test@example.com\",\n  \"name\": \"Test User\",\n  \"password\": \"password123\",\n  \"organizationName\": \"Test Org\"\n}",
+                            "raw": "{\n  \"email\": \"admin@quixhr.com\",\n  \"password\": \"Admin@123\",\n  \"firstName\": \"Admin\",\n  \"lastName\": \"User\",\n  \"organizationName\": \"QuixHR Demo\"\n}",
                             "options": {
                                 "raw": {
                                     "language": "json"
@@ -80,15 +93,13 @@
                             "listen": "test",
                             "script": {
                                 "exec": [
-                                    "var jsonData = pm.response.json();",
-                                    "pm.test(\"Status code is 200\", function () {",
-                                    "    pm.response.to.have.status(200);",
-                                    "});",
-                                    "if (jsonData.token) {",
-                                    "    pm.collectionVariables.set(\"token\", jsonData.token);",
+                                    "if (pm.response.code === 200) {",
+                                    "    const jsonData = pm.response.json();",
+                                    "    if (jsonData.data && jsonData.data.token) {",
+                                    "        pm.collectionVariables.set('token', jsonData.data.token);",
+                                    "    }",
                                     "}"
-                                ],
-                                "type": "text/javascript"
+                                ]
                             }
                         }
                     ],
@@ -97,7 +108,7 @@
                         "header": [],
                         "body": {
                             "mode": "raw",
-                            "raw": "{\n  \"email\": \"test@example.com\",\n  \"password\": \"password123\"\n}",
+                            "raw": "{\n  \"email\": \"admin@quixhr.com\",\n  \"password\": \"Admin@123\"\n}",
                             "options": {
                                 "raw": {
                                     "language": "json"
@@ -122,112 +133,25 @@
                         "method": "GET",
                         "header": [],
                         "url": {
-                            "raw": "{{baseUrl}}/auth/profile",
+                            "raw": "{{baseUrl}}/auth/me",
                             "host": [
                                 "{{baseUrl}}"
                             ],
                             "path": [
                                 "auth",
-                                "profile"
-                            ]
-                        }
-                    }
-                }
-            ]
-        },
-        {
-            "name": "Users",
-            "item": [
-                {
-                    "name": "Get User Profile (by ID)",
-                    "request": {
-                        "method": "GET",
-                        "header": [],
-                        "url": {
-                            "raw": "{{baseUrl}}/users/profile/{{userId}}",
-                            "host": [
-                                "{{baseUrl}}"
-                            ],
-                            "path": [
-                                "users",
-                                "profile",
-                                "{{userId}}"
+                                "me"
                             ]
                         }
                     }
                 },
                 {
-                    "name": "Update User",
-                    "request": {
-                        "method": "PUT",
-                        "header": [],
-                        "body": {
-                            "mode": "raw",
-                            "raw": "{\n  \"name\": \"Updated Name\"\n}",
-                            "options": {
-                                "raw": {
-                                    "language": "json"
-                                }
-                            }
-                        },
-                        "url": {
-                            "raw": "{{baseUrl}}/users/{{userId}}",
-                            "host": [
-                                "{{baseUrl}}"
-                            ],
-                            "path": [
-                                "users",
-                                "{{userId}}"
-                            ]
-                        }
-                    }
-                },
-                {
-                    "name": "Delete User",
-                    "request": {
-                        "method": "DELETE",
-                        "header": [],
-                        "url": {
-                            "raw": "{{baseUrl}}/users/{{userId}}",
-                            "host": [
-                                "{{baseUrl}}"
-                            ],
-                            "path": [
-                                "users",
-                                "{{userId}}"
-                            ]
-                        }
-                    }
-                },
-                {
-                    "name": "Get All Users (Admin)",
-                    "request": {
-                        "method": "GET",
-                        "header": [],
-                        "url": {
-                            "raw": "{{baseUrl}}/users",
-                            "host": [
-                                "{{baseUrl}}"
-                            ],
-                            "path": [
-                                "users"
-                            ]
-                        }
-                    }
-                }
-            ]
-        },
-        {
-            "name": "Leaves",
-            "item": [
-                {
-                    "name": "Create Leave",
+                    "name": "Refresh Token",
                     "request": {
                         "method": "POST",
                         "header": [],
                         "body": {
                             "mode": "raw",
-                            "raw": "{\n  \"startDate\": \"2024-01-01\",\n  \"endDate\": \"2024-01-05\",\n  \"reason\": \"Vacation\"\n}",
+                            "raw": "{\n  \"refreshToken\": \"your-refresh-token\"\n}",
                             "options": {
                                 "raw": {
                                     "language": "json"
@@ -235,77 +159,25 @@
                             }
                         },
                         "url": {
-                            "raw": "{{baseUrl}}/leaves",
+                            "raw": "{{baseUrl}}/auth/refresh",
                             "host": [
                                 "{{baseUrl}}"
                             ],
                             "path": [
-                                "leaves"
+                                "auth",
+                                "refresh"
                             ]
                         }
                     }
                 },
                 {
-                    "name": "Get User Stats",
+                    "name": "Verify Email",
                     "request": {
-                        "method": "GET",
-                        "header": [],
-                        "url": {
-                            "raw": "{{baseUrl}}/leaves/user/stats",
-                            "host": [
-                                "{{baseUrl}}"
-                            ],
-                            "path": [
-                                "leaves",
-                                "user",
-                                "stats"
-                            ]
-                        }
-                    }
-                },
-                {
-                    "name": "Get User Leaves",
-                    "request": {
-                        "method": "GET",
-                        "header": [],
-                        "url": {
-                            "raw": "{{baseUrl}}/leaves/user/leaves",
-                            "host": [
-                                "{{baseUrl}}"
-                            ],
-                            "path": [
-                                "leaves",
-                                "user",
-                                "leaves"
-                            ]
-                        }
-                    }
-                },
-                {
-                    "name": "Get Leave by ID",
-                    "request": {
-                        "method": "GET",
-                        "header": [],
-                        "url": {
-                            "raw": "{{baseUrl}}/leaves/{{leaveId}}",
-                            "host": [
-                                "{{baseUrl}}"
-                            ],
-                            "path": [
-                                "leaves",
-                                "{{leaveId}}"
-                            ]
-                        }
-                    }
-                },
-                {
-                    "name": "Update Leave",
-                    "request": {
-                        "method": "PUT",
+                        "method": "POST",
                         "header": [],
                         "body": {
                             "mode": "raw",
-                            "raw": "{\n  \"reason\": \"Updated Reason\"\n}",
+                            "raw": "{\n  \"token\": \"your-verification-token\"\n}",
                             "options": {
                                 "raw": {
                                     "language": "json"
@@ -313,65 +185,13 @@
                             }
                         },
                         "url": {
-                            "raw": "{{baseUrl}}/leaves/{{leaveId}}",
+                            "raw": "{{baseUrl}}/auth/verify-email",
                             "host": [
                                 "{{baseUrl}}"
                             ],
                             "path": [
-                                "leaves",
-                                "{{leaveId}}"
-                            ]
-                        }
-                    }
-                },
-                {
-                    "name": "Cancel Leave",
-                    "request": {
-                        "method": "PUT",
-                        "header": [],
-                        "url": {
-                            "raw": "{{baseUrl}}/leaves/{{leaveId}}/cancel",
-                            "host": [
-                                "{{baseUrl}}"
-                            ],
-                            "path": [
-                                "leaves",
-                                "{{leaveId}}",
-                                "cancel"
-                            ]
-                        }
-                    }
-                },
-                {
-                    "name": "Get All Leaves (Admin/HR)",
-                    "request": {
-                        "method": "GET",
-                        "header": [],
-                        "url": {
-                            "raw": "{{baseUrl}}/leaves",
-                            "host": [
-                                "{{baseUrl}}"
-                            ],
-                            "path": [
-                                "leaves"
-                            ]
-                        }
-                    }
-                },
-                {
-                    "name": "Approve Leave (Admin/HR)",
-                    "request": {
-                        "method": "PUT",
-                        "header": [],
-                        "url": {
-                            "raw": "{{baseUrl}}/leaves/{{leaveId}}/approve",
-                            "host": [
-                                "{{baseUrl}}"
-                            ],
-                            "path": [
-                                "leaves",
-                                "{{leaveId}}",
-                                "approve"
+                                "auth",
+                                "verify-email"
                             ]
                         }
                     }
@@ -382,18 +202,81 @@
             "name": "Organizations",
             "item": [
                 {
-                    "name": "Get Current Organization",
+                    "name": "List Organizations (Super Admin)",
                     "request": {
                         "method": "GET",
                         "header": [],
                         "url": {
-                            "raw": "{{baseUrl}}/organizations/me",
+                            "raw": "{{baseUrl}}/org?page=1&limit=20&search=&sortBy=name&sortOrder=asc",
                             "host": [
                                 "{{baseUrl}}"
                             ],
                             "path": [
-                                "organizations",
-                                "me"
+                                "org"
+                            ],
+                            "query": [
+                                {
+                                    "key": "page",
+                                    "value": "1"
+                                },
+                                {
+                                    "key": "limit",
+                                    "value": "20"
+                                },
+                                {
+                                    "key": "search",
+                                    "value": ""
+                                },
+                                {
+                                    "key": "sortBy",
+                                    "value": "name"
+                                },
+                                {
+                                    "key": "sortOrder",
+                                    "value": "asc"
+                                }
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "Get Organization",
+                    "request": {
+                        "method": "GET",
+                        "header": [],
+                        "url": {
+                            "raw": "{{baseUrl}}/org/{{organizationId}}",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "org",
+                                "{{organizationId}}"
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "Create Organization (Super Admin)",
+                    "request": {
+                        "method": "POST",
+                        "header": [],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"name\": \"New Organization\",\n  \"email\": \"contact@neworg.com\",\n  \"phone\": \"+1234567890\"\n}",
+                            "options": {
+                                "raw": {
+                                    "language": "json"
+                                }
+                            }
+                        },
+                        "url": {
+                            "raw": "{{baseUrl}}/org",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "org"
                             ]
                         }
                     }
@@ -401,11 +284,11 @@
                 {
                     "name": "Update Organization",
                     "request": {
-                        "method": "PUT",
+                        "method": "PATCH",
                         "header": [],
                         "body": {
                             "mode": "raw",
-                            "raw": "{\n  \"name\": \"New Org Name\"\n}",
+                            "raw": "{\n  \"name\": \"Updated Organization Name\"\n}",
                             "options": {
                                 "raw": {
                                     "language": "json"
@@ -413,13 +296,114 @@
                             }
                         },
                         "url": {
-                            "raw": "{{baseUrl}}/organizations/me",
+                            "raw": "{{baseUrl}}/org/{{organizationId}}",
                             "host": [
                                 "{{baseUrl}}"
                             ],
                             "path": [
-                                "organizations",
-                                "me"
+                                "org",
+                                "{{organizationId}}"
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "Get Dashboard Stats",
+                    "request": {
+                        "method": "GET",
+                        "header": [],
+                        "url": {
+                            "raw": "{{baseUrl}}/org/{{organizationId}}/dashboard",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "org",
+                                "{{organizationId}}",
+                                "dashboard"
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "Get Audit Logs",
+                    "request": {
+                        "method": "GET",
+                        "header": [],
+                        "url": {
+                            "raw": "{{baseUrl}}/org/{{organizationId}}/audit-logs?page=1&limit=20",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "org",
+                                "{{organizationId}}",
+                                "audit-logs"
+                            ],
+                            "query": [
+                                {
+                                    "key": "page",
+                                    "value": "1"
+                                },
+                                {
+                                    "key": "limit",
+                                    "value": "20"
+                                }
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "List Members (Restricted)",
+                    "request": {
+                        "method": "GET",
+                        "header": [],
+                        "url": {
+                            "raw": "{{baseUrl}}/org/{{organizationId}}/members?page=1&limit=20&sortBy=firstName&sortOrder=asc&role=EMPLOYEE",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "org",
+                                "{{organizationId}}",
+                                "members"
+                            ],
+                            "query": [
+                                {
+                                    "key": "page",
+                                    "value": "1"
+                                },
+                                {
+                                    "key": "limit",
+                                    "value": "20"
+                                },
+                                {
+                                    "key": "sortBy",
+                                    "value": "firstName"
+                                },
+                                {
+                                    "key": "sortOrder",
+                                    "value": "asc"
+                                }
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "Remove Member (RBAC)",
+                    "request": {
+                        "method": "DELETE",
+                        "header": [],
+                        "url": {
+                            "raw": "{{baseUrl}}/org/{{organizationId}}/members/{{employeeId}}",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "org",
+                                "{{organizationId}}",
+                                "members",
+                                "{{employeeId}}"
                             ]
                         }
                     }
@@ -427,50 +411,73 @@
             ]
         },
         {
-            "name": "Subscriptions",
+            "name": "Employees",
             "item": [
                 {
-                    "name": "Get Plans",
+                    "name": "List Employees",
                     "request": {
                         "method": "GET",
                         "header": [],
                         "url": {
-                            "raw": "{{baseUrl}}/subscriptions/plans",
+                            "raw": "{{baseUrl}}/employees?page=1&limit=20&search=&status=ACTIVE&sortBy=firstName&sortOrder=asc",
                             "host": [
                                 "{{baseUrl}}"
                             ],
                             "path": [
-                                "subscriptions",
-                                "plans"
+                                "employees"
+                            ],
+                            "query": [
+                                {
+                                    "key": "page",
+                                    "value": "1"
+                                },
+                                {
+                                    "key": "limit",
+                                    "value": "20"
+                                },
+                                {
+                                    "key": "search",
+                                    "value": ""
+                                },
+                                {
+                                    "key": "status",
+                                    "value": "ACTIVE"
+                                },
+                                {
+                                    "key": "sortBy",
+                                    "value": "firstName"
+                                },
+                                {
+                                    "key": "sortOrder",
+                                    "value": "asc"
+                                }
                             ]
                         }
                     }
                 },
                 {
-                    "name": "Get Current Subscription",
-                    "request": {
-                        "method": "GET",
-                        "header": [],
-                        "url": {
-                            "raw": "{{baseUrl}}/subscriptions/current",
-                            "host": [
-                                "{{baseUrl}}"
-                            ],
-                            "path": [
-                                "subscriptions",
-                                "current"
-                            ]
+                    "name": "Create Employee",
+                    "event": [
+                        {
+                            "listen": "test",
+                            "script": {
+                                "exec": [
+                                    "if (pm.response.code === 201) {",
+                                    "    const jsonData = pm.response.json();",
+                                    "    if (jsonData.data && jsonData.data.id) {",
+                                    "        pm.collectionVariables.set('employeeId', jsonData.data.id);",
+                                    "    }",
+                                    "}"
+                                ]
+                            }
                         }
-                    }
-                },
-                {
-                    "name": "Create Subscription",
+                    ],
                     "request": {
                         "method": "POST",
                         "header": [],
                         "body": {
                             "mode": "raw",
-                            "raw": "{\n  \"planId\": 1\n}",
+                            "raw": "{\n  \"firstName\": \"John\",\n  \"lastName\": \"Doe\",\n  \"email\": \"john.doe@company.com\",\n  \"phone\": \"+1234567890\",\n  \"joiningDate\": \"2024-01-01\",\n  \"designation\": \"Software Engineer\",\n  \"department\": \"Engineering\"\n}",
                             "options": {
                                 "raw": {
                                     "language": "json"
@@ -478,12 +485,1052 @@
                             }
                         },
                         "url": {
-                            "raw": "{{baseUrl}}/subscriptions",
+                            "raw": "{{baseUrl}}/org/{{organizationId}}/employees",
                             "host": [
                                 "{{baseUrl}}"
                             ],
                             "path": [
-                                "subscriptions"
+                                "org",
+                                "{{organizationId}}",
+                                "employees"
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "Get Employee",
+                    "request": {
+                        "method": "GET",
+                        "header": [],
+                        "url": {
+                            "raw": "{{baseUrl}}/employees/{{employeeId}}",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "employees",
+                                "{{employeeId}}"
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "Update Employee",
+                    "request": {
+                        "method": "PATCH",
+                        "header": [],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"designation\": \"Senior Software Engineer\",\n  \"department\": \"Engineering\"\n}",
+                            "options": {
+                                "raw": {
+                                    "language": "json"
+                                }
+                            }
+                        },
+                        "url": {
+                            "raw": "{{baseUrl}}/employees/{{employeeId}}",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "employees",
+                                "{{employeeId}}"
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "Delete Employee",
+                    "request": {
+                        "method": "DELETE",
+                        "header": [],
+                        "url": {
+                            "raw": "{{baseUrl}}/employees/{{employeeId}}",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "employees",
+                                "{{employeeId}}"
+                            ]
+                        }
+                    }
+                }
+            ]
+        },
+        {
+            "name": "Calendars",
+            "item": [
+                {
+                    "name": "List Calendars",
+                    "request": {
+                        "method": "GET",
+                        "header": [],
+                        "url": {
+                            "raw": "{{baseUrl}}/calendars?page=1&limit=20&sortBy=name&sortOrder=asc",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "calendars"
+                            ],
+                            "query": [
+                                {
+                                    "key": "page",
+                                    "value": "1"
+                                },
+                                {
+                                    "key": "limit",
+                                    "value": "20"
+                                },
+                                {
+                                    "key": "sortBy",
+                                    "value": "name"
+                                },
+                                {
+                                    "key": "sortOrder",
+                                    "value": "asc"
+                                }
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "Create Calendar",
+                    "event": [
+                        {
+                            "listen": "test",
+                            "script": {
+                                "exec": [
+                                    "if (pm.response.code === 201) {",
+                                    "    const jsonData = pm.response.json();",
+                                    "    if (jsonData.data && jsonData.data.id) {",
+                                    "        pm.collectionVariables.set('calendarId', jsonData.data.id);",
+                                    "    }",
+                                    "}"
+                                ]
+                            }
+                        }
+                    ],
+                    "request": {
+                        "method": "POST",
+                        "header": [],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"name\": \"Standard Work Week\",\n  \"description\": \"Monday to Friday, 9 AM to 6 PM\",\n  \"dayStartTime\": \"09:00\",\n  \"dayEndTime\": \"18:00\",\n  \"weeklyOffs\": [\"SATURDAY\", \"SUNDAY\"]\n}",
+                            "options": {
+                                "raw": {
+                                    "language": "json"
+                                }
+                            }
+                        },
+                        "url": {
+                            "raw": "{{baseUrl}}/org/{{organizationId}}/calendars",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "org",
+                                "{{organizationId}}",
+                                "calendars"
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "Get Calendar",
+                    "request": {
+                        "method": "GET",
+                        "header": [],
+                        "url": {
+                            "raw": "{{baseUrl}}/calendars/{{calendarId}}",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "calendars",
+                                "{{calendarId}}"
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "Update Calendar",
+                    "request": {
+                        "method": "PATCH",
+                        "header": [],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"name\": \"Updated Calendar Name\"\n}",
+                            "options": {
+                                "raw": {
+                                    "language": "json"
+                                }
+                            }
+                        },
+                        "url": {
+                            "raw": "{{baseUrl}}/calendars/{{calendarId}}",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "calendars",
+                                "{{calendarId}}"
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "Delete Calendar",
+                    "request": {
+                        "method": "DELETE",
+                        "header": [],
+                        "url": {
+                            "raw": "{{baseUrl}}/calendars/{{calendarId}}",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "calendars",
+                                "{{calendarId}}"
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "Create Holiday",
+                    "request": {
+                        "method": "POST",
+                        "header": [],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"name\": \"New Year\",\n  \"date\": \"2024-01-01\",\n  \"isOptional\": false\n}",
+                            "options": {
+                                "raw": {
+                                    "language": "json"
+                                }
+                            }
+                        },
+                        "url": {
+                            "raw": "{{baseUrl}}/calendars/{{calendarId}}/holidays",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "calendars",
+                                "{{calendarId}}",
+                                "holidays"
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "List Holidays",
+                    "request": {
+                        "method": "GET",
+                        "header": [],
+                        "url": {
+                            "raw": "{{baseUrl}}/calendars/{{calendarId}}/holidays",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "calendars",
+                                "{{calendarId}}",
+                                "holidays"
+                            ]
+                        }
+                    }
+                }
+            ]
+        },
+        {
+            "name": "Attendance",
+            "item": [
+                {
+                    "name": "Clock In",
+                    "request": {
+                        "method": "POST",
+                        "header": [],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"gpsCoords\": {\n    \"latitude\": 28.6139,\n    \"longitude\": 77.2090\n  },\n  \"method\": \"WEB\"\n}",
+                            "options": {
+                                "raw": {
+                                    "language": "json"
+                                }
+                            }
+                        },
+                        "url": {
+                            "raw": "{{baseUrl}}/attendance/check-in",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "attendance",
+                                "check-in"
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "Clock Out",
+                    "request": {
+                        "method": "POST",
+                        "header": [],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"gpsCoords\": {\n    \"latitude\": 28.6139,\n    \"longitude\": 77.2090\n  },\n  \"method\": \"WEB\"\n}",
+                            "options": {
+                                "raw": {
+                                    "language": "json"
+                                }
+                            }
+                        },
+                        "url": {
+                            "raw": "{{baseUrl}}/attendance/check-out",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "attendance",
+                                "check-out"
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "Get My Attendance",
+                    "request": {
+                        "method": "GET",
+                        "header": [],
+                        "url": {
+                            "raw": "{{baseUrl}}/attendance/me?date=2024-01-01",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "attendance",
+                                "me"
+                            ],
+                            "query": [
+                                {
+                                    "key": "date",
+                                    "value": "2024-01-01"
+                                }
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "List All Attendance (Admin)",
+                    "request": {
+                        "method": "GET",
+                        "header": [],
+                        "url": {
+                            "raw": "{{baseUrl}}/attendance?page=1&limit=20&employeeId=&status=PRESENT&month=1&year=2024&sortBy=date&sortOrder=desc",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "attendance"
+                            ],
+                            "query": [
+                                {
+                                    "key": "page",
+                                    "value": "1"
+                                },
+                                {
+                                    "key": "limit",
+                                    "value": "20"
+                                },
+                                {
+                                    "key": "employeeId",
+                                    "value": ""
+                                },
+                                {
+                                    "key": "status",
+                                    "value": "PRESENT"
+                                },
+                                {
+                                    "key": "month",
+                                    "value": "1"
+                                },
+                                {
+                                    "key": "year",
+                                    "value": "2024"
+                                },
+                                {
+                                    "key": "sortBy",
+                                    "value": "date"
+                                },
+                                {
+                                    "key": "sortOrder",
+                                    "value": "desc"
+                                }
+                            ]
+                        }
+                    }
+                }
+            ]
+        },
+        {
+            "name": "Leave Allocations",
+            "item": [
+                {
+                    "name": "List Allocations",
+                    "request": {
+                        "method": "GET",
+                        "header": [],
+                        "url": {
+                            "raw": "{{baseUrl}}/allocations?page=1&limit=20&year=2024&leaveType=CASUAL&sortBy=year&sortOrder=desc",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "allocations"
+                            ],
+                            "query": [
+                                {
+                                    "key": "page",
+                                    "value": "1"
+                                },
+                                {
+                                    "key": "limit",
+                                    "value": "20"
+                                },
+                                {
+                                    "key": "year",
+                                    "value": "2024"
+                                },
+                                {
+                                    "key": "leaveType",
+                                    "value": "CASUAL"
+                                },
+                                {
+                                    "key": "sortBy",
+                                    "value": "year"
+                                },
+                                {
+                                    "key": "sortOrder",
+                                    "value": "desc"
+                                }
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "Create Allocation for Employee",
+                    "request": {
+                        "method": "POST",
+                        "header": [],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"year\": 2024,\n  \"leaveType\": \"CASUAL\",\n  \"allocated\": 12\n}",
+                            "options": {
+                                "raw": {
+                                    "language": "json"
+                                }
+                            }
+                        },
+                        "url": {
+                            "raw": "{{baseUrl}}/employees/{{employeeId}}/allocations",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "employees",
+                                "{{employeeId}}",
+                                "allocations"
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "Get Employee Allocations",
+                    "request": {
+                        "method": "GET",
+                        "header": [],
+                        "url": {
+                            "raw": "{{baseUrl}}/employees/{{employeeId}}/allocations?year=2024",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "employees",
+                                "{{employeeId}}",
+                                "allocations"
+                            ],
+                            "query": [
+                                {
+                                    "key": "year",
+                                    "value": "2024"
+                                }
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "Bulk Allocate",
+                    "request": {
+                        "method": "POST",
+                        "header": [],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"year\": 2024,\n  \"leaveGradeId\": \"grade-uuid\"\n}",
+                            "options": {
+                                "raw": {
+                                    "language": "json"
+                                }
+                            }
+                        },
+                        "url": {
+                            "raw": "{{baseUrl}}/allocations/bulk",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "allocations",
+                                "bulk"
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "Update Allocation",
+                    "request": {
+                        "method": "PATCH",
+                        "header": [],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"allocated\": 15\n}",
+                            "options": {
+                                "raw": {
+                                    "language": "json"
+                                }
+                            }
+                        },
+                        "url": {
+                            "raw": "{{baseUrl}}/allocations/:allocationId",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "allocations",
+                                ":allocationId"
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "Delete Allocation",
+                    "request": {
+                        "method": "DELETE",
+                        "header": [],
+                        "url": {
+                            "raw": "{{baseUrl}}/allocations/:allocationId",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "allocations",
+                                ":allocationId"
+                            ]
+                        }
+                    }
+                }
+            ]
+        },
+        {
+            "name": "Leaves",
+            "item": [
+                {
+                    "name": "List Leave Requests",
+                    "request": {
+                        "method": "GET",
+                        "header": [],
+                        "url": {
+                            "raw": "{{baseUrl}}/leaves/requests?page=1&limit=20&status=PENDING&type=CASUAL&sortBy=createdAt&sortOrder=desc",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "leaves",
+                                "requests"
+                            ],
+                            "query": [
+                                {
+                                    "key": "page",
+                                    "value": "1"
+                                },
+                                {
+                                    "key": "limit",
+                                    "value": "20"
+                                },
+                                {
+                                    "key": "status",
+                                    "value": "PENDING"
+                                },
+                                {
+                                    "key": "type",
+                                    "value": "CASUAL"
+                                },
+                                {
+                                    "key": "sortBy",
+                                    "value": "createdAt"
+                                },
+                                {
+                                    "key": "sortOrder",
+                                    "value": "desc"
+                                }
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "Create Leave Request",
+                    "request": {
+                        "method": "POST",
+                        "header": [],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"startDate\": \"2024-02-01\",\n  \"endDate\": \"2024-02-03\",\n  \"type\": \"CASUAL\",\n  \"reason\": \"Personal work\"\n}",
+                            "options": {
+                                "raw": {
+                                    "language": "json"
+                                }
+                            }
+                        },
+                        "url": {
+                            "raw": "{{baseUrl}}/employees/{{employeeId}}/leaves",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "employees",
+                                "{{employeeId}}",
+                                "leaves"
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "Update Leave Status",
+                    "request": {
+                        "method": "PATCH",
+                        "header": [],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"status\": \"APPROVED\"\n}",
+                            "options": {
+                                "raw": {
+                                    "language": "json"
+                                }
+                            }
+                        },
+                        "url": {
+                            "raw": "{{baseUrl}}/leaves/requests/:requestId/status",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "leaves",
+                                "requests",
+                                ":requestId",
+                                "status"
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "List Leave Grades",
+                    "request": {
+                        "method": "GET",
+                        "header": [],
+                        "url": {
+                            "raw": "{{baseUrl}}/leaves/grades?page=1&limit=20",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "leaves",
+                                "grades"
+                            ],
+                            "query": [
+                                {
+                                    "key": "page",
+                                    "value": "1"
+                                },
+                                {
+                                    "key": "limit",
+                                    "value": "20"
+                                }
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "Create Leave Grade",
+                    "request": {
+                        "method": "POST",
+                        "header": [],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"name\": \"Standard Grade\"\n}",
+                            "options": {
+                                "raw": {
+                                    "language": "json"
+                                }
+                            }
+                        },
+                        "url": {
+                            "raw": "{{baseUrl}}/org/{{organizationId}}/leave-grades",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "org",
+                                "{{organizationId}}",
+                                "leave-grades"
+                            ]
+                        }
+                    }
+                }
+            ]
+        },
+        {
+            "name": "Invitations",
+            "item": [
+                {
+                    "name": "List Invitations (Nested)",
+                    "request": {
+                        "method": "GET",
+                        "header": [],
+                        "url": {
+                            "raw": "{{baseUrl}}/org/{{organizationId}}/invitations?page=1&limit=20&status=PENDING&sortBy=createdAt&sortOrder=desc",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "org",
+                                "{{organizationId}}",
+                                "invitations"
+                            ],
+                            "query": [
+                                {
+                                    "key": "page",
+                                    "value": "1"
+                                },
+                                {
+                                    "key": "limit",
+                                    "value": "20"
+                                },
+                                {
+                                    "key": "status",
+                                    "value": "PENDING"
+                                },
+                                {
+                                    "key": "sortBy",
+                                    "value": "createdAt"
+                                },
+                                {
+                                    "key": "sortOrder",
+                                    "value": "desc"
+                                }
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "List Invitations",
+                    "request": {
+                        "method": "GET",
+                        "header": [],
+                        "url": {
+                            "raw": "{{baseUrl}}/invitations?page=1&limit=20&status=PENDING&sortBy=createdAt&sortOrder=desc",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "invitations"
+                            ],
+                            "query": [
+                                {
+                                    "key": "page",
+                                    "value": "1"
+                                },
+                                {
+                                    "key": "limit",
+                                    "value": "20"
+                                },
+                                {
+                                    "key": "status",
+                                    "value": "PENDING"
+                                },
+                                {
+                                    "key": "sortBy",
+                                    "value": "createdAt"
+                                },
+                                {
+                                    "key": "sortOrder",
+                                    "value": "desc"
+                                }
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "Create Invitation",
+                    "request": {
+                        "method": "POST",
+                        "header": [],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"email\": \"newuser@company.com\",\n  \"role\": \"EMPLOYEE\"\n}",
+                            "options": {
+                                "raw": {
+                                    "language": "json"
+                                }
+                            }
+                        },
+                        "url": {
+                            "raw": "{{baseUrl}}/org/{{organizationId}}/invitations",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "org",
+                                "{{organizationId}}",
+                                "invitations"
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "Verify Invitation Token",
+                    "request": {
+                        "method": "GET",
+                        "header": [],
+                        "url": {
+                            "raw": "{{baseUrl}}/invitations/verify/:token",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "invitations",
+                                "verify",
+                                ":token"
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "Accept Invitation",
+                    "request": {
+                        "method": "POST",
+                        "header": [],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"token\": \"invitation-token\",\n  \"firstName\": \"John\",\n  \"lastName\": \"Doe\",\n  \"password\": \"SecurePass@123\"\n}",
+                            "options": {
+                                "raw": {
+                                    "language": "json"
+                                }
+                            }
+                        },
+                        "url": {
+                            "raw": "{{baseUrl}}/invitations/accept",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "invitations",
+                                "accept"
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "Resend Invitation",
+                    "request": {
+                        "method": "POST",
+                        "header": [],
+                        "url": {
+                            "raw": "{{baseUrl}}/invitations/:invitationId/resend",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "invitations",
+                                ":invitationId",
+                                "resend"
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "Cancel Invitation",
+                    "request": {
+                        "method": "PATCH",
+                        "header": [],
+                        "url": {
+                            "raw": "{{baseUrl}}/invitations/:invitationId/cancel",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "invitations",
+                                ":invitationId",
+                                "cancel"
+                            ]
+                        }
+                    }
+                }
+            ]
+        },
+        {
+            "name": "Me (Self-Service)",
+            "item": [
+                {
+                    "name": "Get My Profile",
+                    "request": {
+                        "method": "GET",
+                        "header": [],
+                        "url": {
+                            "raw": "{{baseUrl}}/me",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "me"
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "Get My Attendance",
+                    "request": {
+                        "method": "GET",
+                        "header": [],
+                        "url": {
+                            "raw": "{{baseUrl}}/me/attendance?month=1&year=2024",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "me",
+                                "attendance"
+                            ],
+                            "query": [
+                                {
+                                    "key": "month",
+                                    "value": "1"
+                                },
+                                {
+                                    "key": "year",
+                                    "value": "2024"
+                                }
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "Get My Leaves",
+                    "request": {
+                        "method": "GET",
+                        "header": [],
+                        "url": {
+                            "raw": "{{baseUrl}}/me/leaves",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "me",
+                                "leaves"
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "Get My Allocations",
+                    "request": {
+                        "method": "GET",
+                        "header": [],
+                        "url": {
+                            "raw": "{{baseUrl}}/me/allocations?year=2024",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "me",
+                                "allocations"
+                            ],
+                            "query": [
+                                {
+                                    "key": "year",
+                                    "value": "2024"
+                                }
+                            ]
+                        }
+                    }
+                }
+            ]
+        },
+        {
+            "name": "Users (Super Admin)",
+            "item": [
+                {
+                    "name": "List Users",
+                    "request": {
+                        "method": "GET",
+                        "header": [],
+                        "url": {
+                            "raw": "{{baseUrl}}/users?page=1&limit=20&role=EMPLOYEE&sortBy=createdAt&sortOrder=desc",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "users"
+                            ],
+                            "query": [
+                                {
+                                    "key": "page",
+                                    "value": "1"
+                                },
+                                {
+                                    "key": "limit",
+                                    "value": "20"
+                                },
+                                {
+                                    "key": "role",
+                                    "value": "EMPLOYEE"
+                                },
+                                {
+                                    "key": "sortBy",
+                                    "value": "createdAt"
+                                },
+                                {
+                                    "key": "sortOrder",
+                                    "value": "desc"
+                                }
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "Get User by ID",
+                    "request": {
+                        "method": "GET",
+                        "header": [],
+                        "url": {
+                            "raw": "{{baseUrl}}/users/:userId",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "users",
+                                ":userId"
                             ]
                         }
                     }

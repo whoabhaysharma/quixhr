@@ -1,5 +1,5 @@
 import { Request, Response, NextFunction } from 'express';
-import { ZodSchema } from 'zod';
+import { ZodSchema, ZodError } from 'zod';
 import { AppError } from '@/utils/appError';
 
 type ValidationSchema = ZodSchema | {
@@ -29,14 +29,33 @@ const validate = (schema: ValidationSchema) => {
       }
       next();
     } catch (error: any) {
-      if (error.errors) {
-        const errorMessages = error.errors.map((issue: any) => ({
-          path: issue.path.join('.'),
-          message: issue.message,
-        }));
-        return next(new AppError(`Validation error: ${JSON.stringify(errorMessages)}`, 400));
+      if (error instanceof ZodError) {
+        const errorMessages = error.issues.map((issue: any) => `${issue.path.join('.')}: ${issue.message}`).join(', ');
+        return next(new AppError(`Validation error: ${errorMessages}`, 400));
       }
-      return next(new AppError('Validation failed', 400));
+
+      // Handle edge cases where error.message is a stringified JSON array of errors
+      try {
+        if (error.message && error.message.startsWith('[')) {
+          const parsed = JSON.parse(error.message);
+          if (Array.isArray(parsed)) {
+            const messages = parsed.map((e: any) => {
+              const path = e.path ? (Array.isArray(e.path) ? e.path.join('.') : e.path) : 'unknown';
+              return `${path}: ${e.message}`;
+            }).join(', ');
+            return next(new AppError(`Validation error: ${messages}`, 400));
+          }
+        }
+      } catch (e) {
+        // Ignore JSON parse errors and fall through
+      }
+
+      if (error.errors) {
+        const errorMessages = error.errors.map((issue: any) => `${issue.path.join('.')}: ${issue.message}`).join(', ');
+        return next(new AppError(`Validation error: ${errorMessages}`, 400));
+      }
+
+      return next(new AppError(`Validation failed: ${error.message}`, 400));
     }
   };
 };

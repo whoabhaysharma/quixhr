@@ -1,7 +1,6 @@
 import { Router } from 'express';
 import { Role } from '@prisma/client';
-import { protect, restrictTo } from '@/shared/middleware';
-import validate from '@/shared/middleware/validate-resource.middleware';
+import { protect, restrictTo, validate } from '@/shared/middleware';
 import * as LeaveController from './leaves.controller';
 import {
     updateLeaveGradeSchema,

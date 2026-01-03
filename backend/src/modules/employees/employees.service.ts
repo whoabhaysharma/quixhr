@@ -12,7 +12,7 @@ export class EmployeeService {
   static async getEmployees(
     organizationId: string,
     query: ParsedPagination,
-    filters: Pick<GetEmployeesQuery, 'status' | 'calendarId' | 'leaveGradeId' | 'role'>
+    filters: Pick<GetEmployeesQuery, 'status' | 'calendarId' | 'leaveGradeId' | 'role'> & { allowedRoles?: Role[] }
   ) {
     const { page, limit, skip, search, sortBy, sortOrder } = query;
 
@@ -22,7 +22,10 @@ export class EmployeeService {
       ...(filters.status && { status: filters.status }),
       ...(filters.calendarId && { calendarId: filters.calendarId }),
       ...(filters.leaveGradeId && { leaveGradeId: filters.leaveGradeId }),
-      ...(filters.role && { user: { role: filters.role } }),
+      user: {
+        ...(filters.role && { role: filters.role }), // Explicit filter
+        ...(filters.allowedRoles && { role: { in: filters.allowedRoles } }) // RBAC Restriction
+      }
     };
 
     if (search) {

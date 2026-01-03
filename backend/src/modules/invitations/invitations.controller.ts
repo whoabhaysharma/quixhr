@@ -2,28 +2,14 @@ import { Request, Response, NextFunction } from 'express';
 import { catchAsync } from '@/utils/catchAsync';
 import { sendResponse } from '@/utils/sendResponse';
 import { AppError } from '@/utils/appError';
+import { getOrganizationContext } from '@/utils/tenantContext';
 import { InvitationService } from './invitations.service';
-import { AuthContext } from './invitations.types';
 import {
     InvitationsListResponseDto,
     InvitationResponseDto,
     InvitationDetailsResponseDto,
+    GetInvitationsQuery
 } from './invitations.schema';
-
-// =========================================================================
-// HELPER FUNCTIONS
-// =========================================================================
-
-/**
- * Get auth context from request
- */
-const getAuthContext = (req: Request): AuthContext => {
-    const user = (req as any).user;
-    if (!user) {
-        throw new AppError('User not authenticated', 401);
-    }
-    return user as AuthContext;
-};
 
 // =========================================================================
 // INVITATION ENDPOINTS
@@ -36,16 +22,17 @@ const getAuthContext = (req: Request): AuthContext => {
  */
 export const createInvitation = catchAsync(
     async (req: Request, res: Response, next: NextFunction) => {
-        const authContext = getAuthContext(req);
-        const { organizationId } = req.params;
+        const organizationId = getOrganizationContext(req, next);
+        const { role: invitedRole } = req.body;
 
-        // Validate organization access
-        if (
-            authContext.role !== 'SUPER_ADMIN' &&
-            authContext.organizationId !== organizationId
-        ) {
+        const user = (req as any).user;
+        if (!user) return next(new AppError('User not authenticated', 401));
+
+        // Strict Role Hierarchy Check
+        const { canInviteRole } = require('@/utils/roleHierarchy');
+        if (!canInviteRole(user.role, invitedRole)) {
             return next(
-                new AppError('Access denied. You can only invite to your own organization.', 403)
+                new AppError('You cannot invite a user with this role. You can only invite users with a role lower than yours.', 403)
             );
         }
 
@@ -78,31 +65,31 @@ export const createInvitation = catchAsync(
  */
 export const getInvitations = catchAsync(
     async (req: Request, res: Response, next: NextFunction) => {
-        const organizationId = req.targetOrganizationId;
-
-        if (!organizationId) {
-            return next(new AppError('Organization context is required', 400));
-        }
+        const organizationId = getOrganizationContext(req, next);
 
         const page = parseInt(req.query.page as string) || 1;
         const limit = parseInt(req.query.limit as string) || 20;
-        const status = req.query.status as string;
+
+        // Explicit cast with validation could be better, but strict typing is requested
+        const status = req.query.status as GetInvitationsQuery['status'];
+
         const email = req.query.email as string;
+        const sortBy = req.query.sortBy as string || 'expiresAt';
+        const sortOrder = (req.query.sortOrder as 'asc' | 'desc') || 'desc';
 
-        const result = await InvitationService.getInvitations(organizationId, {
-            page,
-            limit,
-            status,
-            email,
-        });
+        // Prepare pagination object (ParsedPagination)
+        const skip = (page - 1) * limit;
 
-        const responseData: InvitationsListResponseDto = {
+        const result = await InvitationService.getInvitations(
+            organizationId,
+            { page, limit, skip, sortBy, sortOrder, search: '' },
+            { status, email }
+        );
+
+        const responseData = {
             success: true,
             message: 'Invitations retrieved successfully',
-            data: {
-                invitations: result.invitations,
-                pagination: result.pagination,
-            },
+            data: result
         };
 
         sendResponse(res, 200, responseData);
@@ -120,7 +107,7 @@ export const verifyInvitation = catchAsync(
 
         const details = await InvitationService.verifyInvitationToken(token);
 
-        const responseData: InvitationDetailsResponseDto = {
+        const responseData = {
             success: true,
             message: 'Invitation verified successfully',
             data: details,
@@ -140,6 +127,7 @@ export const acceptInvitation = catchAsync(
         const { token, firstName, lastName, password } = req.body;
 
         const result = await InvitationService.acceptInvitation(token, {
+            token, // Pass token as part of input
             firstName,
             lastName,
             password,
@@ -166,17 +154,16 @@ export const acceptInvitation = catchAsync(
  */
 export const resendInvitation = catchAsync(
     async (req: Request, res: Response, next: NextFunction) => {
-        const authContext = getAuthContext(req);
+        const organizationId = getOrganizationContext(req, next);
         const { invitationId } = req.params;
 
-        // Use targetOrganizationId if resolved, or fall back to user's organization for safety if middleware not applied (though it should be)
-        const organizationId = req.targetOrganizationId || authContext.organizationId || '';
+        const user = (req as any).user;
+        if (!user) return next(new AppError('User not authenticated', 401));
 
-        // Get invitation to check organization access
         const invitation = await InvitationService.resendInvitation(
             invitationId,
             organizationId,
-            authContext.role
+            user.role
         );
 
         const responseData = {
@@ -200,14 +187,16 @@ export const resendInvitation = catchAsync(
  */
 export const cancelInvitation = catchAsync(
     async (req: Request, res: Response, next: NextFunction) => {
-        const authContext = getAuthContext(req);
+        const organizationId = getOrganizationContext(req, next);
         const { invitationId } = req.params;
-        const organizationId = req.targetOrganizationId || authContext.organizationId || '';
+
+        const user = (req as any).user;
+        if (!user) return next(new AppError('User not authenticated', 401));
 
         const invitation = await InvitationService.cancelInvitation(
             invitationId,
             organizationId,
-            authContext.role
+            user.role
         );
 
         const responseData = {
@@ -230,14 +219,16 @@ export const cancelInvitation = catchAsync(
  */
 export const deleteInvitation = catchAsync(
     async (req: Request, res: Response, next: NextFunction) => {
-        const authContext = getAuthContext(req);
+        const organizationId = getOrganizationContext(req, next);
         const { invitationId } = req.params;
-        const organizationId = req.targetOrganizationId || authContext.organizationId || '';
+
+        const user = (req as any).user;
+        if (!user) return next(new AppError('User not authenticated', 401));
 
         await InvitationService.deleteInvitation(
             invitationId,
             organizationId,
-            authContext.role
+            user.role
         );
 
         const responseData = {

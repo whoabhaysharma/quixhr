@@ -8,7 +8,10 @@ import { Role } from '@prisma/client';
 /**
  * Register schema - Create new organization + super admin
  */
-export const registerSchema = z.object({
+/**
+ * Register schema - Create new organization + super admin
+ */
+const registerBodySchema = z.object({
   organizationName: z
     .string()
     .min(2, 'Organization name must be at least 2 characters')
@@ -24,7 +27,6 @@ export const registerSchema = z.object({
     .regex(/[a-z]/, 'Password must contain at least one lowercase letter')
     .regex(/[0-9]/, 'Password must contain at least one digit')
     .regex(/[@$!%*?&#^-]/, 'Password must contain at least one special character'),
-  confirmPassword: z.string(),
   firstName: z
     .string()
     .min(1, 'First name is required')
@@ -34,36 +36,41 @@ export const registerSchema = z.object({
     .min(1, 'Last name is required')
     .max(100, 'Last name must not exceed 100 characters'),
   joiningDate: z.coerce.date().default(() => new Date()),
-}).refine((data) => data.password === data.confirmPassword, {
-  message: 'Passwords do not match',
-  path: ['confirmPassword'],
 });
 
-export type RegisterRequestDto = z.infer<typeof registerSchema>;
+export const registerSchema = {
+  body: registerBodySchema,
+};
+
+export type RegisterRequestDto = z.infer<typeof registerBodySchema>;
 
 /**
  * Login schema
  */
-export const loginSchema = z.object({
-  email: z.string().email('Invalid email format'),
-  password: z.string().min(1, 'Password is required'),
-});
+export const loginSchema = {
+  body: z.object({
+    email: z.string().email('Invalid email format'),
+    password: z.string().min(1, 'Password is required'),
+  }),
+};
 
-export type LoginRequestDto = z.infer<typeof loginSchema>;
+export type LoginRequestDto = z.infer<typeof loginSchema.body>;
 
 /**
  * Forgot password schema
  */
-export const forgotPasswordSchema = z.object({
-  email: z.string().email('Invalid email format'),
-});
+export const forgotPasswordSchema = {
+  body: z.object({
+    email: z.string().email('Invalid email format'),
+  }),
+};
 
-export type ForgotPasswordRequestDto = z.infer<typeof forgotPasswordSchema>;
+export type ForgotPasswordRequestDto = z.infer<typeof forgotPasswordSchema.body>;
 
 /**
  * Reset password schema
  */
-export const resetPasswordSchema = z.object({
+const resetPasswordBodySchema = z.object({
   token: z.string().min(1, 'Reset token is required'),
   password: z
     .string()
@@ -72,27 +79,29 @@ export const resetPasswordSchema = z.object({
     .regex(/[a-z]/, 'Password must contain at least one lowercase letter')
     .regex(/[0-9]/, 'Password must contain at least one digit')
     .regex(/[@$!%*?&#^-]/, 'Password must contain at least one special character'),
-  confirmPassword: z.string(),
-}).refine((data) => data.password === data.confirmPassword, {
-  message: 'Passwords do not match',
-  path: ['confirmPassword'],
 });
 
-export type ResetPasswordRequestDto = z.infer<typeof resetPasswordSchema>;
+export const resetPasswordSchema = {
+  body: resetPasswordBodySchema,
+};
+
+export type ResetPasswordRequestDto = z.infer<typeof resetPasswordBodySchema>;
 
 /**
  * Verify email schema
  */
-export const verifyEmailSchema = z.object({
-  token: z.string().min(1, 'Verification token is required'),
-});
+export const verifyEmailSchema = {
+  body: z.object({
+    token: z.string().min(1, 'Verification token is required'),
+  }),
+};
 
-export type VerifyEmailRequestDto = z.infer<typeof verifyEmailSchema>;
+export type VerifyEmailRequestDto = z.infer<typeof verifyEmailSchema.body>;
 
 /**
  * Change password schema
  */
-export const changePasswordSchema = z.object({
+const changePasswordBodySchema = z.object({
   currentPassword: z.string().min(1, 'Current password is required'),
   newPassword: z
     .string()
@@ -101,13 +110,13 @@ export const changePasswordSchema = z.object({
     .regex(/[a-z]/, 'Password must contain at least one lowercase letter')
     .regex(/[0-9]/, 'Password must contain at least one digit')
     .regex(/[@$!%*?&#^-]/, 'Password must contain at least one special character'),
-  confirmPassword: z.string(),
-}).refine((data) => data.newPassword === data.confirmPassword, {
-  message: 'Passwords do not match',
-  path: ['confirmPassword'],
 });
 
-export type ChangePasswordRequestDto = z.infer<typeof changePasswordSchema>;
+export const changePasswordSchema = {
+  body: changePasswordBodySchema,
+};
+
+export type ChangePasswordRequestDto = z.infer<typeof changePasswordBodySchema>;
 
 // =========================================================================
 // RESPONSE DTOs (Manual Interfaces - we trust our own backend)

@@ -34,6 +34,14 @@ router.post(
     EmployeeController.createEmployee
 );
 
+// GET /api/v1/org/:organizationId/members
+router.get(
+    '/:organizationId/members',
+    resolveTenant,
+    restrictTo(Role.ORG_ADMIN, Role.HR_ADMIN, Role.MANAGER, Role.SUPER_ADMIN, Role.EMPLOYEE),
+    OrganizationController.getMembers
+);
+
 // --- Calendars (Nested Create) ---
 // POST /api/v1/org/:organizationId/calendars
 router.post(
@@ -67,6 +75,15 @@ router.post(
     InvitationController.createInvitation
 );
 
+// GET /api/v1/org/:organizationId/invitations
+router.get(
+    '/:organizationId/invitations',
+    resolveTenant,
+    restrictTo(Role.ORG_ADMIN, Role.HR_ADMIN, Role.SUPER_ADMIN),
+    // validate(getInvitationsQuerySchema), // Add validation if needed
+    InvitationController.getInvitations
+);
+
 // --- Allocations (Nested List/Create) ---
 import * as AllocationController from '../allocations/allocations.controller';
 import { createLeaveAllocationSchema, getAllocationsQuerySchema } from '../allocations/allocations.schema';
@@ -86,7 +103,7 @@ router.post(
     resolveTenant,
     restrictTo(Role.ORG_ADMIN, Role.HR_ADMIN, Role.SUPER_ADMIN),
     validate(createLeaveAllocationSchema),
-    AllocationController.createEmployeeAllocation // Note: The old route used createAllocation (implied from body), but if we want nested creation we should probably use a controller method that handles it. The docs say "Create Allocation".
+    AllocationController.createEmployeeAllocation
 );
 
 // POST /api/v1/org/:organizationId/allocations/bulk
@@ -97,7 +114,6 @@ router.post(
     // validate(bulkAllocateSchema), // Assuming schema exists
     AllocationController.bulkAllocate
 );
-
 
 
 // =========================================================================
@@ -168,22 +184,17 @@ router.get(
 );
 
 // =========================================================================
-// 3. BILLING & PLANS
+// MEMBER MANAGEMENT ROUTES (Restricted Strict RBAC)
 // =========================================================================
-/*
-router.post(
-    '/:organizationId/billing/upgrade',
-    resolveTenant,
-    restrictTo(Role.ORG_ADMIN, Role.SUPER_ADMIN),
-    OrganizationController.initiateUpgrade
-);
 
-router.get(
-    '/:organizationId/billing/invoices',
+
+
+// DELETE /api/v1/org/:organizationId/members/:employeeId
+router.delete(
+    '/:organizationId/members/:employeeId',
     resolveTenant,
-    restrictTo(Role.ORG_ADMIN, Role.SUPER_ADMIN),
-    OrganizationController.getBillingHistory
+    restrictTo(Role.ORG_ADMIN, Role.HR_ADMIN, Role.SUPER_ADMIN),
+    OrganizationController.removeMember
 );
-*/
 
 export default router;
