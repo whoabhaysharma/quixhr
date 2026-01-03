@@ -65,5 +65,5 @@ export const createTestEmployee = async (organizationId?: string, role: Role = R
         employeeId: employee.id
     });
 
-    return { user, token, employee };
+    return { user, token, employee, organizationId: createdOrganizationId };
 };

@@ -5,7 +5,7 @@ import { protect } from '@/shared/middleware/auth.middleware';
 import { validate } from '@/shared/middleware';
 import {
     acceptInvitationSchema,
-    verifyInvitationSchema,
+    tokenSchema as verifyInvitationSchema,
 } from './invitations.schema';
 
 const router = Router();

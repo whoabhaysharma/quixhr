@@ -32,7 +32,7 @@ export class LeaveService {
     static async getGrades(
         organizationId: string,
         pagination: ParsedPagination,
-        filters: LeaveGradeQuery
+        filters: { search?: string }
     ) {
         const { page, limit, skip, sortBy, sortOrder, search } = pagination;
 
@@ -135,6 +135,20 @@ export class LeaveService {
             where: { leaveGradeId: gradeId },
             orderBy: { leaveType: 'asc' },
         });
+    }
+
+    static async getPolicyById(organizationId: string, policyId: string) {
+        const policy = await prisma.leavePolicy.findUnique({
+            where: { id: policyId },
+            include: { grade: true }
+        });
+
+        if (!policy || policy.grade.organizationId !== organizationId) {
+             // Returning null allows controller to decide 404 or 403, or we can throw.
+             // Controller expects an object or null
+             return null;
+        }
+        return policy;
     }
 
     static async updatePolicy(

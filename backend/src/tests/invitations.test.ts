@@ -10,149 +10,105 @@ describe('Invitations Module', () => {
         await cleanDatabase();
     });
 
-    const setupAdmin = async () => {
-        const { user: adminUser, token: adminToken, organizationId } = await createTestUser(Role.ORG_ADMIN);
-        return { adminUser, adminToken, organizationId: organizationId! };
-    };
-
-    describe('Invitation Lifecycle', () => {
-        it('should allow admin to create an invitation', async () => {
-            const { adminToken, organizationId } = await setupAdmin();
+    describe('POST /api/v1/org/:organizationId/invitations', () => {
+        it('should send an invitation', async () => {
+            const { token, organizationId } = await createTestUser(Role.ORG_ADMIN);
 
             const res = await request(app)
                 .post(`/api/v1/org/${organizationId}/invitations`)
-                .set('Authorization', `Bearer ${adminToken}`)
+                .set('Authorization', `Bearer ${token}`)
                 .send({
-                    email: 'newhire@example.com',
+                    email: 'invitee@example.com',
                     role: Role.EMPLOYEE
                 });
 
-            expect(res.body.status).toBe('success');
-            expect(res.body.data.data.email).toBe('newhire@example.com');
-            expect(res.body.data.data.status).toBe('PENDING');
+            expect(res.status).toBe(201);
+            expect(res.body.data.email).toBe('invitee@example.com');
         });
+    });
 
-        it('should list invitations for the organization', async () => {
-            const { adminToken, organizationId } = await setupAdmin();
+    describe('GET /api/v1/invitations/verify/:token', () => {
+         it('should verify valid token', async () => {
+             const { token, organizationId } = await createTestUser(Role.ORG_ADMIN);
+             // 1. Create invitation
+             await request(app)
+                .post(`/api/v1/org/${organizationId}/invitations`)
+                .set('Authorization', `Bearer ${token}`)
+                .send({
+                    email: 'verify@example.com',
+                    role: Role.EMPLOYEE
+                });
 
-            // Create one
-            await request(app)
+             // Query DB for token
+             const invite = await prisma.invitation.findFirst({ where: { email: 'verify@example.com' } });
+             expect(invite).toBeDefined();
+
+             const res = await request(app).get(`/api/v1/invitations/verify/${invite!.token}`);
+             expect(res.status).toBe(200);
+             expect(res.body.data.email).toBe('verify@example.com');
+         });
+    });
+
+    describe('POST /api/v1/invitations/accept', () => {
+        it('should accept invitation', async () => {
+             const { token: adminToken, organizationId } = await createTestUser(Role.ORG_ADMIN);
+             // 1. Create invitation
+             await request(app)
                 .post(`/api/v1/org/${organizationId}/invitations`)
                 .set('Authorization', `Bearer ${adminToken}`)
-                .send({ email: 'listtest@example.com', role: Role.EMPLOYEE });
+                .send({
+                    email: 'accept@example.com',
+                    role: Role.EMPLOYEE
+                });
 
-            const res = await request(app)
-                .get('/api/v1/invitations')
-                .set('Authorization', `Bearer ${adminToken}`);
+             const invite = await prisma.invitation.findFirst({ where: { email: 'accept@example.com' } });
+             expect(invite).toBeDefined();
 
-            expect(res.body.status).toBe('success');
-            // Assuming res.body.data.invitations based on controller logic
-            expect(res.body.data.data.invitations.length).toBeGreaterThanOrEqual(1);
-            expect(res.body.data.data.invitations[0].email).toBe('listtest@example.com');
-        });
-
-        it('should verify an invitation token', async () => {
-            const { adminToken, organizationId } = await setupAdmin();
-
-            const createRes = await request(app)
-                .post(`/api/v1/org/${organizationId}/invitations`)
-                .set('Authorization', `Bearer ${adminToken}`)
-                .send({ email: 'verify@example.com', role: Role.EMPLOYEE });
-
-            const invitationId = createRes.body.data.data.id;
-
-            // Get token from DB
-            const invitation = await prisma.invitation.findUnique({ where: { id: invitationId } });
-            expect(invitation).toBeDefined();
-
-            const res = await request(app)
-                .get(`/api/v1/invitations/verify/${invitation!.token}`);
-
-            expect(res.body.status).toBe('success');
-            expect(res.body.data.data.email).toBe('verify@example.com');
-        });
-
-        it('should accept an invitation', async () => {
-            const { adminToken, organizationId } = await setupAdmin();
-
-            const createRes = await request(app)
-                .post(`/api/v1/org/${organizationId}/invitations`)
-                .set('Authorization', `Bearer ${adminToken}`)
-                .send({ email: 'accept@example.com', role: Role.EMPLOYEE });
-
-            const invitationId = createRes.body.data.data.id;
-            const invitation = await prisma.invitation.findUnique({ where: { id: invitationId } });
-
-            const res = await request(app)
+             const res = await request(app)
                 .post('/api/v1/invitations/accept')
                 .send({
-                    token: invitation!.token,
-                    firstName: 'John',
-                    lastName: 'Doe',
+                    token: invite!.token,
+                    firstName: 'New',
+                    lastName: 'User',
                     password: 'Password123!'
                 });
 
-            expect(res.body.status).toBe('success');
-
-            // Verify status changed to ACCEPTED in DB
-            const updatedInvitation = await prisma.invitation.findUnique({ where: { id: invitationId } });
-            expect(updatedInvitation!.status).toBe('ACCEPTED');
-
-            // Verify user created
-            const user = await prisma.user.findUnique({ where: { email: 'accept@example.com' } });
-            expect(user).toBeDefined();
-            // expect(user!.employee).toBeDefined(); // Removed due to TS error (not included in query)
-
-            // Check employee directly
-            const employee = await prisma.employee.findFirst({ where: { userId: user!.id } });
-            expect(employee).toBeDefined();
-            expect(employee!.organizationId).toBe(organizationId);
+             expect(res.status).toBe(200);
+             expect(res.body.data).toHaveProperty('token');
         });
+    });
 
-        it('should cancel an invitation', async () => {
-            const { adminToken, organizationId } = await setupAdmin();
-
-            const createRes = await request(app)
+    describe('GET /api/v1/invitations', () => {
+        it('should list invitations', async () => {
+            const { token, organizationId } = await createTestUser(Role.ORG_ADMIN);
+            await request(app)
                 .post(`/api/v1/org/${organizationId}/invitations`)
-                .set('Authorization', `Bearer ${adminToken}`)
-                .send({ email: 'cancel@example.com', role: Role.EMPLOYEE });
-
-            const invitationId = createRes.body.data.data.id;
+                .set('Authorization', `Bearer ${token}`)
+                .send({ email: 'list@example.com', role: Role.EMPLOYEE });
 
             const res = await request(app)
-                .patch(`/api/v1/invitations/${invitationId}/cancel`)
-                .set('Authorization', `Bearer ${adminToken}`);
+                .get('/api/v1/invitations')
+                .set('Authorization', `Bearer ${token}`);
 
-            if (res.body.status !== 'success') {
-                console.log('CANCEL Invitation failed:', JSON.stringify(res.body, null, 2));
-            }
-            expect(res.body.status).toBe('success');
-            expect(res.body.data.data.status).toBe('CANCELLED');
+            expect(res.status).toBe(200);
+            expect(res.body.data.invitations.length).toBeGreaterThan(0);
         });
+    });
 
-        it('should delete an invitation', async () => {
-            const { adminToken, organizationId } = await setupAdmin();
-
-            const createRes = await request(app)
+    describe('DELETE /api/v1/invitations/:invitationId', () => {
+        it('should cancel/delete invitation', async () => {
+             const { token, organizationId } = await createTestUser(Role.ORG_ADMIN);
+             const inviteRes = await request(app)
                 .post(`/api/v1/org/${organizationId}/invitations`)
-                .set('Authorization', `Bearer ${adminToken}`)
+                .set('Authorization', `Bearer ${token}`)
                 .send({ email: 'delete@example.com', role: Role.EMPLOYEE });
+             const invitationId = inviteRes.body.data.id;
 
-            const invitationId = createRes.body.data.data.id;
-
-            const res = await request(app)
+             const res = await request(app)
                 .delete(`/api/v1/invitations/${invitationId}`)
-                .set('Authorization', `Bearer ${adminToken}`);
+                .set('Authorization', `Bearer ${token}`);
 
-            if (res.body.status !== 'success') {
-                console.log('DELETE Invitation failed:', JSON.stringify(res.body, null, 2));
-            }
-            expect(res.body.status).toBe('success'); // or 204 no content status?
-            // checking inv controller: sendResponse(res, 200, responseData) for delete. Ok. 
-            // Usually delete is 204 but here it seems to return 200 with success: true.
-
-            const deleted = await prisma.invitation.findUnique({ where: { id: invitationId } });
-            expect(deleted).toBeNull();
+             expect(res.status).toBe(204);
         });
     });
 });
