@@ -210,6 +210,78 @@ export class AttendanceService {
             }
         };
     }
+
+    /**
+     * Get Attendance Across All Organizations (Super Admin)
+     */
+    static async getAttendanceAllOrgs(
+        query: ParsedPagination,
+        filters: GetAttendanceQuery
+    ) {
+        const { page, limit, skip, sortBy, sortOrder } = query;
+        const { employeeId, status, date, startDate, endDate, month, year } = filters;
+
+        const where: any = {};
+
+        if (employeeId) where.employeeId = employeeId;
+        if (status) where.status = status;
+
+        // Date Filtering
+        if (date) {
+            const d = new Date(date);
+            d.setHours(0, 0, 0, 0);
+            where.date = d;
+        } else if (startDate && endDate) {
+            where.date = {
+                gte: new Date(startDate),
+                lte: new Date(endDate)
+            };
+        } else if (month && year) {
+            const start = new Date(year, month - 1, 1);
+            const end = new Date(year, month, 0);
+            where.date = { gte: start, lte: end };
+        }
+
+        const orderBy = buildOrderBy(sortBy, sortOrder, {
+            allowedFields: ['date', 'status', 'checkIn', 'checkOut', 'workMinutes'],
+            defaultSort: { date: 'desc' }
+        });
+
+        const [data, total] = await Promise.all([
+            prisma.attendance.findMany({
+                where,
+                skip,
+                take: limit,
+                orderBy: orderBy as any,
+                include: {
+                    employee: {
+                        select: {
+                            firstName: true,
+                            lastName: true,
+                            code: true,
+                            organizationId: true,
+                            organization: {
+                                select: {
+                                    name: true
+                                }
+                            }
+                        }
+                    }
+                }
+            }),
+            prisma.attendance.count({ where })
+        ]);
+
+        return {
+            data,
+            pagination: {
+                total,
+                page,
+                limit,
+                totalPages: Math.ceil(total / limit)
+            }
+        };
+    }
     /**
      * Manual Entry (Admin/Manager)
      */
@@ -267,8 +339,7 @@ export class AttendanceService {
                     status: data.status || AttendanceStatus.PRESENT,
                     checkIn: new Date(data.checkIn),
                     checkOut: data.checkOut ? new Date(data.checkOut) : null,
-                    workMinutes,
-                    remarks: data.remarks
+                    workMinutes
                 }
             });
 
@@ -278,7 +349,11 @@ export class AttendanceService {
                     timestamp: new Date(),
                     type: 'MANUAL',
                     method: 'MANUAL_ENTRY',
-                    metadata: { createdBy: requesterId, role: requesterRole }
+                    metadata: {
+                        createdBy: requesterId,
+                        role: requesterRole,
+                        remarks: data.remarks // Store remarks in metadata instead
+                    }
                 }
             });
 
@@ -315,7 +390,6 @@ export class AttendanceService {
         if (data.status) updateData.status = data.status;
         if (data.checkIn) updateData.checkIn = new Date(data.checkIn);
         if (data.checkOut) updateData.checkOut = new Date(data.checkOut);
-        if (data.remarks) updateData.remarks = data.remarks;
 
         // Recalculate workMinutes if times change
         const newCheckIn = updateData.checkIn ? new Date(updateData.checkIn) : attendance.checkIn;
@@ -339,7 +413,12 @@ export class AttendanceService {
                     timestamp: new Date(),
                     type: 'MANUAL', // Or 'UPDATE' if supported enum
                     method: 'MANUAL_UPDATE',
-                    metadata: { updatedBy: requesterId, role: requesterRole, changes: updateData }
+                    metadata: {
+                        updatedBy: requesterId,
+                        role: requesterRole,
+                        changes: updateData,
+                        remarks: data.remarks // Store remarks in metadata
+                    }
                 }
             });
 
