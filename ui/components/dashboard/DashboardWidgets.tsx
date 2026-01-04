@@ -27,14 +27,6 @@ export function WelcomeBanner({ name, role, showButton = true, message }: { name
                         {message || "Welcome back to your dashboard. We hope you have a productive day!"}
                     </p>
                 </div>
-                {showButton && (
-                    <div className="hidden sm:block">
-                        <Button className="bg-white text-slate-900 hover:bg-slate-50 font-bold border-none">
-                            View Reports
-                            <ChevronRight className="w-4 h-4 ml-2 opacity-50" />
-                        </Button>
-                    </div>
-                )}
             </div>
             {/* Decorative Background Elements */}
             <div className="absolute -top-24 -right-24 h-64 w-64 rounded-full bg-indigo-500/20 blur-3xl" />
@@ -44,7 +36,7 @@ export function WelcomeBanner({ name, role, showButton = true, message }: { name
     )
 }
 
-export function StatCard({ label, value, icon: Icon, trend, color = "text-slate-900", alert = false }: any) {
+export function StatCard({ label, value, icon: Icon, trend, trendValue, trendUp, color = "text-slate-900", alert = false }: any) {
     return (
         <div className="relative overflow-hidden border-none shadow-lg shadow-slate-200/50 bg-white ring-1 ring-slate-100 hover:ring-indigo-100 transition-all duration-300 group rounded-xl">
             <div className="p-6 relative z-10">
@@ -60,9 +52,11 @@ export function StatCard({ label, value, icon: Icon, trend, color = "text-slate-
 
                 {trend && (
                     <div className="flex items-center gap-2 mt-1">
-                        <div className="flex items-center gap-1 text-[10px] font-bold text-emerald-600 bg-emerald-50 px-2 py-1 rounded-full">
-                            <span>↑</span> 12%
-                        </div>
+                        {trendValue && (
+                            <div className={`flex items-center gap-1 text-[10px] font-bold ${trendUp ? 'text-emerald-600 bg-emerald-50' : 'text-rose-600 bg-rose-50'} px-2 py-1 rounded-full`}>
+                                <span>{trendUp ? '↑' : '↓'}</span> {trendValue}
+                            </div>
+                        )}
                         <span className="text-[11px] font-medium text-slate-400">{trend}</span>
                     </div>
                 )}
@@ -161,8 +155,12 @@ export function LeaveDistributionWidget({ data }: { data: any[] }) {
     if (!data) return null;
 
     // Sort by count descending
-    const sorted = [...data].sort((a, b) => b._count.id - a._count.id);
-    const total = sorted.reduce((sum, item) => sum + item._count.id, 0);
+    const sorted = [...data].sort((a, b) => {
+        const valA = a.value || a._count?.id || 0;
+        const valB = b.value || b._count?.id || 0;
+        return valB - valA;
+    });
+    const total = sorted.reduce((sum, item) => sum + (item.value || item._count?.id || 0), 0);
 
     return (
         <div className="border-none shadow-lg shadow-slate-200/50 bg-white ring-1 ring-slate-100 h-full rounded-xl">
@@ -174,16 +172,18 @@ export function LeaveDistributionWidget({ data }: { data: any[] }) {
             </div>
             <div className="p-6 pt-6 space-y-6">
                 {sorted.map((item) => {
-                    const percent = total > 0 ? (item._count.id / total) * 100 : 0;
+                    const value = item.value || item._count?.id || 0;
+                    const name = item.name || item.type || 'Unknown';
+                    const percent = total > 0 ? (value / total) * 100 : 0;
                     return (
-                        <div key={item.type} className="group">
+                        <div key={name} className="group">
                             <div className="flex justify-between items-end mb-2">
                                 <span className="text-xs font-bold text-slate-700 capitalize flex items-center gap-2">
                                     <span className="w-1.5 h-1.5 rounded-full bg-indigo-500"></span>
-                                    {item.type.toLowerCase().replace('_', ' ')}
+                                    {name.toLowerCase().replace('_', ' ')}
                                 </span>
                                 <span className="text-[10px] font-bold text-slate-400 bg-slate-50 px-2 py-0.5 rounded-full group-hover:bg-indigo-50 group-hover:text-indigo-600 transition-colors">
-                                    {item._count.id} requests
+                                    {value} requests
                                 </span>
                             </div>
                             <div className="h-2.5 w-full bg-slate-50 rounded-full overflow-hidden shadow-inner">
@@ -313,8 +313,9 @@ export function StatusBadge({ status }: { status: string }) {
         'PENDING': 'bg-amber-50 text-amber-700 border-amber-100',
         'REJECTED': 'bg-rose-50 text-rose-700 border-rose-100'
     }
+    const normalizedStatus = status?.toUpperCase() || 'PENDING';
     return (
-        <Badge variant="outline" className={`${styles[status] || styles['PENDING']} border px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-tight`}>
+        <Badge variant="outline" className={`${styles[normalizedStatus] || styles['PENDING']} border px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-tight`}>
             {status}
         </Badge>
     )

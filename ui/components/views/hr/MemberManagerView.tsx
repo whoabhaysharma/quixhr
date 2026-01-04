@@ -113,7 +113,7 @@ export default function MemberManagerView() {
         )
     }
 
-    const availableRoles = currentUser ? getAssignableRoles(currentUser.role as Role) : [];
+    const availableRoles = currentUser ? getAssignableRoles(currentUser.user.role as Role) : [];
 
     return (
         <div className="space-y-6">
@@ -206,7 +206,14 @@ export default function MemberManagerView() {
                                                     </AvatarFallback>
                                                 </Avatar>
                                                 <div>
-                                                    <span className="font-semibold text-slate-900 block">{user.name || user.fullName}</span>
+                                                    <div className="flex items-center gap-2">
+                                                        <span className="font-semibold text-slate-900">{user.name || user.fullName}</span>
+                                                        {!user.isInvitation && currentUser?.employee?.id === user.id && (
+                                                            <Badge className="bg-indigo-100 text-indigo-700 hover:bg-indigo-100 border-0 px-2 py-0.5 text-[10px] font-bold uppercase tracking-tight">
+                                                                You
+                                                            </Badge>
+                                                        )}
+                                                    </div>
                                                     <span className="text-xs text-slate-500 block">{user.email}</span>
                                                     {user.isInvitation && <span className="text-[10px] text-slate-400 font-normal">Pending Invite</span>}
                                                 </div>
@@ -232,8 +239,8 @@ export default function MemberManagerView() {
                                                             (resendInvitationMutation.isPending && resendInvitationMutation.variables === user.id) ||
                                                             (deleteInvitationMutation.isPending && deleteInvitationMutation.variables === user.id) ||
                                                             (deleteInvitationMutation.isPending && deleteInvitationMutation.variables === user.id) ||
-                                                            (!currentUser?.role) ||
-                                                            (!user.isInvitation && !canManageRole(currentUser.role as Role, user.role as Role))
+                                                            (!currentUser?.user?.role) ||
+                                                            (!user.isInvitation && !canManageRole(currentUser.user.role as Role, user.role as Role))
                                                         }>
                                                         {(updateMemberRoleMutation.isPending && updateMemberRoleMutation.variables?.memberId === user.id) ||
                                                             (deleteMemberMutation.isPending && deleteMemberMutation.variables === user.id) ||
@@ -286,7 +293,7 @@ export default function MemberManagerView() {
                                                                                 })
                                                                             }}
                                                                             className="cursor-pointer"
-                                                                            disabled={user.role === role || updateMemberRoleMutation.isPending || !canModifyRole(currentUser?.role as Role, user.role as Role, role)}
+                                                                            disabled={user.role === role || updateMemberRoleMutation.isPending || !canModifyRole(currentUser?.user?.role as Role, user.role as Role, role)}
                                                                         >
                                                                             <Shield className="w-4 h-4 mr-2" />
                                                                             {ROLE_LABELS[role]}
@@ -308,7 +315,7 @@ export default function MemberManagerView() {
                                                                     setItemToDelete({ id: user.id, name: user.name, type: 'MEMBER' })
                                                                 }}
                                                                 className="cursor-pointer text-red-600 focus:text-red-600 focus:bg-red-50"
-                                                                disabled={deleteMemberMutation.isPending || (user.role === 'ORG_ADMIN' && adminCount <= 1) || !canManageRole(currentUser?.role as Role, user.role as Role)}
+                                                                disabled={deleteMemberMutation.isPending || (user.role === 'ORG_ADMIN' && adminCount <= 1) || !canManageRole(currentUser?.user?.role as Role, user.role as Role)}
                                                             >
                                                                 <Trash2 className="w-4 h-4 mr-2" />
                                                                 Remove Member

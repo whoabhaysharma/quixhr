@@ -15,14 +15,14 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
             title: "Management",
             items: [
                 { name: "People", href: "/a/people", icon: Users },
-                { name: "Attendance", href: "/a/attendance", icon: Clock },
+                { name: "Attendance", href: "/a/attendance", icon: Clock, disabled: true, badge: "Soon" },
                 { name: "Leave Requests", href: "/a/leaves", icon: Calendar }
             ]
         },
         {
             title: "System",
             items: [
-                { name: "Audit Logs", href: "/a/audit", icon: FileText }
+                { name: "Audit Logs", href: "/a/audit", icon: FileText, disabled: true, badge: "Soon" }
             ]
         }
     ]

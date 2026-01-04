@@ -20,14 +20,27 @@ export function useLeaves(userId?: string) {
     })
 }
 
-// For Admin/Manager: Get organization leaves
-export function useOrgLeaves(organizationId: string) {
+// For Admin/Manager: Get organization leaves with filters
+export function useOrgLeaves(
+    organizationId: string,
+    filters?: {
+        page?: number;
+        limit?: number;
+        status?: string;
+        type?: string;
+        employeeId?: string;
+        startDate?: string;
+        endDate?: string;
+        sortBy?: string;
+        search?: string;
+    }
+) {
     return useQuery({
-        queryKey: ['org-leaves', organizationId],
+        queryKey: ['org-leaves', organizationId, filters],
         queryFn: async () => {
             try {
                 // The backend returns a different structure for Org leaves: { data: [], pagination: {} }
-                const response = await leavesService.getOrgLeaveRequests(organizationId)
+                const response = await leavesService.getOrgLeaveRequests(organizationId, filters)
                 const responseData = response.data as any; // Type assertion since service type is currently incorrectly typed for this endpoint
 
                 // Handle both possible structures (requests array or data array)

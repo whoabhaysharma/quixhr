@@ -61,12 +61,24 @@ export const leavesService = {
     // Get all leave requests for an organization (Admin/Manager)
     getOrgLeaveRequests: async (
         organizationId: string,
-        page = 1,
-        limit = 10,
-        status?: string
+        params?: {
+            page?: number;
+            limit?: number;
+            status?: string;
+            type?: string;
+            employeeId?: string;
+            startDate?: string;
+            endDate?: string;
+            sortBy?: string;
+            search?: string;
+        }
     ): Promise<ApiResponse<LeaveListResponse>> => {
         const response = await api.get(`/org/${organizationId}/leaves`, {
-            params: { page, limit, status }
+            params: {
+                page: params?.page || 1,
+                limit: params?.limit || 100,
+                ...params
+            }
         });
         return response.data;
     },

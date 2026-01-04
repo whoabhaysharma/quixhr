@@ -2,6 +2,7 @@
 export const formatRole = (role: string): string => {
     const roleMap: Record<string, string> = {
         'SUPER_ADMIN': 'Super Admin',
+        'ORG_ADMIN': 'Admin',
         'HR_ADMIN': 'HR Admin',
         'MANAGER': 'Manager',
         'EMPLOYEE': 'Employee',

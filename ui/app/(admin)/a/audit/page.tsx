@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { format, formatDistanceToNow } from "date-fns";
+import ComingSoonView from "@/components/views/ComingSoonView";
 import { auditService, AuditLog } from "@/services/audit";
 import { useAuth } from "@/context/auth-context";
 import {
@@ -28,26 +29,17 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { ChevronDown, Filter, X } from "lucide-react";
 
-// Predefined filter options based on backend enums/events
-const ACTION_OPTIONS = [
-    { label: "Create", value: "CREATE" },
-    { label: "Update", value: "UPDATE" },
-    { label: "Delete", value: "DELETE" },
-    { label: "Login", value: "LOGIN" },
-    { label: "Register", value: "REGISTER" },
-];
 
-const RESOURCE_OPTIONS = [
-    { label: "Auth", value: "AUTH" },
-    { label: "Employee", value: "EMPLOYEE" },
-    { label: "Attendance", value: "ATTENDANCE" },
-    { label: "Company", value: "COMPANY" },
-    { label: "Calendar", value: "CALENDAR" },
-    { label: "Leave", value: "LEAVE" },
-    { label: "Notification", value: "NOTIFICATION" },
-];
+const COMING_SOON = true;
 
 export default function AuditLogsPage() {
+    if (COMING_SOON) {
+        return <ComingSoonView
+            title="Audit Logs"
+            description="Track critical system activities, security events, and data changes. This feature is currently under development."
+        />;
+    }
+
     const { user, isLoading: authLoading } = useAuth();
     const router = useRouter();
     const [logs, setLogs] = useState<AuditLog[]>([]);
