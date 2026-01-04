@@ -9,7 +9,7 @@ export default function AuthLayout({
 }: {
     children: React.ReactNode
 }) {
-    const { isAuthenticated, isLoading } = useAuth()
+    const { isAuthenticated, isLoading, user } = useAuth()
     const router = useRouter()
 
     useEffect(() => {
@@ -18,7 +18,7 @@ export default function AuthLayout({
             else if (['ORG_ADMIN', 'HR_ADMIN', 'MANAGER'].includes(user.role)) router.push('/a/dashboard');
             else router.push('/e/dashboard');
         }
-    }, [isLoading, isAuthenticated, router])
+    }, [isLoading, isAuthenticated, router, user])
 
     if (isLoading) {
         return (

@@ -65,7 +65,7 @@ export default function AcceptInvitePage() {
                 }
             } catch (err: any) {
                 console.error("Token verification failed", err)
-                setError(err.response?.data?.error || err.response?.data?.message || "Invalid or expired invitation link")
+                setError(err.response?.data?.message || (typeof err.response?.data?.error === 'string' ? err.response?.data?.error : "Invalid or expired invitation link"))
             } finally {
                 setIsLoading(false)
             }
@@ -91,7 +91,7 @@ export default function AcceptInvitePage() {
             }, 2000)
         } catch (err: any) {
             console.error("Accept invitation failed", err)
-            toast.error(err.response?.data?.error || "Failed to accept invitation")
+            toast.error(err.response?.data?.message || (typeof err.response?.data?.error === 'string' ? err.response?.data?.error : "Failed to accept invitation"))
         } finally {
             setIsSubmitting(false)
         }
