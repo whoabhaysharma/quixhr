@@ -69,7 +69,7 @@ export default function LeavesView() {
     const [customDates, setCustomDates] = useState<Date[]>([])
     const [tempCustomDate, setTempCustomDate] = useState<Date>()
 
-    const { data: leaves = [], isLoading } = useLeaves(user?.id)
+    const { data: leaves = [], isLoading } = useLeaves()
     const createLeaveMutation = useCreateLeave()
 
     const addCustomDate = () => {
@@ -108,8 +108,15 @@ export default function LeavesView() {
 
         if (!finalStartDate || !finalEndDate) return
 
+        // Map display names to backend enums
+        const typeMapping: Record<string, string> = {
+            'Vacation': 'ANNUAL',
+            'Sick': 'SICK',
+            'Personal': 'CASUAL'
+        };
+
         const payload: any = {
-            type: leaveType,
+            type: typeMapping[leaveType] || 'ANNUAL', // Default to ANNUAL if not found
             startDate: finalStartDate.toISOString(),
             endDate: finalEndDate.toISOString(),
             reason: finalReason
@@ -117,7 +124,7 @@ export default function LeavesView() {
 
         // Include customDates array for accurate day count
         if (mode === "custom" && customDates.length > 0) {
-            payload.customDates = customDates.map(d => d.toISOString());
+            payload.dayDetails = customDates.map(d => d.toISOString());
         }
 
         createLeaveMutation.mutate(payload, {

@@ -115,6 +115,18 @@ router.post(
     AllocationController.bulkAllocate
 );
 
+// --- Leave Requests (Nested List) ---
+import { leaveRequestQuerySchema } from '../leaves/leaves.schema';
+
+// GET /api/v1/org/:organizationId/leaves
+router.get(
+    '/:organizationId/leaves',
+    resolveTenant,
+    restrictTo(Role.ORG_ADMIN, Role.HR_ADMIN, Role.MANAGER, Role.SUPER_ADMIN),
+    validate(leaveRequestQuerySchema),
+    LeaveController.getLeaveRequests
+);
+
 
 // =========================================================================
 // 2. ORGANIZATION MANAGEMENT ROUTES

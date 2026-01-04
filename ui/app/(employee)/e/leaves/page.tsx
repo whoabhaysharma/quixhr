@@ -11,12 +11,12 @@ export default function LeavesPage() {
     const router = useRouter()
 
     useEffect(() => {
-        if (!isLoading && user?.role !== 'EMPLOYEE') {
+        if (!isLoading && user?.user?.role !== 'EMPLOYEE') {
             router.push("/manage/leaves")
         }
     }, [user, isLoading, router])
 
-    if (isLoading || user?.role !== 'EMPLOYEE') {
+    if (isLoading || user?.user?.role !== 'EMPLOYEE') {
         return (
             <div className="flex h-[50vh] w-full items-center justify-center">
                 <Spinner />

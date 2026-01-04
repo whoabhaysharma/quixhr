@@ -6,12 +6,49 @@ import { useRouter, usePathname } from "next/navigation"
 import { jwtDecode } from "jwt-decode"
 import { useCurrentUser } from "@/lib/hooks/useAuth"
 
+interface User {
+    id: string
+    email: string
+    role: string
+    isEmailVerified: boolean
+}
+
+interface Employee {
+    id: string
+    organizationId: string
+    userId: string
+    firstName: string
+    lastName: string
+    status: string
+    joiningDate: string
+    calendarId?: string
+    leaveGradeId?: string
+    code?: string
+    managerId?: string
+}
+
+interface Organization {
+    id: string
+    name: string
+    timezone: string
+    currency: string
+    dateFormat: string
+    logoUrl?: string
+    createdAt: string
+}
+
+interface UserData {
+    user: User
+    employee?: Employee
+    organization?: Organization
+}
+
 interface AuthContextType {
     isAuthenticated: boolean
     isLoading: boolean
     login: (token: string) => void
     logout: () => void
-    user: any | null
+    user: UserData | null
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined)
@@ -19,18 +56,18 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined)
 export function AuthProvider({ children }: { children: React.ReactNode }) {
     const [isAuthenticated, setIsAuthenticated] = useState(false)
     const [isLoading, setIsLoading] = useState(true)
-    const [user, setUser] = useState<any | null>(null)
+    const [user, setUser] = useState<UserData | null>(null)
     const router = useRouter()
     const pathname = usePathname()
 
-    // Use query for user data
     // Use query for user data
     const { data: userData, isSuccess, error } = useCurrentUser({
         enabled: typeof window !== 'undefined' && !!localStorage.getItem("token")
     })
 
     useEffect(() => {
-        if (isSuccess && userData?.success && userData.data) {
+        if (isSuccess && userData?.status === 'success' && userData.data) {
+            // Store the complete data structure from /me endpoint
             setUser(userData.data)
         }
     }, [userData, isSuccess])
@@ -53,8 +90,32 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
                     return
                 }
 
-                // Initial set from token (fast)
-                setUser(decoded)
+                // Initial set from token (fast) - create minimal user object
+                setUser({
+                    user: {
+                        id: decoded.userId,
+                        email: decoded.email,
+                        role: decoded.role,
+                        isEmailVerified: false
+                    },
+                    employee: decoded.employeeId ? {
+                        id: decoded.employeeId,
+                        organizationId: decoded.organizationId || '',
+                        userId: decoded.userId,
+                        firstName: '',
+                        lastName: '',
+                        status: 'ACTIVE',
+                        joiningDate: ''
+                    } : undefined,
+                    organization: decoded.organizationId ? {
+                        id: decoded.organizationId,
+                        name: '',
+                        timezone: 'Asia/Kolkata',
+                        currency: 'INR',
+                        dateFormat: 'DD/MM/YYYY',
+                        createdAt: ''
+                    } : undefined
+                })
                 setIsAuthenticated(true)
 
                 // Redirect to dashboard if on auth pages

@@ -1,9 +1,41 @@
 import api, { ApiResponse } from '../api';
 
+export interface UserData {
+    user: {
+        id: string;
+        email: string;
+        role: string;
+        isEmailVerified: boolean;
+    };
+    employee?: {
+        id: string;
+        organizationId: string;
+        userId: string;
+        firstName: string;
+        lastName: string;
+        status: string;
+        joiningDate: string;
+        calendarId?: string;
+        leaveGradeId?: string;
+        code?: string;
+        managerId?: string;
+    };
+    organization?: {
+        id: string;
+        name: string;
+        timezone: string;
+        currency: string;
+        dateFormat: string;
+        logoUrl?: string;
+        createdAt: string;
+    };
+}
+
+// Legacy User interface for backward compatibility
 export interface User {
     id: string;
     email: string;
-    role: string; // 'SUPER_ADMIN' | 'ADMIN' | 'EMPLOYEE' etc.
+    role: string;
     isEmailVerified: boolean;
     employee?: {
         id: string;
@@ -66,26 +98,9 @@ export const authService = {
         return response.data;
     },
 
-    // Get current user
-    getCurrentUser: async (): Promise<ApiResponse<User>> => {
+    // Get current user - returns raw /me response
+    getCurrentUser: async (): Promise<ApiResponse<UserData>> => {
         const response = await api.get('/me');
-        // Transform backend response { user, employee, company } to frontend User interface { ...user, employee: { ...employee } }
-        const data = response.data as any;
-
-        if (data.user && data.employee) {
-            const user: User = {
-                ...data.user,
-                employee: {
-                    ...data.employee
-                }
-            };
-            // Preserve wrapper if it exists, otherwise return as data
-            if (response.data.status) {
-                return { ...response.data, data: user };
-            }
-            return { status: 'success', data: user, message: 'User profile retrieved' }; // Mock ApiResponse wrapper if needed
-        }
-
         return response.data;
     },
     // Forgot password

@@ -77,14 +77,14 @@ export function AppShell({
 
             // Role-based access control
             // If allowedRoles contains '*', allow any authenticated user
-            if (!allowedRoles.includes('*') && user?.role && !allowedRoles.includes(user.role)) {
+            if (!allowedRoles.includes('*') && user?.user?.role && !allowedRoles.includes(user.user.role)) {
                 // If user is accessing /admin but is EMPLOYEE, kick them out
                 // If user is accessing /employee but is SUPER_ADMIN, kick them out? 
                 // Let's rely on the passed redirect logic or default to a safe dashboard
 
                 // Defaults:
-                if (user.role === 'SUPER_ADMIN') router.push('/s/dashboard')
-                else if (['ORG_ADMIN', 'HR_ADMIN'].includes(user.role)) router.push('/a/dashboard')
+                if (user.user.role === 'SUPER_ADMIN') router.push('/s/dashboard')
+                else if (['ORG_ADMIN', 'HR_ADMIN'].includes(user.user.role)) router.push('/a/dashboard')
                 else router.push('/e/dashboard')
             }
         }
@@ -102,7 +102,7 @@ export function AppShell({
     }
 
     // Role Guard Check (Render nothing while redirecting)
-    if (!allowedRoles.includes('*') && user?.role && !allowedRoles.includes(user.role)) {
+    if (!allowedRoles.includes('*') && user?.user?.role && !allowedRoles.includes(user.user.role)) {
         return null
     }
 
@@ -273,13 +273,15 @@ export function AppShell({
                                     <button className="flex items-center gap-2 group p-0.5 pr-3 rounded-full hover:bg-slate-100/80 transition-all outline-none">
                                         <Avatar className="h-9 w-9 border-2 border-white shadow-sm ring-1 ring-slate-200">
                                             <AvatarFallback className="bg-gradient-to-tr from-indigo-500 to-violet-500 text-white font-black text-xs">
-                                                {user?.employee?.name?.charAt(0) || user?.name?.charAt(0) || 'U'}
+                                                {user?.employee?.firstName?.charAt(0) || user?.user?.email?.charAt(0) || 'U'}
                                             </AvatarFallback>
                                         </Avatar>
                                         <div className="hidden text-left lg:block">
-                                            <p className="text-xs font-bold text-slate-900 leading-none">{user?.employee?.name || user?.name}</p>
-                                            <p className="text-[10px] text-slate-500 font-medium tracking-wide mt-1">
-                                                {user?.role ? formatRole(user.role) : 'Employee'}
+                                            <p className="text-sm font-bold text-slate-900 leading-tight">
+                                                {user?.employee?.firstName || 'User'}
+                                            </p>
+                                            <p className="text-[11px] text-slate-600 font-medium leading-tight mt-0.5">
+                                                {user?.user?.role ? formatRole(user.user.role) : 'Employee'}
                                             </p>
                                         </div>
                                         <ChevronDown className="w-3 h-3 text-slate-400 group-hover:text-slate-900 transition-colors" />
@@ -287,8 +289,17 @@ export function AppShell({
                                 </PopoverTrigger>
                                 <PopoverContent align="end" className="w-60 p-0 rounded-2xl shadow-2xl border-slate-200" sideOffset={8}>
                                     <div className="px-4 py-3 bg-slate-50/50 rounded-t-2xl border-b border-slate-100">
-                                        <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Connected as</p>
-                                        <p className="text-xs font-semibold text-slate-600 truncate mt-1">{user?.email}</p>
+                                        <p className="text-sm font-bold text-slate-900 leading-tight">
+                                            {user?.employee?.firstName && user?.employee?.lastName
+                                                ? `${user.employee.firstName} ${user.employee.lastName}`
+                                                : user?.employee?.firstName || 'User'}
+                                        </p>
+                                        <p className="text-xs text-slate-600 mt-1 leading-tight">
+                                            {user?.user?.role ? formatRole(user.user.role) : 'Employee'}
+                                        </p>
+                                        <p className="text-xs text-slate-500 truncate mt-1">
+                                            {user?.user?.email}
+                                        </p>
                                     </div>
                                     <div className="p-1.5">
                                         <Button variant="ghost" className="w-full justify-start h-9 px-3 text-sm font-medium text-slate-700">

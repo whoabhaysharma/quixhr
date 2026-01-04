@@ -16,21 +16,27 @@ import {
     TableHeader,
     TableRow,
 } from "@/components/ui/table"
-import { useLeaves, useUpdateLeaveStatus } from "@/lib/hooks/useLeaves"
+import { useLeaves, useOrgLeaves, useUpdateLeaveStatus } from "@/lib/hooks/useLeaves"
 import { Leave } from "@/lib/services/leaves"
+import { useAuth } from "@/context/auth-context"
 
 export default function LeaveManagerView() {
+    const { user } = useAuth()
     const [searchQuery, setSearchQuery] = useState("")
 
-    // Use the custom hook for fetching leaves
-    const { data: leaves = [], isLoading } = useLeaves()
+    // Use the custom hook for fetching org leaves
+    // We assume the user has an organization
+    const organizationId = user?.organization?.id || ''
+
+    // Only fetch if we have an org ID
+    const { data: leaves = [], isLoading } = useOrgLeaves(organizationId)
 
     // Use the custom hook for updating leave status
     const updateLeaveStatusMutation = useUpdateLeaveStatus()
 
     const handleStatusUpdate = (id: string, status: 'APPROVED' | 'REJECTED') => {
         updateLeaveStatusMutation.mutate({
-            leaveId: id,
+            requestId: id,
             status
         })
     }
@@ -153,10 +159,10 @@ export default function LeaveManagerView() {
                                                     <Button
                                                         onClick={() => handleStatusUpdate(leave.id, 'APPROVED')}
                                                         size="sm"
-                                                        disabled={updateLeaveStatusMutation.isPending && updateLeaveStatusMutation.variables?.leaveId === leave.id}
+                                                        disabled={updateLeaveStatusMutation.isPending && updateLeaveStatusMutation.variables?.requestId === leave.id}
                                                         className="h-7 px-3 bg-emerald-600 hover:bg-emerald-700 text-white rounded-md text-xs font-bold shadow-sm"
                                                     >
-                                                        {updateLeaveStatusMutation.isPending && updateLeaveStatusMutation.variables?.leaveId === leave.id && updateLeaveStatusMutation.variables?.status === 'APPROVED' ? (
+                                                        {updateLeaveStatusMutation.isPending && updateLeaveStatusMutation.variables?.requestId === leave.id && updateLeaveStatusMutation.variables?.status === 'APPROVED' ? (
                                                             <Spinner className="h-3 w-3 animate-spin" />
                                                         ) : 'Approve'}
                                                     </Button>
@@ -164,10 +170,10 @@ export default function LeaveManagerView() {
                                                         onClick={() => handleStatusUpdate(leave.id, 'REJECTED')}
                                                         size="sm"
                                                         variant="outline"
-                                                        disabled={updateLeaveStatusMutation.isPending && updateLeaveStatusMutation.variables?.leaveId === leave.id}
+                                                        disabled={updateLeaveStatusMutation.isPending && updateLeaveStatusMutation.variables?.requestId === leave.id}
                                                         className="h-7 px-3 text-rose-600 hover:text-rose-700 hover:bg-rose-50 border-rose-200 rounded-md text-xs font-bold shadow-sm"
                                                     >
-                                                        {updateLeaveStatusMutation.isPending && updateLeaveStatusMutation.variables?.leaveId === leave.id && updateLeaveStatusMutation.variables?.status === 'REJECTED' ? (
+                                                        {updateLeaveStatusMutation.isPending && updateLeaveStatusMutation.variables?.requestId === leave.id && updateLeaveStatusMutation.variables?.status === 'REJECTED' ? (
                                                             <Spinner className="h-3 w-3 animate-spin" />
                                                         ) : 'Reject'}
                                                     </Button>
