@@ -75,7 +75,7 @@ export const getMembers = catchAsync(async (req: Request, res: Response, next: N
     if (!user) return next(new AppError('User not authenticated', 401));
 
     // Import dynamically to avoid circular dependency
-    const { EmployeeService } = require('../employees/employees.service');
+    const { UserService } = require('../users/users.service');
     const { getViewableRoles } = require('@/utils/roleHierarchy');
 
     // 1. Determine Access
@@ -92,7 +92,7 @@ export const getMembers = catchAsync(async (req: Request, res: Response, next: N
     };
 
     // 3. Query
-    const result = await EmployeeService.getEmployees(organizationId, pagination, filters);
+    const result = await UserService.getEmployees(organizationId, pagination, filters);
     sendResponse(res, 200, result, 'Members retrieved successfully');
 });
 
@@ -104,11 +104,11 @@ export const removeMember = catchAsync(async (req: Request, res: Response, next:
     if (!user) return next(new AppError('User not authenticated', 401));
     const currentUserRole = user.role;
 
-    const { EmployeeService } = require('../employees/employees.service');
+    const { UserService } = require('../users/users.service');
     const { canManageRole } = require('@/utils/roleHierarchy');
 
     // 1. Get the target employee to find their user role
-    const targetEmployee = await EmployeeService.getEmployee(organizationId, employeeId);
+    const targetEmployee = await UserService.getEmployee(organizationId, employeeId);
 
     if (!targetEmployee) {
         return next(new AppError('Employee not found', 404));
@@ -122,7 +122,7 @@ export const removeMember = catchAsync(async (req: Request, res: Response, next:
     }
 
     // 3. Proceed to delete
-    await EmployeeService.deleteEmployee(organizationId, employeeId);
+    await UserService.deleteEmployee(organizationId, employeeId);
 
     sendResponse(res, 200, null, 'Member removed successfully');
 });

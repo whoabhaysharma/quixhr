@@ -1,27 +1,137 @@
 import { Request, Response, NextFunction } from 'express';
 import { catchAsync } from '@/utils/catchAsync';
 import { sendResponse } from '@/utils/sendResponse';
+import { AppError } from '@/utils/appError';
 import { getPaginationParams } from '@/utils/pagination';
 import { UserService } from './users.service';
-import { GetUsersQuery } from './users.schema';
+import { GetUsersQuery, CreateEmployeeInput, UpdateEmployeeInput } from './users.schema';
+import { tryGetOrganizationContext } from '@/utils/tenantContext';
 
-export const getUsers = catchAsync(
-    async (req: Request, res: Response, next: NextFunction) => {
-        const pagination = getPaginationParams(req, 'createdAt', 'desc');
+// =========================================================================
+// UNIFIED CONTROLLERS
+// =========================================================================
+
+/**
+ * Get Users or Employees based on context
+ * - If Tenant Context: Returns Employees of that organization
+ * - If Global Context: Returns All Users (Super Admin)
+ */
+export const getUsers = catchAsync(async (req: Request, res: Response, next: NextFunction) => {
+    const organizationId = tryGetOrganizationContext(req);
+
+    // 1. Pagination Params
+    // Default sort changes based on context (Users -> createdAt, Employees -> firstName)
+    const defaultSortField = organizationId ? 'firstName' : 'createdAt';
+    const pagination = getPaginationParams(req, defaultSortField, 'asc');
+
+    let result;
+
+    if (organizationId) {
+        // TENANT CONTEXT: List Employees
+        const filters = {
+            status: req.query.status as any,
+            role: req.query.role as any,
+            calendarId: req.query.calendarId as string,
+            leaveGradeId: req.query.leaveGradeId as string,
+        };
+        result = await UserService.getEmployees(organizationId, pagination, filters);
+        sendResponse(res, 200, result, 'Organization members retrieved successfully');
+
+    } else {
+        // GLOBAL CONTEXT: List Users
+        // Note: Super Admin might want to filter by organizationId as a query param effectively handled by resolveTenant
+        // But if resolveTenant didn't set it (no param), we list ALL users.
         const filters = req.query as unknown as GetUsersQuery;
-
-        const result = await UserService.getUsers(pagination, filters);
-
+        result = await UserService.getUsers(pagination, filters);
         sendResponse(res, 200, result, 'Users retrieved successfully');
     }
-);
+});
 
-export const getUserById = catchAsync(
-    async (req: Request, res: Response, next: NextFunction) => {
-        const { userId } = req.params;
+/**
+ * Get Single User or Employee
+ * - If Tenant Context: Returns Employee details
+ * - If Global Context: Returns User details
+ * - Smart ID handling: If ID is UUID, try both or infer?
+ *   - Actually, 'id' param is generic.
+ *   - If Org Context -> valid ID is EmployeeID.
+ *   - If Global Context -> valid ID is UserID.
+ */
+export const getUserById = catchAsync(async (req: Request, res: Response, next: NextFunction) => {
+    const organizationId = tryGetOrganizationContext(req);
+    const { id } = req.params; // Using 'id' generically, route should use :id
 
-        const user = await UserService.getUserById(userId);
-
+    if (organizationId) {
+        // TENANT CONTEXT: Get Employee
+        const result = await UserService.getEmployee(organizationId, id);
+        sendResponse(res, 200, result, 'Member retrieved successfully');
+    } else {
+        // GLOBAL CONTEXT: Get User
+        // Note: Logic for SuperAdmin viewing an Employee by ID vs User by ID logic?
+        // Usually /users/:id implies UserID.
+        // User requested "keep it only /users".
+        // If I am SuperAdmin and request /users/:id -> I expect User record.
+        // If I am OrgAdmin and request /users/:id -> I expect Employee record (my member).
+        const user = await UserService.getUserById(id);
         sendResponse(res, 200, user, 'User retrieved successfully');
     }
-);
+});
+
+/**
+ * Create User or Employee
+ */
+export const createUser = catchAsync(async (req: Request, res: Response, next: NextFunction) => {
+    const organizationId = tryGetOrganizationContext(req);
+
+    if (organizationId) {
+        // TENANT CONTEXT: Create Employee
+        const payload = req.body as CreateEmployeeInput;
+        const result = await UserService.createEmployee(organizationId, payload);
+        sendResponse(res, 201, result, 'Member created successfully');
+    } else {
+        // GLOBAL CONTEXT: Create User (Super Admin creating another Admin?)
+        // Currently we don't have a specific `createUser` service method for independent users
+        // except via Auth (Register) or implicitly.
+        // If body has 'organizationId', maybe we validly redirect?
+        // For now, restrict to Organization Context for creation unless we implement Global User Create.
+        return next(new AppError('Global user creation not implemented. Use specific organization context.', 501));
+    }
+});
+
+/**
+ * Update User or Employee
+ */
+export const updateUser = catchAsync(async (req: Request, res: Response, next: NextFunction) => {
+    const organizationId = tryGetOrganizationContext(req);
+    const { id } = req.params;
+
+    if (organizationId) {
+        // TENANT CONTEXT: Update Employee
+        const payload = req.body as UpdateEmployeeInput;
+        const result = await UserService.updateEmployee(organizationId, id, payload);
+        sendResponse(res, 200, result, 'Member updated successfully');
+    } else {
+        // GLOBAL CONTEXT: Update User
+        // Provide logic to update User fields (Role, Email, etc.)?
+        // For now, let's say "Not Implemented" or just allow updating basic User props if service supports it.
+        // Assuming strict "Employees are Users" flow requested.
+        return next(new AppError('Global user update not implemented via this route.', 501));
+    }
+});
+
+/**
+ * Delete User or Employee
+ */
+export const deleteUser = catchAsync(async (req: Request, res: Response, next: NextFunction) => {
+    const organizationId = tryGetOrganizationContext(req);
+    const { id } = req.params;
+
+    if (organizationId) {
+        // TENANT CONTEXT: Delete Employee
+        await UserService.deleteEmployee(organizationId, id);
+        sendResponse(res, 200, null, 'Member deleted successfully');
+    } else {
+        // GLOBAL CONTEXT: Delete User
+        // await UserService.deleteUser(id); // Need a global deleteUser method?
+        return next(new AppError('Global user deletion not implemented.', 501));
+    }
+});
