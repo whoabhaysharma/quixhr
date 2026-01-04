@@ -122,7 +122,7 @@ export const removeMember = catchAsync(async (req: Request, res: Response, next:
     }
 
     // 3. Proceed to delete
-    await MemberService.deleteEmployee(organizationId, employeeId);
+    await MemberService.deleteEmployee(organizationId, employeeId, currentUserRole);
 
     sendResponse(res, 200, null, 'Member removed successfully');
 });

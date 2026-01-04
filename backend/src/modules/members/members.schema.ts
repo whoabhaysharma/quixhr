@@ -60,6 +60,7 @@ export const updateEmployeeSchema = {
         code: z.string().max(20).optional(),
         status: z.enum(['ACTIVE', 'INACTIVE', 'TERMINATED']).optional(),
         joiningDate: z.coerce.date().optional(),
+        role: z.nativeEnum(Role).optional(),
 
         // Relations
         calendarId: z.string().uuid().optional(),

@@ -106,8 +106,11 @@ export const updateUser = catchAsync(async (req: Request, res: Response, next: N
 
     if (organizationId) {
         // TENANT CONTEXT: Update Employee
+        const user = (req as any).user;
+        if (!user) return next(new AppError('User not authenticated', 401));
+
         const payload = req.body as UpdateEmployeeInput;
-        const result = await MemberService.updateEmployee(organizationId, id, payload);
+        const result = await MemberService.updateEmployee(organizationId, id, payload, user.role);
         sendResponse(res, 200, result, 'Member updated successfully');
     } else {
         // GLOBAL CONTEXT: Update User
@@ -127,7 +130,10 @@ export const deleteUser = catchAsync(async (req: Request, res: Response, next: N
 
     if (organizationId) {
         // TENANT CONTEXT: Delete Employee
-        await MemberService.deleteEmployee(organizationId, id);
+        const user = (req as any).user;
+        if (!user) return next(new AppError('User not authenticated', 401));
+
+        await MemberService.deleteEmployee(organizationId, id, user.role);
         sendResponse(res, 200, null, 'Member deleted successfully');
     } else {
         // GLOBAL CONTEXT: Delete User

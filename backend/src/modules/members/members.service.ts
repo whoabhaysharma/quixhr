@@ -5,6 +5,7 @@ import { buildOrderBy } from '@/utils/prismaHelpers';
 import { GetUsersQuery, CreateEmployeeInput, UpdateEmployeeInput, GetEmployeesQuery } from './members.schema';
 import { Role, Prisma } from '@prisma/client';
 import { validateOrganizationResource } from '@/utils/prismaHelpers';
+import { canModifyRole, canManageRole } from '@/utils/roleHierarchy';
 
 export class MemberService {
     static async getUsers(
@@ -250,7 +251,7 @@ export class MemberService {
     /**
      * Update Employee
      */
-    static async updateEmployee(organizationId: string, id: string, data: UpdateEmployeeInput) {
+    static async updateEmployee(organizationId: string, id: string, data: UpdateEmployeeInput, requesterRole: Role) {
         const employee = await validateOrganizationResource('employee', id, organizationId, 'Employee');
 
         if (data.code && data.code !== (employee as any).code) {
@@ -265,29 +266,79 @@ export class MemberService {
             }
         }
 
+        // 2. Fetch Current Data for RBAC and Logic
+        const currentEmployee = await prisma.employee.findUnique({
+            where: { id },
+            include: { user: true }
+        });
+
+        if (!currentEmployee || !currentEmployee.user) {
+            throw new AppError('Employee or associated user not found', 404);
+        }
+
+        // 3. RBAC: Strict Check (Lower cannot modify Higher/Equal)
+        const targetRole = currentEmployee.user.role;
+        const newRole = data.role || targetRole;
+
+        // "changing the role or editing the information ... should only be allowed to the lower roles by higher roles"
+        // This implies I cannot even EDIT if I am not strictly higher.
+        if (!canModifyRole(requesterRole, targetRole, newRole)) {
+            throw new AppError('You do not have permission to modify this member or assign this role.', 403);
+        }
+
+        // 4. Last Admin Protection
+        if (targetRole === Role.ORG_ADMIN && newRole !== Role.ORG_ADMIN) {
+            // We are demoting an Admin. Check if they are the last one.
+            const adminCount = await prisma.user.count({
+                where: {
+                    role: Role.ORG_ADMIN,
+                    employee: { organizationId }
+                }
+            });
+            if (adminCount <= 1) {
+                throw new AppError('Cannot demote the last Organization Admin.', 400);
+            }
+        }
+
         if (data.calendarId) await validateOrganizationResource('calendar', data.calendarId, organizationId, 'Calendar');
         if (data.leaveGradeId) await validateOrganizationResource('leaveGrade', data.leaveGradeId, organizationId, 'Leave Grade');
 
-        return await prisma.employee.update({
-            where: { id },
-            data: {
-                ...data,
-                joiningDate: data.joiningDate ? new Date(data.joiningDate) : undefined,
-                status: data.status as any,
-            },
-            include: { user: { select: { email: true, role: true } } }
+        // 5. Update Transaction (Update Employee AND User Role if needed)
+        return await prisma.$transaction(async (tx) => {
+            // Update Role if changed
+            if (data.role && data.role !== targetRole) {
+                await tx.user.update({
+                    where: { id: currentEmployee.userId! },
+                    data: { role: data.role }
+                });
+            }
+
+            return await tx.employee.update({
+                where: { id },
+                data: {
+                    firstName: data.firstName,
+                    lastName: data.lastName,
+                    code: data.code,
+                    status: data.status as any,
+                    joiningDate: data.joiningDate ? new Date(data.joiningDate) : undefined,
+                    calendarId: data.calendarId,
+                    leaveGradeId: data.leaveGradeId,
+                },
+                include: { user: { select: { email: true, role: true } } }
+            });
         });
     }
 
     /**
      * Delete Employee
      */
-    static async deleteEmployee(organizationId: string, id: string) {
+    static async deleteEmployee(organizationId: string, id: string, requesterRole: Role) {
         /* validateOrganizationResource is enough for access check, 
        but we need relations to check constraints. */
         const employee = await prisma.employee.findFirst({
             where: { id, organizationId },
             include: {
+                user: true,
                 attendance: { take: 1 },
                 leaveRequests: { take: 1 },
                 leaveAllocations: { take: 1 }
@@ -295,6 +346,24 @@ export class MemberService {
         });
 
         if (!employee) throw new AppError('Employee not found', 404);
+
+        // RBAC Check
+        if (employee.user && !canManageRole(requesterRole, employee.user.role)) {
+            throw new AppError('You cannot remove a member with a role equal to or higher than yours.', 403);
+        }
+
+        // Last Admin Check
+        if (employee.user && employee.user.role === Role.ORG_ADMIN) {
+            const adminCount = await prisma.user.count({
+                where: {
+                    role: Role.ORG_ADMIN,
+                    employee: { organizationId }
+                }
+            });
+            if (adminCount <= 1) {
+                throw new AppError('Cannot delete the last Organization Admin.', 400);
+            }
+        }
 
         if (employee.attendance.length > 0 || employee.leaveRequests.length > 0 || employee.leaveAllocations.length > 0) {
             throw new AppError('Cannot delete employee with existing history. Deactivate instead.', 400);

@@ -55,6 +55,7 @@ import { useMembers, useDeleteMember, useUpdateMemberRole, useInvitations, useRe
 import { Member } from "@/lib/services/members"
 import { Invitation } from "@/lib/services/invitation"
 import { Role, ROLE_LABELS, ROLE_BADGE_STYLES } from "@/lib/constants/roles"
+import { canManageRole, canModifyRole, getAssignableRoles } from "@/lib/utils/roleHierarchy"
 
 export default function MemberManagerView() {
     const { user: currentUser } = useAuth()
@@ -111,6 +112,8 @@ export default function MemberManagerView() {
             </Badge>
         )
     }
+
+    const availableRoles = currentUser ? getAssignableRoles(currentUser.role as Role) : [];
 
     return (
         <div className="space-y-6">
@@ -228,7 +231,9 @@ export default function MemberManagerView() {
                                                             (deleteMemberMutation.isPending && deleteMemberMutation.variables === user.id) ||
                                                             (resendInvitationMutation.isPending && resendInvitationMutation.variables === user.id) ||
                                                             (deleteInvitationMutation.isPending && deleteInvitationMutation.variables === user.id) ||
-                                                            (currentUser?.role !== 'SUPER_ADMIN' && currentUser?.role !== 'HR_ADMIN')
+                                                            (deleteInvitationMutation.isPending && deleteInvitationMutation.variables === user.id) ||
+                                                            (!currentUser?.role) ||
+                                                            (!user.isInvitation && !canManageRole(currentUser.role as Role, user.role as Role))
                                                         }>
                                                         {(updateMemberRoleMutation.isPending && updateMemberRoleMutation.variables?.memberId === user.id) ||
                                                             (deleteMemberMutation.isPending && deleteMemberMutation.variables === user.id) ||
@@ -266,50 +271,27 @@ export default function MemberManagerView() {
                                                     ) : (
                                                         <>
                                                             <DropdownMenuSub>
-                                                                <DropdownMenuSubTrigger>
+                                                                <DropdownMenuSubTrigger disabled={availableRoles.length === 0}>
                                                                     <UserCog className="w-4 h-4 mr-2" />
                                                                     Change Role
                                                                 </DropdownMenuSubTrigger>
                                                                 <DropdownMenuSubContent>
-                                                                    <DropdownMenuItem
-                                                                        onClick={() => {
-                                                                            updateMemberRoleMutation.mutate({
-                                                                                memberId: user.id,
-                                                                                role: 'HR_ADMIN'
-                                                                            })
-                                                                        }}
-                                                                        className="cursor-pointer"
-                                                                        disabled={user.role === 'HR_ADMIN' || updateMemberRoleMutation.isPending}
-                                                                    >
-                                                                        <Shield className="w-4 h-4 mr-2" />
-                                                                        HR Admin
-                                                                    </DropdownMenuItem>
-                                                                    <DropdownMenuItem
-                                                                        onClick={() => {
-                                                                            updateMemberRoleMutation.mutate({
-                                                                                memberId: user.id,
-                                                                                role: 'MANAGER'
-                                                                            })
-                                                                        }}
-                                                                        className="cursor-pointer"
-                                                                        disabled={user.role === 'MANAGER' || updateMemberRoleMutation.isPending}
-                                                                    >
-                                                                        <Users className="w-4 h-4 mr-2" />
-                                                                        Manager
-                                                                    </DropdownMenuItem>
-                                                                    <DropdownMenuItem
-                                                                        onClick={() => {
-                                                                            updateMemberRoleMutation.mutate({
-                                                                                memberId: user.id,
-                                                                                role: 'EMPLOYEE'
-                                                                            })
-                                                                        }}
-                                                                        className="cursor-pointer"
-                                                                        disabled={user.role === 'EMPLOYEE' || updateMemberRoleMutation.isPending || (user.role === 'HR_ADMIN' && adminCount === 1)}
-                                                                    >
-                                                                        <Users className="w-4 h-4 mr-2" />
-                                                                        Employee
-                                                                    </DropdownMenuItem>
+                                                                    {availableRoles.map((role) => (
+                                                                        <DropdownMenuItem
+                                                                            key={role}
+                                                                            onClick={() => {
+                                                                                updateMemberRoleMutation.mutate({
+                                                                                    memberId: user.id,
+                                                                                    role: role
+                                                                                })
+                                                                            }}
+                                                                            className="cursor-pointer"
+                                                                            disabled={user.role === role || updateMemberRoleMutation.isPending || !canModifyRole(currentUser?.role as Role, user.role as Role, role)}
+                                                                        >
+                                                                            <Shield className="w-4 h-4 mr-2" />
+                                                                            {ROLE_LABELS[role]}
+                                                                        </DropdownMenuItem>
+                                                                    ))}
                                                                 </DropdownMenuSubContent>
                                                             </DropdownMenuSub>
                                                             <DropdownMenuItem
@@ -326,7 +308,8 @@ export default function MemberManagerView() {
                                                                     setItemToDelete({ id: user.id, name: user.name, type: 'MEMBER' })
                                                                 }}
                                                                 className="cursor-pointer text-red-600 focus:text-red-600 focus:bg-red-50"
-                                                                disabled={deleteMemberMutation.isPending || (user.role === 'HR_ADMIN' && adminCount === 1)}
+                                                                className="cursor-pointer text-red-600 focus:text-red-600 focus:bg-red-50"
+                                                                disabled={deleteMemberMutation.isPending || (user.role === 'ORG_ADMIN' && adminCount <= 1) || !canManageRole(currentUser?.role as Role, user.role as Role)}
                                                             >
                                                                 <Trash2 className="w-4 h-4 mr-2" />
                                                                 Remove Member
