@@ -1,8 +1,9 @@
 import api from '../api';
+import { Role } from '../constants/roles';
 
 export interface CreateInvitationDto {
     email: string;
-    role: 'HR_ADMIN' | 'MANAGER' | 'EMPLOYEE';
+    role: Role;
 }
 
 export interface Invitation {

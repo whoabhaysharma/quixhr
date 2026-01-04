@@ -17,7 +17,7 @@ export default function RegisterPage() {
     // Form State
     const [firstName, setFirstName] = useState("")
     const [lastName, setLastName] = useState("")
-    const [companyName, setCompanyName] = useState("")
+    const [organizationName, setOrganizationName] = useState("")
     const [email, setEmail] = useState("")
     const [password, setPassword] = useState("")
     const [confirmPassword, setConfirmPassword] = useState("")
@@ -47,7 +47,7 @@ export default function RegisterPage() {
                 confirmPassword,
                 firstName,
                 lastName,
-                companyName
+                organizationName
             })
 
             if (response.status === 'success') {
@@ -179,13 +179,13 @@ export default function RegisterPage() {
                             </div>
 
                             <div className="space-y-2">
-                                <Label htmlFor="companyName" className="text-slate-700">Company</Label>
+                                <Label htmlFor="organizationName" className="text-slate-700">Organization Name</Label>
                                 <Input
-                                    id="companyName"
+                                    id="organizationName"
                                     type="text"
                                     placeholder="Acme Inc."
-                                    value={companyName}
-                                    onChange={(e) => setCompanyName(e.target.value)}
+                                    value={organizationName}
+                                    onChange={(e) => setOrganizationName(e.target.value)}
                                     className="h-10 rounded-md border-slate-200 focus:ring-slate-900 focus:border-slate-900"
                                     required
                                 />

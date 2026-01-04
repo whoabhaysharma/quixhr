@@ -39,7 +39,7 @@ export const authService = {
         email: string;
         password: string;
         confirmPassword: string;
-        companyName: string;
+        organizationName: string;
     }): Promise<ApiResponse<RegisterResponse>> => {
         const response = await api.post('/auth/register', data);
         return response.data;

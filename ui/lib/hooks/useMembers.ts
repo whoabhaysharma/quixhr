@@ -1,14 +1,20 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { membersService } from '../services/members'
 import { invitationService } from '../services/invitation'
+import { Role } from '@/lib/constants/roles'
 import { toast } from 'sonner'
 
+import { useAuth } from '@/context/auth-context'
+
 export function useMembers(options?: { enabled?: boolean }) {
+    const { user } = useAuth()
+    const organizationId = user?.organizationId || user?.employee?.organizationId
+
     return useQuery({
-        queryKey: ['members'],
+        queryKey: ['members', organizationId],
         queryFn: async () => {
             try {
-                const response = await membersService.getAllMembers()
+                const response = await membersService.getAllMembers(organizationId)
                 return response
             } catch (error: any) {
                 const errorMessage = error.response?.data?.error || error.response?.data?.message || 'Failed to load members list'
@@ -16,7 +22,7 @@ export function useMembers(options?: { enabled?: boolean }) {
                 throw error
             }
         },
-        enabled: options?.enabled,
+        enabled: options?.enabled && !!organizationId,
     })
 }
 
@@ -24,7 +30,7 @@ export function useSendInvite() {
     const queryClient = useQueryClient()
 
     return useMutation({
-        mutationFn: (data: { email: string; role: 'HR_ADMIN' | 'MANAGER' | 'EMPLOYEE' }) =>
+        mutationFn: (data: { email: string; role: Role }) =>
             invitationService.inviteUser(data),
         onSuccess: () => {
             // Optionally refetch members list
@@ -82,7 +88,12 @@ export function useInvitations() {
         queryKey: ['invitations'],
         queryFn: async () => {
             const response = await invitationService.getAll()
-            return response.data || []
+            console.log("DEBUG: useInvitations response", response)
+            // Backend returns: { success: true, data: { data: [], pagination: {} } }
+            // response.data is the 'data' field of the body
+            const result = response.data?.data;
+            console.log("DEBUG: useInvitations extracted result", result)
+            return Array.isArray(result) ? result : []
         }
     })
 }

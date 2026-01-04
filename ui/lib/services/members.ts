@@ -1,4 +1,5 @@
 import api, { ApiResponse, PaginatedResponse } from '../api';
+import { Role } from '../constants/roles';
 
 export interface Member {
     id: string;
@@ -6,21 +7,22 @@ export interface Member {
     companyId: string;
     name: string;
     email: string;
-    role: 'SUPER_ADMIN' | 'HR_ADMIN' | 'MANAGER' | 'EMPLOYEE';
+    role: Role;
     status: string;
     createdAt: string;
 }
 
 export const membersService = {
     // Get all members in company
-    getAllMembers: async (page = 1, limit = 10, search?: string): Promise<PaginatedResponse<Member[]>> => {
+    getAllMembers: async (organizationId?: string, page = 1, limit = 10, search?: string): Promise<PaginatedResponse<Member[]>> => {
         const params = new URLSearchParams({
             page: page.toString(),
             limit: limit.toString(),
         });
         if (search) params.append('search', search);
 
-        const response = await api.get(`/members?${params.toString()}`);
+        const url = organizationId ? `/org/${organizationId}/members` : '/members';
+        const response = await api.get(`${url}?${params.toString()}`);
         return response.data;
     },
 

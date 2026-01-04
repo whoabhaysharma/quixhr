@@ -54,6 +54,7 @@ import {
 import { useMembers, useDeleteMember, useUpdateMemberRole, useInvitations, useResendInvitation, useDeleteInvitation } from "@/lib/hooks/useMembers"
 import { Member } from "@/lib/services/members"
 import { Invitation } from "@/lib/services/invitation"
+import { Role, ROLE_LABELS, ROLE_BADGE_STYLES } from "@/lib/constants/roles"
 
 export default function MemberManagerView() {
     const { user: currentUser } = useAuth()
@@ -64,7 +65,7 @@ export default function MemberManagerView() {
     // TanStack Query hooks
     // TanStack Query hooks
     const { data: membersResponse, isLoading: isLoadingMembers } = useMembers()
-    const members = membersResponse?.data || []
+    const members = (membersResponse?.data as any)?.data || []
 
     // Invitations hook
     const { data: invitations = [], isLoading: isLoadingInvitations } = useInvitations()
@@ -90,21 +91,25 @@ export default function MemberManagerView() {
         ...members
     ]
 
-    const admins = members.filter((m) => m.role === 'SUPER_ADMIN' || m.role === 'HR_ADMIN')
+    // ... members array construction
+
+    // ... (keep surrounding code)
+
+    const admins = members.filter((m: Member) => m.role === Role.SUPER_ADMIN || m.role === Role.HR_ADMIN)
     const adminCount = admins.length
 
     const getRoleBadge = (role: string) => {
-        switch (role) {
-            case 'SUPER_ADMIN':
-                return <Badge className="bg-purple-100 text-purple-700 hover:bg-purple-200 border-none px-2.5 py-0.5 text-[10px] uppercase tracking-wide shadow-none"><Shield className="w-3 h-3 mr-1" /> Super Admin</Badge>
-            case 'HR_ADMIN':
-                return <Badge className="bg-blue-100 text-blue-700 hover:bg-blue-200 border-none px-2.5 py-0.5 text-[10px] uppercase tracking-wide shadow-none">HR Admin</Badge>
-            case 'MANAGER':
-                return <Badge className="bg-indigo-100 text-indigo-700 hover:bg-indigo-200 border-none px-2.5 py-0.5 text-[10px] uppercase tracking-wide shadow-none">Manager</Badge>
-            case 'EMPLOYEE':
-            default:
-                return <Badge className="bg-slate-100 text-slate-600 hover:bg-slate-200 border-none px-2.5 py-0.5 text-[10px] uppercase tracking-wide shadow-none">Employee</Badge>
-        }
+        // Fallback or explicit mapping
+        const roleKey = role as Role;
+        const style = ROLE_BADGE_STYLES[roleKey] || ROLE_BADGE_STYLES[Role.EMPLOYEE];
+        const label = ROLE_LABELS[roleKey] || role;
+
+        return (
+            <Badge className={style}>
+                {role === Role.SUPER_ADMIN && <Shield className="w-3 h-3 mr-1" />}
+                {label}
+            </Badge>
+        )
     }
 
     return (
