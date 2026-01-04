@@ -173,6 +173,13 @@ export class LeaveService {
         await prisma.leavePolicy.delete({ where: { id: policyId } });
     }
 
+    static async getPolicyById(policyId: string) {
+        return await prisma.leavePolicy.findUnique({
+            where: { id: policyId },
+            include: { grade: true },
+        });
+    }
+
     // =========================================================================
     // LEAVE REQUESTS
     // =========================================================================

@@ -1,5 +1,5 @@
 import { prisma } from '@/utils/prisma';
-import { AttendanceStatus } from '@prisma/client';
+import { AttendanceStatus, Role } from '@prisma/client';
 import { AppError } from '@/utils/appError';
 import { ParsedPagination } from '@/utils/pagination';
 import { buildOrderBy, validateOrganizationResource } from '@/utils/prismaHelpers';
@@ -209,5 +209,141 @@ export class AttendanceService {
                 totalPages: Math.ceil(total / limit)
             }
         };
+    }
+    /**
+     * Manual Entry (Admin/Manager)
+     */
+    static async createManualAttendance(
+        organizationId: string,
+        data: ManualEntryInput,
+        requesterRole: Role,
+        requesterId: string // Used for Manager verification
+    ) {
+        // 1. Verify Employee exists in Organization
+        await validateOrganizationResource('employee', data.employeeId, organizationId, 'Employee');
+
+        // 2. Strict RBAC: Manager can only clock for their direct reports
+        if (requesterRole === Role.MANAGER) {
+            const subordinate = await prisma.employee.findFirst({
+                where: {
+                    id: data.employeeId,
+                    organizationId,
+                    managerId: requesterId
+                }
+            });
+            if (!subordinate) {
+                throw new AppError('You can only manage attendance for your direct reports', 403);
+            }
+        }
+
+        // 3. Check for duplicates
+        const existing = await prisma.attendance.findUnique({
+            where: {
+                employeeId_date: {
+                    employeeId: data.employeeId,
+                    date: new Date(data.date)
+                }
+            }
+        });
+
+        if (existing) {
+            throw new AppError('Attendance record already exists for this date', 400);
+        }
+
+        const date = new Date(data.date);
+        date.setHours(0, 0, 0, 0);
+
+        // Calculate workMinutes if both times provided
+        let workMinutes = 0;
+        if (data.checkIn && data.checkOut) {
+            workMinutes = Math.floor((new Date(data.checkOut).getTime() - new Date(data.checkIn).getTime()) / 60000);
+        }
+
+        return await prisma.$transaction(async (tx) => {
+            const attendance = await tx.attendance.create({
+                data: {
+                    employeeId: data.employeeId,
+                    date,
+                    status: data.status || AttendanceStatus.PRESENT,
+                    checkIn: new Date(data.checkIn),
+                    checkOut: data.checkOut ? new Date(data.checkOut) : null,
+                    workMinutes,
+                    remarks: data.remarks
+                }
+            });
+
+            await tx.attendanceLog.create({
+                data: {
+                    attendanceId: attendance.id,
+                    timestamp: new Date(),
+                    type: 'MANUAL',
+                    method: 'MANUAL_ENTRY',
+                    metadata: { createdBy: requesterId, role: requesterRole }
+                }
+            });
+
+            return attendance;
+        });
+    }
+
+    /**
+     * Update Attendance (Admin/Manager)
+     */
+    static async updateAttendance(
+        attendanceId: string,
+        organizationId: string,
+        data: Partial<ManualEntryInput>,
+        requesterRole: Role,
+        requesterId: string
+    ) {
+        const attendance = await prisma.attendance.findUnique({
+            where: { id: attendanceId },
+            include: { employee: true }
+        });
+
+        if (!attendance) throw new AppError('Attendance record not found', 404);
+        if (attendance.employee.organizationId !== organizationId) throw new AppError('Access denied', 403);
+
+        // RBAC: Manager check
+        if (requesterRole === Role.MANAGER) {
+            if (attendance.employee.managerId !== requesterId) {
+                throw new AppError('You can only manage attendance for your direct reports', 403);
+            }
+        }
+
+        const updateData: any = {};
+        if (data.status) updateData.status = data.status;
+        if (data.checkIn) updateData.checkIn = new Date(data.checkIn);
+        if (data.checkOut) updateData.checkOut = new Date(data.checkOut);
+        if (data.remarks) updateData.remarks = data.remarks;
+
+        // Recalculate workMinutes if times change
+        const newCheckIn = updateData.checkIn ? new Date(updateData.checkIn) : attendance.checkIn;
+        const newCheckOut = updateData.checkOut ? new Date(updateData.checkOut) : attendance.checkOut;
+
+        if (newCheckIn && newCheckOut) {
+            updateData.workMinutes = Math.floor((newCheckOut.getTime() - newCheckIn.getTime()) / 60000);
+        } else if (newCheckIn && !newCheckOut) {
+            updateData.workMinutes = 0; // Reset if checkout removed
+        }
+
+        return await prisma.$transaction(async (tx) => {
+            const updated = await tx.attendance.update({
+                where: { id: attendanceId },
+                data: updateData
+            });
+
+            await tx.attendanceLog.create({
+                data: {
+                    attendanceId: attendance.id,
+                    timestamp: new Date(),
+                    type: 'MANUAL', // Or 'UPDATE' if supported enum
+                    method: 'MANUAL_UPDATE',
+                    metadata: { updatedBy: requesterId, role: requesterRole, changes: updateData }
+                }
+            });
+
+            return updated;
+        });
     }
 }

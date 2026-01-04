@@ -181,6 +181,11 @@ model Employee {
   leaveRequests    LeaveRequest[]
   leaveAllocations LeaveAllocation[]
   leaveLedger      LeaveLedger[]
+
+  // Manager Self-Relation
+  managerId    String?
+  manager      Employee?   @relation("ManagerSubordinates", fields: [managerId], references: [id])
+  subordinates Employee[]  @relation("ManagerSubordinates")
 }
 
 // ==========================================
@@ -343,8 +348,10 @@ model AttendanceLog {
   type         String     // "IN" or "OUT"
   method       String?    // "BIOMETRIC", "WEB", "MOBILE"
   gpsCoords    Json?      
+  metadata     Json?
 
   attendance   Attendance @relation(fields: [attendanceId], references: [id])
+
 }
 
 // ==========================================

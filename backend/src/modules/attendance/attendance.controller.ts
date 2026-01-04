@@ -49,3 +49,50 @@ export const getAllAttendance = catchAsync(async (req: Request, res: Response, n
     const result = await AttendanceService.getAttendance(organizationId, pagination, filters);
     sendResponse(res, 200, result, 'Attendance records retrieved successfully');
 });
+
+export const createAttendance = catchAsync(async (req: Request, res: Response, next: NextFunction) => {
+    const organizationId = getOrganizationContext(req, next);
+    const user = (req as any).user;
+    if (!user) return next(new AppError('User not authenticated', 401));
+
+    // For managers, we need their employeeId to verify subordinate relationship
+    const requesterId = user.employeeId;
+    if (user.role === 'MANAGER' && !requesterId) {
+        return next(new AppError('Manager account not linked to employee profile', 400));
+    }
+
+    const { manualEntrySchema } = require('./attendance.schema');
+    // Note: Schema validation should ideally be done in valid middleware, but we can do it here too or assume passed.
+
+    const result = await AttendanceService.createManualAttendance(
+        organizationId,
+        req.body,
+        user.role,
+        requesterId || user.id // Fallback to userId for admins if not linked (though admins can do anything)
+    );
+
+    sendResponse(res, 201, result, 'Attendance created successfully');
+});
+
+export const updateAttendance = catchAsync(async (req: Request, res: Response, next: NextFunction) => {
+    const organizationId = getOrganizationContext(req, next);
+    const { attendanceId } = req.params;
+    const user = (req as any).user;
+
+    if (!user) return next(new AppError('User not authenticated', 401));
+    const requesterId = user.employeeId;
+
+    if (user.role === 'MANAGER' && !requesterId) {
+        return next(new AppError('Manager account not linked to employee profile', 400));
+    }
+
+    const result = await AttendanceService.updateAttendance(
+        attendanceId,
+        organizationId,
+        req.body,
+        user.role,
+        requesterId || user.id
+    );
+
+    sendResponse(res, 200, result, 'Attendance updated successfully');
+});

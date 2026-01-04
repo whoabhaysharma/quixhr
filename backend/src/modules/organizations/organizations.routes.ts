@@ -120,6 +120,37 @@ router.post(
 // 2. ORGANIZATION MANAGEMENT ROUTES
 // =========================================================================
 
+// --- Attendance (Nested Manual Management) ---
+import * as AttendanceController from '../attendance/attendance.controller';
+import { manualEntrySchema, getAttendanceQuerySchema } from '../attendance/attendance.schema';
+
+// GET /api/v1/org/:organizationId/attendance
+router.get(
+    '/:organizationId/attendance',
+    resolveTenant,
+    restrictTo(Role.ORG_ADMIN, Role.HR_ADMIN, Role.MANAGER, Role.SUPER_ADMIN),
+    validate(getAttendanceQuerySchema),
+    AttendanceController.getAllAttendance
+);
+
+// POST /api/v1/org/:organizationId/attendance
+router.post(
+    '/:organizationId/attendance',
+    resolveTenant,
+    restrictTo(Role.ORG_ADMIN, Role.HR_ADMIN, Role.MANAGER, Role.SUPER_ADMIN),
+    validate(manualEntrySchema),
+    AttendanceController.createAttendance
+);
+
+// PATCH /api/v1/org/:organizationId/attendance/:attendanceId
+router.patch(
+    '/:organizationId/attendance/:attendanceId',
+    resolveTenant,
+    restrictTo(Role.ORG_ADMIN, Role.HR_ADMIN, Role.MANAGER, Role.SUPER_ADMIN),
+    // validate(manualEntrySchema.partial()), // Use partial schema if available, or just body
+    AttendanceController.updateAttendance
+);
+
 /**
  * @route   GET /api/v1/org/:organizationId
  */
