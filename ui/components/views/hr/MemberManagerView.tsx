@@ -164,7 +164,6 @@ export default function MemberManagerView() {
                         <TableHeader className="bg-slate-50 border-b border-slate-100">
                             <TableRow className="hover:bg-transparent border-slate-100">
                                 <TableHead className="px-6 py-3 text-[11px] font-bold text-slate-500 uppercase tracking-wider">User</TableHead>
-                                <TableHead className="px-6 py-3 text-[11px] font-bold text-slate-500 uppercase tracking-wider">Email Address</TableHead>
                                 <TableHead className="px-6 py-3 text-[11px] font-bold text-slate-500 uppercase tracking-wider">Role</TableHead>
                                 <TableHead className="px-6 py-3 text-[11px] font-bold text-slate-500 uppercase tracking-wider">Status</TableHead>
                                 <TableHead className="px-6 py-3 text-right"></TableHead>
@@ -177,12 +176,13 @@ export default function MemberManagerView() {
                                         <TableCell className="px-6 py-4">
                                             <div className="flex items-center gap-3">
                                                 <Skeleton className="h-8 w-8 rounded-lg" />
-                                                <Skeleton className="h-4 w-32" />
+                                                <div className="space-y-1">
+                                                    <Skeleton className="h-4 w-32" />
+                                                    <Skeleton className="h-3 w-48" />
+                                                </div>
                                             </div>
                                         </TableCell>
-                                        <TableCell className="px-6 py-4"><Skeleton className="h-4 w-48" /></TableCell>
                                         <TableCell className="px-6 py-4"><Skeleton className="h-6 w-20 rounded-full" /></TableCell>
-                                        <TableCell className="px-6 py-4"><Skeleton className="h-4 w-16" /></TableCell>
                                         <TableCell className="px-6 py-4 text-right"><Skeleton className="h-8 w-8 rounded-md ml-auto" /></TableCell>
                                     </TableRow>
                                 ))
@@ -202,16 +202,16 @@ export default function MemberManagerView() {
                                             <div className="flex items-center gap-3">
                                                 <Avatar className="h-8 w-8 rounded-lg border border-slate-200">
                                                     <AvatarFallback className="bg-slate-100 text-slate-600 font-bold text-xs">
-                                                        {user.name ? user.name.charAt(0) : '?'}
+                                                        {user.name ? user.name.charAt(0) : user.fullName ? user.fullName.charAt(0) : '?'}
                                                     </AvatarFallback>
                                                 </Avatar>
                                                 <div>
-                                                    <span className="font-semibold text-slate-900 block">{user.name}</span>
+                                                    <span className="font-semibold text-slate-900 block">{user.name || user.fullName}</span>
+                                                    <span className="text-xs text-slate-500 block">{user.email}</span>
                                                     {user.isInvitation && <span className="text-[10px] text-slate-400 font-normal">Pending Invite</span>}
                                                 </div>
                                             </div>
                                         </TableCell>
-                                        <TableCell className="px-6 py-4 text-slate-500 text-sm">{user.email}</TableCell>
                                         <TableCell className="px-6 py-4">
                                             {getRoleBadge(user.role)}
                                         </TableCell>
@@ -307,7 +307,6 @@ export default function MemberManagerView() {
                                                                 onClick={() => {
                                                                     setItemToDelete({ id: user.id, name: user.name, type: 'MEMBER' })
                                                                 }}
-                                                                className="cursor-pointer text-red-600 focus:text-red-600 focus:bg-red-50"
                                                                 className="cursor-pointer text-red-600 focus:text-red-600 focus:bg-red-50"
                                                                 disabled={deleteMemberMutation.isPending || (user.role === 'ORG_ADMIN' && adminCount <= 1) || !canManageRole(currentUser?.role as Role, user.role as Role)}
                                                             >
