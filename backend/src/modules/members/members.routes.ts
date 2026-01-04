@@ -1,13 +1,13 @@
 import { Router } from 'express';
 import { Role } from '@prisma/client';
 import { protect, restrictTo, validate, resolveTenant } from '@/shared/middleware';
-import * as UserController from './users.controller';
+import * as MemberController from './members.controller';
 import {
     getUsersQuerySchema,
     userIdSchema,
     createEmployeeSchema,
     updateEmployeeSchema
-} from './users.schema';
+} from './members.schema';
 
 // Import related controllers for nested routes (Lazy load or direct import if clean)
 import * as LeaveController from '../leaves/leaves.controller';
@@ -35,7 +35,7 @@ router.get(
     // Note: getUsersQuerySchema might strict-check "unknown" keys if Zod set to strict.
     // If we want to support employee filters (status, etc.), we should combine schemas or use a relaxed one.
     // For now, let's assume loose validation or update the schema to include optional employee filters.
-    UserController.getUsers
+    MemberController.getUsers
 );
 
 /**
@@ -51,7 +51,7 @@ router.post(
     // If SuperAdmin creates Global User, schema fails?
     // Let's use createEmployeeSchema for now as that's the primary use case requested.
     validate(createEmployeeSchema),
-    UserController.createUser
+    MemberController.createUser
 );
 
 /**
@@ -61,7 +61,7 @@ router.post(
 router.get(
     '/:id',
     restrictTo(Role.SUPER_ADMIN, Role.ORG_ADMIN, Role.HR_ADMIN, Role.MANAGER, Role.EMPLOYEE),
-    UserController.getUserById
+    MemberController.getUserById
 );
 
 /**
@@ -72,7 +72,7 @@ router.patch(
     '/:id',
     restrictTo(Role.SUPER_ADMIN, Role.ORG_ADMIN, Role.HR_ADMIN),
     validate(updateEmployeeSchema), // Using employee update schema primarily
-    UserController.updateUser
+    MemberController.updateUser
 );
 
 /**
@@ -82,7 +82,7 @@ router.patch(
 router.delete(
     '/:id',
     restrictTo(Role.SUPER_ADMIN, Role.ORG_ADMIN),
-    UserController.deleteUser
+    MemberController.deleteUser
 );
 
 // --- Nested Routes (Leaves, Allocations) ---

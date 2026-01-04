@@ -22,8 +22,8 @@ router.use(protect);
 // =========================================================================
 
 // --- Employees (Nested Create) ---
-import * as UserController from '../users/users.controller';
-import { createEmployeeSchema } from '../users/users.schema';
+import * as MemberController from '../members';
+import { createEmployeeSchema } from '../members';
 
 // POST /api/v1/org/:organizationId/employees
 router.post(
@@ -31,7 +31,7 @@ router.post(
     resolveTenant,
     restrictTo(Role.ORG_ADMIN, Role.HR_ADMIN, Role.SUPER_ADMIN),
     validate(createEmployeeSchema),
-    UserController.createUser
+    MemberController.createUser
 );
 
 // GET /api/v1/org/:organizationId/members

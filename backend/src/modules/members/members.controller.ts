@@ -3,8 +3,8 @@ import { catchAsync } from '@/utils/catchAsync';
 import { sendResponse } from '@/utils/sendResponse';
 import { AppError } from '@/utils/appError';
 import { getPaginationParams } from '@/utils/pagination';
-import { UserService } from './users.service';
-import { GetUsersQuery, CreateEmployeeInput, UpdateEmployeeInput } from './users.schema';
+import { MemberService } from './members.service';
+import { GetUsersQuery, CreateEmployeeInput, UpdateEmployeeInput } from './members.schema';
 import { tryGetOrganizationContext } from '@/utils/tenantContext';
 
 // =========================================================================
@@ -34,7 +34,7 @@ export const getUsers = catchAsync(async (req: Request, res: Response, next: Nex
             calendarId: req.query.calendarId as string,
             leaveGradeId: req.query.leaveGradeId as string,
         };
-        result = await UserService.getEmployees(organizationId, pagination, filters);
+        result = await MemberService.getEmployees(organizationId, pagination, filters);
         sendResponse(res, 200, result, 'Organization members retrieved successfully');
 
     } else {
@@ -42,7 +42,7 @@ export const getUsers = catchAsync(async (req: Request, res: Response, next: Nex
         // Note: Super Admin might want to filter by organizationId as a query param effectively handled by resolveTenant
         // But if resolveTenant didn't set it (no param), we list ALL users.
         const filters = req.query as unknown as GetUsersQuery;
-        result = await UserService.getUsers(pagination, filters);
+        result = await MemberService.getUsers(pagination, filters);
         sendResponse(res, 200, result, 'Users retrieved successfully');
     }
 });
@@ -62,7 +62,7 @@ export const getUserById = catchAsync(async (req: Request, res: Response, next: 
 
     if (organizationId) {
         // TENANT CONTEXT: Get Employee
-        const result = await UserService.getEmployee(organizationId, id);
+        const result = await MemberService.getEmployee(organizationId, id);
         sendResponse(res, 200, result, 'Member retrieved successfully');
     } else {
         // GLOBAL CONTEXT: Get User
@@ -71,7 +71,7 @@ export const getUserById = catchAsync(async (req: Request, res: Response, next: 
         // User requested "keep it only /users".
         // If I am SuperAdmin and request /users/:id -> I expect User record.
         // If I am OrgAdmin and request /users/:id -> I expect Employee record (my member).
-        const user = await UserService.getUserById(id);
+        const user = await MemberService.getUserById(id);
         sendResponse(res, 200, user, 'User retrieved successfully');
     }
 });
@@ -85,7 +85,7 @@ export const createUser = catchAsync(async (req: Request, res: Response, next: N
     if (organizationId) {
         // TENANT CONTEXT: Create Employee
         const payload = req.body as CreateEmployeeInput;
-        const result = await UserService.createEmployee(organizationId, payload);
+        const result = await MemberService.createEmployee(organizationId, payload);
         sendResponse(res, 201, result, 'Member created successfully');
     } else {
         // GLOBAL CONTEXT: Create User (Super Admin creating another Admin?)
@@ -107,7 +107,7 @@ export const updateUser = catchAsync(async (req: Request, res: Response, next: N
     if (organizationId) {
         // TENANT CONTEXT: Update Employee
         const payload = req.body as UpdateEmployeeInput;
-        const result = await UserService.updateEmployee(organizationId, id, payload);
+        const result = await MemberService.updateEmployee(organizationId, id, payload);
         sendResponse(res, 200, result, 'Member updated successfully');
     } else {
         // GLOBAL CONTEXT: Update User
@@ -127,11 +127,11 @@ export const deleteUser = catchAsync(async (req: Request, res: Response, next: N
 
     if (organizationId) {
         // TENANT CONTEXT: Delete Employee
-        await UserService.deleteEmployee(organizationId, id);
+        await MemberService.deleteEmployee(organizationId, id);
         sendResponse(res, 200, null, 'Member deleted successfully');
     } else {
         // GLOBAL CONTEXT: Delete User
-        // await UserService.deleteUser(id); // Need a global deleteUser method?
+        // await MemberService.deleteUser(id); // Need a global deleteUser method?
         return next(new AppError('Global user deletion not implemented.', 501));
     }
 });

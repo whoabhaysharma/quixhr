@@ -2,11 +2,11 @@ import { prisma } from '@/utils/prisma';
 import { AppError } from '@/utils/appError';
 import { ParsedPagination } from '@/utils/pagination';
 import { buildOrderBy } from '@/utils/prismaHelpers';
-import { GetUsersQuery, CreateEmployeeInput, UpdateEmployeeInput, GetEmployeesQuery } from './users.schema';
+import { GetUsersQuery, CreateEmployeeInput, UpdateEmployeeInput, GetEmployeesQuery } from './members.schema';
 import { Role, Prisma } from '@prisma/client';
 import { validateOrganizationResource } from '@/utils/prismaHelpers';
 
-export class UserService {
+export class MemberService {
     static async getUsers(
         pagination: ParsedPagination,
         filters: GetUsersQuery
