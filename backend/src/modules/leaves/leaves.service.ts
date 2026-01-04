@@ -1,6 +1,6 @@
 import { prisma } from '@/utils/prisma';
 import { AppError } from '@/utils/appError';
-import { LeaveStatus, LeaveType } from '@prisma/client';
+import { LeaveStatus } from '@prisma/client';
 import { ParsedPagination } from '@/utils/pagination';
 import { buildOrderBy, validateOrganizationResource } from '@/utils/prismaHelpers';
 import {
@@ -197,7 +197,7 @@ export class LeaveService {
         const diffTime = Math.abs(end.getTime() - start.getTime());
         const daysTaken = Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1;
 
-        return await prisma.leaveRequest.create({
+        const leaveRequest = await prisma.leaveRequest.create({
             data: {
                 employeeId,
                 startDate: start,
@@ -215,6 +215,12 @@ export class LeaveService {
                         firstName: true,
                         lastName: true,
                         code: true,
+                        managerId: true,
+                        manager: {
+                            select: {
+                                userId: true,
+                            },
+                        },
                     },
                 },
             },
@@ -316,7 +322,7 @@ export class LeaveService {
             throw new AppError('Only pending requests can be updated', 400);
         }
 
-        return await prisma.leaveRequest.update({
+        const updatedRequest = await prisma.leaveRequest.update({
             where: { id: requestId },
             data: {
                 status: data.status,
@@ -329,6 +335,7 @@ export class LeaveService {
                         firstName: true,
                         lastName: true,
                         code: true,
+                        userId: true,
                     },
                 },
             },
