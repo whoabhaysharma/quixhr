@@ -140,20 +140,22 @@ export function AppShell({
             {/* Sidebar Navigation */}
             <aside className={`
                 fixed lg:static inset-y-0 left-0 z-50
-                w-[280px] bg-[#0F172A] border-r border-neutral-800
+                w-[280px] bg-white border-r border-slate-200
                 transform transition-transform duration-300 ease-in-out
                 flex flex-col h-full shrink-0
                 ${isSidebarOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"}
             `}>
                 {/* Brand */}
-                <div className="h-20 flex items-center px-8 border-b border-neutral-800/50 shrink-0">
+                <div className="h-20 flex items-center px-8 border-b border-slate-200 shrink-0">
                     <div className="flex items-center gap-3">
-                        <div className={`w-8 h-8 ${brand.color} rounded-lg flex items-center justify-center text-white font-bold text-lg shadow-lg`}>
-                            {brand.name.charAt(0)}
+                        <div className="w-10 h-10 bg-slate-800 rounded-lg flex items-center justify-center shadow-md">
+                            <span className="text-white font-[800] text-2xl font-[family-name:var(--font-lexend)] leading-none flex items-center justify-center">
+                                Q
+                            </span>
                         </div>
                         <div className="flex flex-col">
-                            <span className="text-xl font-bold tracking-tight text-white leading-none">{brand.name}</span>
-                            {brand.badge && <span className="text-[10px] font-bold text-neutral-400 uppercase tracking-widest mt-1">{brand.badge}</span>}
+                            <span className="text-xl font-bold tracking-tight text-slate-900 leading-none">{brand.name}</span>
+                            {brand.badge && <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mt-1">{brand.badge}</span>}
                         </div>
                     </div>
                 </div>
@@ -163,7 +165,7 @@ export function AppShell({
                     {navGroups.map((group, groupIdx) => (
                         <div key={groupIdx}>
                             {group.title && (
-                                <p className="px-4 text-xs font-bold text-neutral-500 uppercase tracking-wider mb-2">
+                                <p className="px-4 text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">
                                     {group.title}
                                 </p>
                             )}
@@ -177,12 +179,12 @@ export function AppShell({
                                         return (
                                             <div
                                                 key={item.href}
-                                                className="flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium text-neutral-600 cursor-not-allowed opacity-60"
+                                                className="flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium text-slate-400 cursor-not-allowed opacity-60"
                                             >
-                                                <Icon className="w-5 h-5 text-neutral-600" />
+                                                <Icon className="w-5 h-5 text-slate-400" />
                                                 <span className="flex-1">{item.name}</span>
                                                 {item.badge && (
-                                                    <span className="bg-neutral-800 text-neutral-400 text-[9px] px-2 py-0.5 rounded-full font-bold uppercase tracking-wide">
+                                                    <span className="bg-slate-100 text-slate-500 text-[9px] px-2 py-0.5 rounded-full font-bold uppercase tracking-wide">
                                                         {item.badge}
                                                     </span>
                                                 )}
@@ -198,15 +200,15 @@ export function AppShell({
                                             className={`
                                                 flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all duration-200 group
                                                 ${isActive
-                                                    ? `bg-white/10 text-white shadow-lg`
-                                                    : "text-neutral-400 hover:bg-white/5 hover:text-white"
+                                                    ? `bg-slate-800 text-white shadow-md`
+                                                    : "text-slate-600 hover:bg-slate-100 hover:text-slate-900"
                                                 }
                                             `}
                                         >
-                                            <Icon className={`w-5 h-5 transition-colors ${isActive ? "text-white" : "text-neutral-500 group-hover:text-white"}`} />
+                                            <Icon className={`w-5 h-5 transition-colors ${isActive ? "text-white" : "text-slate-500 group-hover:text-slate-900"}`} />
                                             <span className="flex-1">{item.name}</span>
                                             {item.badge && (
-                                                <span className={`${typeof item.badge === 'string' ? "bg-indigo-500/20 text-indigo-300 border border-indigo-500/30" : "bg-blue-600 text-white"} text-[10px] px-2 py-0.5 rounded-full font-bold`}>
+                                                <span className={`${typeof item.badge === 'string' ? "bg-indigo-100 text-indigo-700 border border-indigo-200" : "bg-indigo-600 text-white"} text-[10px] px-2 py-0.5 rounded-full font-bold`}>
                                                     {item.badge}
                                                 </span>
                                             )}
@@ -219,11 +221,11 @@ export function AppShell({
                 </nav>
 
                 {/* Mobile Logout */}
-                <div className="p-4 border-t border-neutral-800 lg:hidden shrink-0">
+                <div className="p-4 border-t border-slate-200 lg:hidden shrink-0">
                     <Button
                         onClick={logout}
                         variant="ghost"
-                        className="w-full justify-start text-neutral-400 hover:text-white hover:bg-white/5 gap-2"
+                        className="w-full justify-start text-slate-600 hover:text-slate-900 hover:bg-slate-100 gap-2"
                     >
                         <LogOut className="w-4 h-4" />
                         Sign Out
@@ -254,12 +256,12 @@ export function AppShell({
                             {/* Notifications */}
                             <Popover>
                                 <PopoverTrigger asChild>
-                                    <Button variant="ghost" size="icon" className="relative w-9 h-9 rounded-full text-slate-500 hover:text-indigo-600 transition-colors">
+                                    <Button variant="ghost" size="icon" className="relative w-9 h-9 rounded-full text-slate-500 hover:text-slate-900 transition-colors">
                                         <Bell className="w-5 h-5" />
                                         {unreadCount > 0 && (
                                             <span className="absolute top-2 right-2 flex h-2 w-2">
-                                                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-indigo-400 opacity-75"></span>
-                                                <span className="relative inline-flex rounded-full h-2 w-2 bg-indigo-500"></span>
+                                                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-slate-400 opacity-75"></span>
+                                                <span className="relative inline-flex rounded-full h-2 w-2 bg-slate-800"></span>
                                             </span>
                                         )}
                                     </Button>
@@ -268,7 +270,7 @@ export function AppShell({
                                     <div className="p-4 bg-slate-50/50 rounded-t-2xl border-b border-slate-100 flex items-center justify-between">
                                         <h4 className="font-bold text-xs uppercase tracking-widest text-slate-500">Notifications</h4>
                                         {notifications.length > 0 && (
-                                            <button onClick={handleMarkAllAsRead} className="text-[10px] text-indigo-600 font-bold hover:underline">Mark all read</button>
+                                            <button onClick={handleMarkAllAsRead} className="text-[10px] text-slate-900 font-bold hover:underline">Mark all read</button>
                                         )}
                                     </div>
                                     <div className="max-h-96 overflow-y-auto divide-y divide-slate-100">
@@ -292,7 +294,7 @@ export function AppShell({
                                 <PopoverTrigger asChild>
                                     <button className="flex items-center gap-2 group p-0.5 pr-3 rounded-full hover:bg-slate-100/80 transition-all outline-none">
                                         <Avatar className="h-9 w-9 border-2 border-white shadow-sm ring-1 ring-slate-200">
-                                            <AvatarFallback className="bg-gradient-to-tr from-indigo-500 to-violet-500 text-white font-black text-xs">
+                                            <AvatarFallback className="bg-slate-800 text-white font-black text-xs">
                                                 {user?.employee?.firstName?.charAt(0) || user?.user?.email?.charAt(0) || 'U'}
                                             </AvatarFallback>
                                         </Avatar>

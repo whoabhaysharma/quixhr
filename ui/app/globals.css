@@ -11,36 +11,42 @@
   :root {
     --background: 220 33% 98%;
     /* Light Gray-Blue #f8fafc approx */
-    --foreground: 222 47% 11%;
-    /* Slate 900 */
+    --foreground: 215 25% 27%;
+    /* Softer dark gray #3b4557 - replaces harsh slate-900 */
 
     --card: 0 0% 100%;
-    --card-foreground: 222 47% 11%;
+    --card-foreground: 215 25% 27%;
 
     --popover: 0 0% 100%;
-    --popover-foreground: 222 47% 11%;
+    --popover-foreground: 215 25% 27%;
 
-    --primary: 222 47% 11%;
-    /* Slate 900 (Dark Blue/Black) */
+    --primary: 215 25% 27%;
+    /* Softer dark gray #3b4557 instead of extreme black */
     --primary-foreground: 210 40% 98%;
 
     --secondary: 210 40% 96.1%;
-    --secondary-foreground: 222 47% 11%;
+    --secondary-foreground: 215 25% 27%;
 
     --muted: 210 40% 96.1%;
     --muted-foreground: 215.4 16.3% 46.9%;
 
     --accent: 210 40% 96.1%;
-    --accent-foreground: 222 47% 11%;
+    --accent-foreground: 215 25% 27%;
 
     --destructive: 0 84.2% 60.2%;
     --destructive-foreground: 210 40% 98%;
 
     --border: 214.3 31.8% 91.4%;
     --input: 214.3 31.8% 91.4%;
-    --ring: 222 47% 11%;
+    --ring: 215 25% 27%;
 
     --radius: 0.5rem;
+
+    /* Custom brand colors for consistent theming */
+    --brand-primary: 215 25% 27%;
+    /* Soft dark gray #3b4557 */
+    --brand-secondary: 0 0% 100%;
+    /* Pure white */
   }
 
   .dark {

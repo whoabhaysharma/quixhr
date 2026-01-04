@@ -14,23 +14,23 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 
 export function WelcomeBanner({ name, role, showButton = true, message }: { name: string, role: string, showButton?: boolean, message?: React.ReactNode }) {
     return (
-        <div className="relative overflow-hidden rounded-3xl bg-slate-900 px-8 py-8 shadow-xl">
+        <div className="relative overflow-hidden rounded-3xl bg-slate-800 px-8 py-8 shadow-xl">
             <div className="relative z-10 flex flex-col items-start gap-4 sm:flex-row sm:items-center sm:justify-between">
                 <div>
-                    <Badge variant="outline" className="mb-3 border-indigo-400/30 text-indigo-300 bg-indigo-500/10 uppercase tracking-widest text-[10px] font-bold">
+                    <Badge variant="outline" className="mb-3 border-white/30 text-white bg-white/10 uppercase tracking-widest text-[10px] font-bold">
                         {role} Dashboard
                     </Badge>
                     <h1 className="text-3xl font-bold text-white tracking-tight">
                         Good Morning, {name?.split(' ')[0]}!
                     </h1>
-                    <p className="mt-2 text-slate-400 max-w-lg leading-relaxed">
+                    <p className="mt-2 text-slate-300 max-w-lg leading-relaxed">
                         {message || "Welcome back to your dashboard. We hope you have a productive day!"}
                     </p>
                 </div>
             </div>
             {/* Decorative Background Elements */}
-            <div className="absolute -top-24 -right-24 h-64 w-64 rounded-full bg-indigo-500/20 blur-3xl" />
-            <div className="absolute -bottom-24 -left-24 h-64 w-64 rounded-full bg-emerald-500/10 blur-3xl" />
+            <div className="absolute -top-24 -right-24 h-64 w-64 rounded-full bg-white/10 blur-3xl" />
+            <div className="absolute -bottom-24 -left-24 h-64 w-64 rounded-full bg-white/5 blur-3xl" />
             <div className="absolute top-1/2 left-1/2 h-full w-full -translate-x-1/2 -translate-y-1/2 bg-[url('/grid.svg')] opacity-[0.03]" />
         </div>
     )
@@ -38,14 +38,14 @@ export function WelcomeBanner({ name, role, showButton = true, message }: { name
 
 export function StatCard({ label, value, icon: Icon, trend, trendValue, trendUp, color = "text-slate-900", alert = false }: any) {
     return (
-        <div className="relative overflow-hidden border-none shadow-lg shadow-slate-200/50 bg-white ring-1 ring-slate-100 hover:ring-indigo-100 transition-all duration-300 group rounded-xl">
+        <div className="relative overflow-hidden border-none shadow-lg shadow-slate-200/50 bg-white ring-1 ring-slate-100 hover:ring-slate-200 transition-all duration-300 group rounded-xl">
             <div className="p-6 relative z-10">
                 <div className="flex justify-between items-start mb-4">
                     <div className="space-y-1">
                         <p className="text-[11px] font-bold text-slate-400 uppercase tracking-widest leading-none">{label}</p>
                         <h3 className={`text-4xl font-extrabold tracking-tight ${color} mt-2`}>{value}</h3>
                     </div>
-                    <div className={`p-3 rounded-2xl ${alert ? 'bg-amber-100 text-amber-600' : 'bg-slate-50 text-slate-400'} group-hover:scale-110 transition-transform duration-300`}>
+                    <div className={`p-3 rounded-2xl ${alert ? 'bg-slate-200 text-slate-700' : 'bg-slate-50 text-slate-400'} group-hover:scale-110 transition-transform duration-300`}>
                         <Icon className="w-6 h-6" />
                     </div>
                 </div>
@@ -53,7 +53,7 @@ export function StatCard({ label, value, icon: Icon, trend, trendValue, trendUp,
                 {trend && (
                     <div className="flex items-center gap-2 mt-1">
                         {trendValue && (
-                            <div className={`flex items-center gap-1 text-[10px] font-bold ${trendUp ? 'text-emerald-600 bg-emerald-50' : 'text-rose-600 bg-rose-50'} px-2 py-1 rounded-full`}>
+                            <div className={`flex items-center gap-1 text-[10px] font-bold ${trendUp ? 'text-slate-900 bg-slate-100' : 'text-slate-600 bg-slate-100'} px-2 py-1 rounded-full`}>
                                 <span>{trendUp ? '↑' : '↓'}</span> {trendValue}
                             </div>
                         )}
@@ -63,8 +63,8 @@ export function StatCard({ label, value, icon: Icon, trend, trendValue, trendUp,
             </div>
 
             {/* Decorative Background Elements */}
-            <div className="absolute right-0 top-0 h-32 w-32 bg-gradient-to-br from-indigo-50/50 to-transparent rounded-bl-full -mr-10 -mt-10 transition-all group-hover:from-indigo-100/50" />
-            {alert && <div className="absolute bottom-0 right-0 h-16 w-16 bg-amber-500/10 blur-2xl rounded-full" />}
+            <div className="absolute right-0 top-0 h-32 w-32 bg-gradient-to-br from-slate-50/50 to-transparent rounded-bl-full -mr-10 -mt-10 transition-all group-hover:from-slate-100/50" />
+            {alert && <div className="absolute bottom-0 right-0 h-16 w-16 bg-slate-200/20 blur-2xl rounded-full" />}
         </div>
     )
 }
@@ -83,7 +83,7 @@ export function PendingActionsWidget({ leaves }: { leaves: any[] }) {
                 </div>
                 <div className="h-48 flex flex-col items-center justify-center text-center p-6 text-slate-400">
                     <div className="w-12 h-12 bg-slate-50 rounded-full flex items-center justify-center mb-3">
-                        <CheckCircle className="w-6 h-6 text-emerald-500/50" />
+                        <CheckCircle className="w-6 h-6 text-slate-400" />
                     </div>
                     <p className="text-sm font-medium text-slate-600">All caught up!</p>
                     <p className="text-xs">No pending requests at the moment.</p>
@@ -96,10 +96,10 @@ export function PendingActionsWidget({ leaves }: { leaves: any[] }) {
         <div className="border-none shadow-lg shadow-slate-200/50 bg-white ring-1 ring-slate-100 overflow-hidden rounded-xl">
             <div className="p-4 border-b border-slate-50/50 bg-slate-50/30 flex items-center justify-between">
                 <h3 className="text-sm font-bold text-slate-800 flex items-center gap-2">
-                    <Clock className="w-4 h-4 text-indigo-500" />
+                    <Clock className="w-4 h-4 text-slate-900" />
                     Pending Actions
                 </h3>
-                <Button variant="ghost" size="sm" className="h-8 text-[11px] font-bold text-indigo-600 hover:text-indigo-700 hover:bg-indigo-50 uppercase tracking-wide">
+                <Button variant="ghost" size="sm" className="h-8 text-[11px] font-bold text-slate-900 hover:text-black hover:bg-slate-100 uppercase tracking-wide">
                     View All
                 </Button>
             </div>
@@ -117,7 +117,7 @@ export function PendingActionsWidget({ leaves }: { leaves: any[] }) {
                             <TableCell className="px-6 py-4">
                                 <div className="flex items-center gap-3">
                                     <Avatar className="h-9 w-9 border border-white shadow-sm ring-1 ring-slate-100">
-                                        <AvatarFallback className="bg-gradient-to-br from-indigo-500 to-violet-500 text-white text-xs font-bold">
+                                        <AvatarFallback className="bg-slate-800 text-white text-xs font-bold">
                                             {leave.user?.name?.charAt(0)}
                                         </AvatarFallback>
                                     </Avatar>
@@ -129,7 +129,7 @@ export function PendingActionsWidget({ leaves }: { leaves: any[] }) {
                             </TableCell>
                             <TableCell className="px-6 py-4">
                                 <div className="flex items-center gap-2 mb-1">
-                                    <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-bold bg-indigo-50 text-indigo-700 uppercase tracking-tight">
+                                    <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-bold bg-slate-100 text-slate-900 uppercase tracking-tight">
                                         {leave.type}
                                     </span>
                                 </div>
@@ -139,7 +139,7 @@ export function PendingActionsWidget({ leaves }: { leaves: any[] }) {
                                 </div>
                             </TableCell>
                             <TableCell className="px-6 py-4 text-right">
-                                <Button size="sm" variant="outline" className="h-8 px-3 text-xs font-semibold border-slate-200 text-slate-600 hover:text-indigo-600 hover:border-indigo-200 hover:bg-indigo-50 transition-colors">
+                                <Button size="sm" variant="outline" className="h-8 px-3 text-xs font-semibold border-slate-200 text-slate-600 hover:text-black hover:border-slate-300 hover:bg-slate-100 transition-colors">
                                     Review
                                 </Button>
                             </TableCell>
@@ -166,7 +166,7 @@ export function LeaveDistributionWidget({ data }: { data: any[] }) {
         <div className="border-none shadow-lg shadow-slate-200/50 bg-white ring-1 ring-slate-100 h-full rounded-xl">
             <div className="p-4 border-b border-slate-50/50">
                 <h3 className="text-sm font-bold text-slate-800 flex items-center gap-2">
-                    <Sparkles className="w-4 h-4 text-indigo-500" />
+                    <Sparkles className="w-4 h-4 text-slate-900" />
                     Leave Insights
                 </h3>
             </div>
@@ -179,16 +179,16 @@ export function LeaveDistributionWidget({ data }: { data: any[] }) {
                         <div key={name} className="group">
                             <div className="flex justify-between items-end mb-2">
                                 <span className="text-xs font-bold text-slate-700 capitalize flex items-center gap-2">
-                                    <span className="w-1.5 h-1.5 rounded-full bg-indigo-500"></span>
+                                    <span className="w-1.5 h-1.5 rounded-full bg-slate-800"></span>
                                     {name.toLowerCase().replace('_', ' ')}
                                 </span>
-                                <span className="text-[10px] font-bold text-slate-400 bg-slate-50 px-2 py-0.5 rounded-full group-hover:bg-indigo-50 group-hover:text-indigo-600 transition-colors">
+                                <span className="text-[10px] font-bold text-slate-400 bg-slate-50 px-2 py-0.5 rounded-full group-hover:bg-slate-100 group-hover:text-slate-900 transition-colors">
                                     {value} requests
                                 </span>
                             </div>
                             <div className="h-2.5 w-full bg-slate-50 rounded-full overflow-hidden shadow-inner">
                                 <div
-                                    className="h-full rounded-full bg-gradient-to-r from-indigo-500 to-violet-500 opacity-90 group-hover:opacity-100 transition-all duration-500 shadow-sm"
+                                    className="h-full rounded-full bg-slate-800 opacity-90 group-hover:opacity-100 transition-all duration-500 shadow-sm"
                                     style={{ width: `${percent}%` }}
                                 />
                             </div>
@@ -210,10 +210,10 @@ export function RecentJoinersCard({ users }: { users: any[] }) {
         <div className="border-none shadow-lg shadow-slate-200/50 bg-white ring-1 ring-slate-100 h-full rounded-xl">
             <div className="p-4 border-b border-slate-50/50 bg-slate-50/30 flex items-center justify-between">
                 <h3 className="text-sm font-bold text-slate-800 flex items-center gap-2">
-                    <UserPlus className="w-4 h-4 text-indigo-500" />
+                    <UserPlus className="w-4 h-4 text-slate-900" />
                     New Team Members
                 </h3>
-                <Button variant="ghost" size="sm" className="h-6 w-6 p-0 rounded-full hover:bg-indigo-50 text-slate-400 hover:text-indigo-600">
+                <Button variant="ghost" size="sm" className="h-6 w-6 p-0 rounded-full hover:bg-slate-100 text-slate-400 hover:text-slate-900">
                     <ChevronRight className="w-4 h-4" />
                 </Button>
             </div>
@@ -223,20 +223,20 @@ export function RecentJoinersCard({ users }: { users: any[] }) {
                         <div key={user.id} className="flex items-center gap-4 p-4 hover:bg-slate-50/40 transition-colors group cursor-pointer">
                             <div className="relative">
                                 <Avatar className="h-10 w-10 border-2 border-white shadow-sm ring-1 ring-slate-100 group-hover:scale-105 transition-transform">
-                                    <AvatarFallback className="bg-gradient-to-br from-indigo-500 to-purple-600 text-white text-xs font-bold">
+                                    <AvatarFallback className="bg-slate-800 text-white text-xs font-bold">
                                         {user.name?.charAt(0) || 'U'}
                                     </AvatarFallback>
                                 </Avatar>
-                                <span className="absolute bottom-0 right-0 w-3 h-3 bg-emerald-500 border-2 border-white rounded-full"></span>
+                                <span className="absolute bottom-0 right-0 w-3 h-3 bg-slate-400 border-2 border-white rounded-full"></span>
                             </div>
 
                             <div className="flex-1 min-w-0">
-                                <p className="text-xs font-bold text-slate-800 truncate group-hover:text-indigo-700 transition-colors">{user.name}</p>
+                                <p className="text-xs font-bold text-slate-800 truncate group-hover:text-slate-900 transition-colors">{user.name}</p>
                                 <p className="text-[10px] font-medium text-slate-400 truncate mt-0.5">{user.email}</p>
                             </div>
 
                             <div className="text-right shrink-0">
-                                <Badge variant="secondary" className="bg-slate-100 text-slate-500 font-bold text-[9px] uppercase tracking-wide border-none group-hover:bg-indigo-50 group-hover:text-indigo-600 transition-colors">
+                                <Badge variant="secondary" className="bg-slate-100 text-slate-500 font-bold text-[9px] uppercase tracking-wide border-none group-hover:bg-slate-200 group-hover:text-slate-900 transition-colors">
                                     New
                                 </Badge>
                             </div>
@@ -252,9 +252,9 @@ export function RecentJoinersCard({ users }: { users: any[] }) {
 
 export function QuickActionsCard() {
     return (
-        <div className="bg-gradient-to-br from-indigo-500 to-indigo-600 rounded-2xl p-6 text-white shadow-lg shadow-indigo-200">
+        <div className="bg-slate-800 rounded-2xl p-6 text-white shadow-lg shadow-slate-200">
             <div className="flex items-center gap-2 mb-4">
-                <Zap className="w-5 h-5 text-indigo-200" />
+                <Zap className="w-5 h-5 text-slate-300" />
                 <h3 className="font-bold text-lg">Quick Actions</h3>
             </div>
             <div className="grid grid-cols-2 gap-3">
@@ -309,9 +309,9 @@ export function BalanceCard({ label, current, total, color }: any) {
 
 export function StatusBadge({ status }: { status: string }) {
     const styles: any = {
-        'APPROVED': 'bg-emerald-50 text-emerald-700 border-emerald-100',
-        'PENDING': 'bg-amber-50 text-amber-700 border-amber-100',
-        'REJECTED': 'bg-rose-50 text-rose-700 border-rose-100'
+        'APPROVED': 'bg-slate-800 text-white border-slate-800',
+        'PENDING': 'bg-slate-200 text-slate-900 border-slate-300',
+        'REJECTED': 'bg-white text-slate-900 border-slate-300'
     }
     const normalizedStatus = status?.toUpperCase() || 'PENDING';
     return (

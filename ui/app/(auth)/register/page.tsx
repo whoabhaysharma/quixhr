@@ -67,8 +67,8 @@ export default function RegisterPage() {
             <div className="min-h-screen w-full flex items-center justify-center bg-slate-50 p-4">
                 <div className="w-full max-w-[500px] bg-white rounded-2xl shadow-xl overflow-hidden border border-slate-100 p-8 text-center space-y-6">
                     <div className="flex justify-center">
-                        <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center">
-                            <CheckCircle2 className="w-8 h-8 text-green-600" />
+                        <div className="w-16 h-16 bg-slate-100 rounded-full flex items-center justify-center">
+                            <CheckCircle2 className="w-8 h-8 text-slate-800" />
                         </div>
                     </div>
                     <div className="space-y-2">
@@ -96,55 +96,59 @@ export default function RegisterPage() {
         <div className="min-h-screen w-full flex items-center justify-center bg-slate-50 p-4">
             <div className="w-full max-w-[1000px] h-[700px] bg-white rounded-2xl shadow-xl overflow-hidden flex border border-slate-100">
                 {/* Left Side - Brand & Marketing */}
-                <div className="hidden lg:flex w-1/2 bg-slate-900 flex-col justify-between p-12 text-white relative overflow-hidden">
+                <div className="hidden lg:flex w-1/2 bg-slate-800 flex-col justify-between p-12 text-white relative overflow-hidden">
                     <div className="z-10">
-                        <div className="flex items-center gap-2 mb-2">
-                            <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center font-bold text-sm">Q</div>
+                        <div className="flex items-center gap-3 mb-2">
+                            <div className="w-10 h-10 bg-black rounded-lg flex items-center justify-center shadow-md">
+                                <span className="text-white font-[800] text-2xl font-[family-name:var(--font-lexend)] leading-none flex items-center justify-center">
+                                    Q
+                                </span>
+                            </div>
                             <span className="text-xl font-bold tracking-tight">QuixHR</span>
                         </div>
-                        <p className="text-blue-200 text-sm font-medium">Join over 10,000+ companies.</p>
+                        <p className="text-slate-300 text-sm font-medium">Join over 10,000+ companies.</p>
                     </div>
 
                     <div className="z-10 relative">
                         <h2 className="text-3xl font-bold leading-tight mb-6">
-                            Start managing your team <span className="text-blue-400">smarter</span> today.
+                            Start managing your team <span className="text-slate-300">smarter</span> today.
                         </h2>
                         <div className="space-y-4">
                             <div className="flex items-center gap-3">
-                                <div className="w-8 h-8 rounded-full bg-blue-500/20 flex items-center justify-center text-blue-300">
+                                <div className="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center text-slate-200">
                                     <CheckCircle2 className="w-5 h-5" />
                                 </div>
-                                <span className="text-blue-100">Free 14-day trial</span>
+                                <span className="text-slate-100">Free 14-day trial</span>
                             </div>
                             <div className="flex items-center gap-3">
-                                <div className="w-8 h-8 rounded-full bg-blue-500/20 flex items-center justify-center text-blue-300">
+                                <div className="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center text-slate-200">
                                     <CheckCircle2 className="w-5 h-5" />
                                 </div>
-                                <span className="text-blue-100">No credit card required</span>
+                                <span className="text-slate-100">No credit card required</span>
                             </div>
                             <div className="flex items-center gap-3">
-                                <div className="w-8 h-8 rounded-full bg-blue-500/20 flex items-center justify-center text-blue-300">
+                                <div className="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center text-slate-200">
                                     <CheckCircle2 className="w-5 h-5" />
                                 </div>
-                                <span className="text-blue-100">Cancel anytime</span>
+                                <span className="text-slate-100">Cancel anytime</span>
                             </div>
                         </div>
                     </div>
-                    <div className="z-10 text-xs text-blue-300/80">
+                    <div className="z-10 text-xs text-slate-300/80">
                         <p>© 2025 QuixHR Inc.</p>
                     </div>
 
                     {/* Abstract Background Shapes */}
-                    <div className="absolute top-0 right-0 w-80 h-80 bg-blue-600/20 rounded-full blur-[100px] -translate-y-1/2 translate-x-1/2 pointer-events-none"></div>
-                    <div className="absolute bottom-0 left-0 w-80 h-80 bg-indigo-600/20 rounded-full blur-[100px] translate-y-1/2 -translate-x-1/3 pointer-events-none"></div>
+                    <div className="absolute top-0 right-0 w-80 h-80 bg-white/10 rounded-full blur-[100px] -translate-y-1/2 translate-x-1/2 pointer-events-none"></div>
+                    <div className="absolute bottom-0 left-0 w-80 h-80 bg-white/5 rounded-full blur-[100px] translate-y-1/2 -translate-x-1/3 pointer-events-none"></div>
                 </div>
 
                 {/* Right Side - Register Form */}
                 <div className="flex-1 flex flex-col justify-center p-8 lg:p-12 bg-white relative">
                     <div className="w-full max-w-sm mx-auto space-y-6">
                         <div className="text-center">
-                            <div className="inline-flex items-center justify-center w-10 h-10 rounded-lg bg-slate-900 text-white mb-4 lg:hidden">
-                                <span className="font-bold text-sm">Q</span>
+                            <div className="inline-flex items-center justify-center w-10 h-10 rounded-lg bg-black text-white mb-4 lg:hidden">
+                                <span className="font-[800] text-lg font-[family-name:var(--font-lexend)]">Q</span>
                             </div>
                             <h2 className="text-2xl font-bold tracking-tight text-slate-900">Create an account</h2>
                             <p className="text-sm text-slate-500 mt-2">Get started with QuixHR in seconds</p>

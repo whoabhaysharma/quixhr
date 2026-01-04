@@ -127,7 +127,7 @@ export default function MemberManagerView() {
                 </div>
                 <div className="flex items-center gap-3">
                     <Button
-                        className="bg-indigo-600 hover:bg-indigo-700 text-white"
+                        className="bg-slate-800 hover:bg-slate-900 text-white"
                         onClick={() => setIsAddModalOpen(true)}
                     >
                         <Mail className="w-4 h-4 mr-2" />
@@ -209,7 +209,7 @@ export default function MemberManagerView() {
                                                     <div className="flex items-center gap-2">
                                                         <span className="font-semibold text-slate-900">{user.name || user.fullName}</span>
                                                         {!user.isInvitation && currentUser?.employee?.id === user.id && (
-                                                            <Badge className="bg-indigo-100 text-indigo-700 hover:bg-indigo-100 border-0 px-2 py-0.5 text-[10px] font-bold uppercase tracking-tight">
+                                                            <Badge className="bg-slate-100 text-slate-800 hover:bg-slate-100 border-0 px-2 py-0.5 text-[10px] font-bold uppercase tracking-tight">
                                                                 You
                                                             </Badge>
                                                         )}
