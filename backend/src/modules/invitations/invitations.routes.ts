@@ -1,8 +1,7 @@
 import { Router } from 'express';
 import { Role } from '@prisma/client';
 import * as InvitationController from './invitations.controller';
-import { protect } from '@/shared/middleware/auth.middleware';
-import { validate } from '@/shared/middleware';
+import { protect, validate, resolveTenant, restrictTo } from '@/shared/middleware';
 import {
     acceptInvitationSchema,
     verifyInvitationSchema,
@@ -41,7 +40,6 @@ router.post(
 // =========================================================================
 
 // Global Middleware: Resolve Tenant
-import { resolveTenant, restrictTo } from '@/shared/middleware';
 router.use(protect);
 
 /**
@@ -56,9 +54,9 @@ router.get(
     // validate(getInvitationsSchema), // Need to export/import this schema if validation is desired
     InvitationController.getInvitations
 );
+
 router.post(
     '/:invitationId/resend',
-    protect,
     InvitationController.resendInvitation
 );
 
@@ -69,7 +67,6 @@ router.post(
  */
 router.patch(
     '/:invitationId/cancel',
-    protect,
     InvitationController.cancelInvitation
 );
 
@@ -80,7 +77,6 @@ router.patch(
  */
 router.delete(
     '/:invitationId',
-    protect,
     InvitationController.deleteInvitation
 );
 

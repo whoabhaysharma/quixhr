@@ -44,14 +44,14 @@ export const invitationService = {
      * Validate an invitation token
      */
     validateToken: async (token: string) => {
-        const response = await api.get(`/invitations/validate?token=${token}`);
+        const response = await api.get(`/invitations/verify/${token}`);
         return response.data;
     },
 
     /**
      * Accept an invitation
      */
-    accept: async (data: { token: string; name: string; password: string }) => {
+    accept: async (data: { token: string; firstName: string; lastName: string; password: string }) => {
         const response = await api.post('/invitations/accept', data);
         return response.data;
     },

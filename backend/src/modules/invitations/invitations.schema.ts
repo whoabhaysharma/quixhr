@@ -9,7 +9,7 @@ import { paginationSchema } from '@/utils/pagination';
 export const createInvitationSchema = {
     body: z.object({
         email: z.string().email('Invalid email format'),
-        role: z.nativeEnum(Role),
+        role: z.enum(['HR_ADMIN', 'MANAGER', 'EMPLOYEE']),
     }),
 };
 
@@ -28,7 +28,7 @@ export const invitationIdSchema = {
     }),
 };
 
-export const tokenSchema = {
+export const verifyInvitationSchema = {
     params: z.object({
         token: z.string().min(1),
     }),
