@@ -12,7 +12,7 @@ import * as attendanceService from "@/lib/services/attendance"
 import { useState, useEffect } from "react"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 
-export function WelcomeBanner({ name, role }: { name: string, role: string }) {
+export function WelcomeBanner({ name, role, showButton = true, message }: { name: string, role: string, showButton?: boolean, message?: React.ReactNode }) {
     return (
         <div className="relative overflow-hidden rounded-3xl bg-slate-900 px-8 py-8 shadow-xl">
             <div className="relative z-10 flex flex-col items-start gap-4 sm:flex-row sm:items-center sm:justify-between">
@@ -24,15 +24,17 @@ export function WelcomeBanner({ name, role }: { name: string, role: string }) {
                         Good Morning, {name?.split(' ')[0]}!
                     </h1>
                     <p className="mt-2 text-slate-400 max-w-lg leading-relaxed">
-                        Here's what's happening in your organization today. You have <span className="text-white font-semibold">4 pending requests</span> requiring your attention.
+                        {message || "Welcome back to your dashboard. We hope you have a productive day!"}
                     </p>
                 </div>
-                <div className="hidden sm:block">
-                    <Button className="bg-white text-slate-900 hover:bg-slate-50 font-bold border-none">
-                        View Reports
-                        <ChevronRight className="w-4 h-4 ml-2 opacity-50" />
-                    </Button>
-                </div>
+                {showButton && (
+                    <div className="hidden sm:block">
+                        <Button className="bg-white text-slate-900 hover:bg-slate-50 font-bold border-none">
+                            View Reports
+                            <ChevronRight className="w-4 h-4 ml-2 opacity-50" />
+                        </Button>
+                    </div>
+                )}
             </div>
             {/* Decorative Background Elements */}
             <div className="absolute -top-24 -right-24 h-64 w-64 rounded-full bg-indigo-500/20 blur-3xl" />
@@ -352,7 +354,7 @@ export function HolidayItem({ date, name, subtitle }: any) {
     )
 }
 
-export function AttendanceWidget() {
+export function AttendanceWidget({ todayStatus }: { todayStatus?: any }) {
     const queryClient = useQueryClient()
     const [currentTime, setCurrentTime] = useState(new Date())
 
@@ -361,14 +363,10 @@ export function AttendanceWidget() {
         return () => clearInterval(timer)
     }, [])
 
-    const { data: todayStatus, isLoading: isLoadingStatus } = useQuery({
-        queryKey: ['attendance', 'today'],
-        queryFn: attendanceService.getTodayStatus,
-    })
-
     const clockInMutation = useMutation({
         mutationFn: attendanceService.clockIn,
         onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['dashboard', 'employee'] })
             queryClient.invalidateQueries({ queryKey: ['attendance'] })
         },
     })
@@ -376,6 +374,7 @@ export function AttendanceWidget() {
     const clockOutMutation = useMutation({
         mutationFn: attendanceService.clockOut,
         onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['dashboard', 'employee'] })
             queryClient.invalidateQueries({ queryKey: ['attendance'] })
         },
     })
@@ -398,8 +397,6 @@ export function AttendanceWidget() {
         const minutes = differenceInMinutes(endDate, startDate) % 60
         return `${hours}h ${minutes}m`
     }
-
-    if (isLoadingStatus) return <Skeleton className="h-[140px] w-full rounded-xl" />
 
     return (
         <div className="border border-slate-200/60 shadow-sm bg-gradient-to-br from-white to-slate-50/50 h-full flex flex-col justify-between ring-1 ring-slate-900/5 group rounded-xl">

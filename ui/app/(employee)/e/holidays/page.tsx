@@ -1,6 +1,8 @@
 "use client"
 
 import { useState } from "react"
+import ComingSoonView from "@/components/views/ComingSoonView"
+const COMING_SOON = true
 import { useAuth } from "@/context/auth-context"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -22,6 +24,12 @@ import Link from "next/link"
 import { toast } from "sonner"
 
 export default function HolidaysPage() {
+    if (COMING_SOON) {
+        return <ComingSoonView
+            title="Holiday Calendars"
+            description="View and manage organization holiday schedules and working hours. This feature is currently under development."
+        />
+    }
     const { user } = useAuth()
     const queryClient = useQueryClient()
 

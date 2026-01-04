@@ -6,11 +6,22 @@ import { LayoutDashboard, Timer, Calendar, CalendarDays } from "lucide-react"
 export default function EmployeeLayout({ children }: { children: React.ReactNode }) {
     const navGroups: NavGroup[] = [
         {
+            title: "General",
             items: [
-                { name: "Overview", href: "/e/dashboard", icon: LayoutDashboard },
-                { name: "Attendance", href: "/e/attendance", icon: Timer },
-                { name: "Time Off", href: "/e/leaves", icon: Calendar },
-                { name: "Holidays", href: "/e/holidays", icon: CalendarDays }
+                { name: "Dashboard", href: "/e/dashboard", icon: LayoutDashboard },
+            ]
+        },
+        {
+            title: "My Work",
+            items: [
+                { name: "Attendance", href: "/e/attendance", icon: Timer, disabled: true, badge: "Coming Soon" },
+                { name: "Leaves", href: "/e/leaves", icon: Calendar },
+            ]
+        },
+        {
+            title: "Company",
+            items: [
+                { name: "Holidays", href: "/e/holidays", icon: CalendarDays, disabled: true, badge: "Coming Soon" }
             ]
         }
     ]

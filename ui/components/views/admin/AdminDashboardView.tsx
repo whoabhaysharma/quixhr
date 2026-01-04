@@ -27,10 +27,14 @@ export default function AdminDashboardView({ user, stats, leaves }: any) {
     // Prevent hydration mismatch or divide by zero if data isn't loaded
     const attendanceRate = totalEmployees > 0 ? Math.round((presentCount / totalEmployees) * 100) : 0
 
+    const welcomeMessage = stats?.pendingLeaves > 0
+        ? <span>You have <span className="text-white font-semibold">{stats.pendingLeaves} pending requests</span> requiring your attention.</span>
+        : "All caught up! No pending leaves to review.";
+
     return (
         <div className="space-y-8 max-w-[1600px] mx-auto">
             {/* Hero Section */}
-            <WelcomeBanner name={user?.name || 'Administrator'} role="Admin" />
+            <WelcomeBanner name={user?.name || 'Administrator'} role="Admin" message={welcomeMessage} />
 
             {/* KPI Row */}
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">

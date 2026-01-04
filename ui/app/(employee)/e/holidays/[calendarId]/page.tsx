@@ -1,6 +1,8 @@
 "use client"
 
 import { useState } from "react"
+import ComingSoonView from "@/components/views/ComingSoonView"
+const COMING_SOON = true
 import { useParams, useRouter } from "next/navigation"
 import { useAuth } from "@/context/auth-context"
 import { Button } from "@/components/ui/button"
@@ -52,6 +54,14 @@ const RULE_TYPES: Array<{ value: WeeklyRule['rule'], label: string, color: strin
 ]
 
 export default function CalendarDetailPage() {
+    if (COMING_SOON) {
+        return <ComingSoonView
+            title="Calendar Details"
+            description="Detailed view of holiday calendars and weekly rules. This feature is currently under development."
+            backLink="/e/holidays"
+            backText="Back to Holidays"
+        />
+    }
     const params = useParams()
     const router = useRouter()
     const { user } = useAuth()

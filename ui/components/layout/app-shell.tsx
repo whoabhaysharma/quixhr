@@ -29,7 +29,8 @@ export interface NavItem {
     name: string
     href: string
     icon: any
-    badge?: number
+    badge?: number | string
+    disabled?: boolean
 }
 
 export interface NavGroup {
@@ -170,6 +171,25 @@ export function AppShell({
                                 {group.items.map((item) => {
                                     const isActive = pathname.startsWith(item.href)
                                     const Icon = item.icon
+                                    const isDisabled = item.disabled
+
+                                    if (isDisabled) {
+                                        return (
+                                            <div
+                                                key={item.href}
+                                                className="flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium text-neutral-600 cursor-not-allowed opacity-60"
+                                            >
+                                                <Icon className="w-5 h-5 text-neutral-600" />
+                                                <span className="flex-1">{item.name}</span>
+                                                {item.badge && (
+                                                    <span className="bg-neutral-800 text-neutral-400 text-[9px] px-2 py-0.5 rounded-full font-bold uppercase tracking-wide">
+                                                        {item.badge}
+                                                    </span>
+                                                )}
+                                            </div>
+                                        )
+                                    }
+
                                     return (
                                         <Link
                                             key={item.href}
@@ -186,7 +206,7 @@ export function AppShell({
                                             <Icon className={`w-5 h-5 transition-colors ${isActive ? "text-white" : "text-neutral-500 group-hover:text-white"}`} />
                                             <span className="flex-1">{item.name}</span>
                                             {item.badge && (
-                                                <span className="bg-blue-600 text-white text-[10px] px-2 py-0.5 rounded-full">
+                                                <span className={`${typeof item.badge === 'string' ? "bg-indigo-500/20 text-indigo-300 border border-indigo-500/30" : "bg-blue-600 text-white"} text-[10px] px-2 py-0.5 rounded-full font-bold`}>
                                                     {item.badge}
                                                 </span>
                                             )}

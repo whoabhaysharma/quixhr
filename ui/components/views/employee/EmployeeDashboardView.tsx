@@ -3,24 +3,47 @@
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card"
 import { Calendar } from "lucide-react"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
-import { format } from "date-fns"
-import { useUpcomingHolidays } from "@/lib/hooks/useHolidays"
+import { format, isSameDay } from "date-fns"
 import { BalanceCard, AttendanceWidget, StatusBadge, HolidayItem, WelcomeBanner } from "@/components/dashboard/DashboardWidgets"
 
 export default function EmployeeDashboardView({ user, stats, leaves }: any) {
-    const { data: holidays = [], isLoading: holidaysLoading } = useUpcomingHolidays(3)
+    const holidays = stats?.upcomingHolidays || [];
+    const holidaysLoading = !stats;
+
+    // Find today's attendance record
+    const todayStatus = stats?.recentAttendance?.find((att: any) =>
+        isSameDay(new Date(att.date), new Date())
+    );
+
+    const welcomeMessage = stats?.pendingRequests > 0
+        ? <span>You have <span className="text-white font-semibold">{stats.pendingRequests} pending requests</span> requiring your attention.</span>
+        : "You are all caught up! No pending requests at the moment.";
 
     return (
         <div className="space-y-8 max-w-[1600px] mx-auto">
-            <WelcomeBanner name={user?.name || 'Employee'} role="Employee" />
+            <WelcomeBanner name={user?.name || 'Employee'} role="Employee" showButton={false} message={welcomeMessage} />
 
             {/* Balance Overview */}
             <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-6">
-                <BalanceCard label="Annual Leave" current={stats?.leaveBalance?.used || 0} total={stats?.leaveBalance?.total || 20} color="bg-indigo-600" />
+                <div className="relative group overflow-hidden rounded-xl">
+                    <div className="blur-[2px] pointer-events-none">
+                        <BalanceCard label="Annual Leave" current={stats?.leaveBalance?.used || 0} total={stats?.leaveBalance?.total || 20} color="bg-indigo-600" />
+                    </div>
+                    <div className="absolute inset-0 z-10 flex items-center justify-center bg-slate-900/5">
+                        <span className="bg-slate-900 text-white text-[10px] font-bold px-3 py-1 rounded-full uppercase tracking-widest shadow-lg">Coming Soon</span>
+                    </div>
+                </div>
                 <BalanceCard label="Pending Requests" current={stats?.pendingRequests || 0} total={5} color="bg-amber-500" />
                 {/* Attendance Widget */}
                 <div className="md:col-span-1 lg:col-span-2">
-                    <AttendanceWidget />
+                    <div className="relative h-full group overflow-hidden rounded-xl">
+                        <div className="h-full blur-[2px] pointer-events-none">
+                            <AttendanceWidget todayStatus={todayStatus} />
+                        </div>
+                        <div className="absolute inset-0 z-10 flex items-center justify-center bg-slate-900/5">
+                            <span className="bg-slate-900 text-white text-[10px] font-bold px-3 py-1 rounded-full uppercase tracking-widest shadow-lg">Coming Soon</span>
+                        </div>
+                    </div>
                 </div>
             </div>
 
@@ -68,11 +91,11 @@ export default function EmployeeDashboardView({ user, stats, leaves }: any) {
                 </div>
 
                 <div className="space-y-6">
-                    <Card className="border-slate-200/60 shadow-sm ring-1 ring-slate-900/5">
+                    <Card className="border-slate-200/60 shadow-sm ring-1 ring-slate-900/5 relative overflow-hidden">
                         <CardHeader className="border-b border-slate-50">
                             <CardTitle className="text-sm font-bold text-slate-800">Upcoming Holidays</CardTitle>
                         </CardHeader>
-                        <CardContent className="pt-6 space-y-6">
+                        <CardContent className="pt-6 space-y-6 blur-[2px] pointer-events-none select-none">
                             {holidaysLoading ? (
                                 <div className="space-y-4 animate-pulse">
                                     {[1, 2, 3].map(i => (
@@ -98,6 +121,9 @@ export default function EmployeeDashboardView({ user, stats, leaves }: any) {
                                 ))
                             )}
                         </CardContent>
+                        <div className="absolute inset-0 z-10 flex items-center justify-center bg-slate-900/5">
+                            <span className="bg-slate-900 text-white text-[10px] font-bold px-3 py-1 rounded-full uppercase tracking-widest shadow-lg">Coming Soon</span>
+                        </div>
                     </Card>
                 </div>
             </div>
