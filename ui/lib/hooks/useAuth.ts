@@ -12,7 +12,7 @@ export function useCurrentUser(options?: { enabled?: boolean }) {
     })
 }
 
-export const useAuth = () => {
+export const useAuthQuery = () => {
     const { data: user, ...rest } = useCurrentUser();
     return { user, ...rest };
 };
@@ -30,25 +30,16 @@ export function useLogin() {
     })
 }
 
-export function useSendVerificationCode() {
-    return useMutation({
-        mutationFn: (email: string) => authService.sendVerificationCode(email),
-        onSuccess: () => {
-            toast.success('Verification code sent to your email');
-        },
-        onError: (error: any) => {
-            toast.error(error.response?.data?.message || 'Failed to send verification code');
-        },
-    })
-}
+
 
 export function useRegister() {
     return useMutation({
         mutationFn: (data: {
-            name: string
+            firstName: string
+            lastName: string
             email: string
             password: string
-            otp: string
+            confirmPassword: string
             organizationName: string
         }) => authService.register(data),
         onSuccess: () => {
@@ -123,7 +114,7 @@ export function useVerifyEmail() {
         },
         onSuccess: (data) => {
             console.log('useVerifyEmail: onSuccess called with data:', data)
-            toast.success(data.data?.message || 'Email verified successfully');
+            toast.success(data.message || 'Email verified successfully');
         },
         onError: (error: any) => {
             console.error('useVerifyEmail: onError called with error:', error)

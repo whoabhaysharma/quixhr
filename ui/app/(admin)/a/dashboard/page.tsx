@@ -2,7 +2,7 @@
 
 import { useEffect } from "react"
 import AdminDashboardView from "@/components/views/admin/AdminDashboardView"
-import { useAuth } from "@/lib/hooks/useAuth"
+import { useAuth } from "@/context/auth-context"
 import { useAdminStats } from "@/lib/hooks/useDashboard"
 import { Loader2 } from "lucide-react"
 
@@ -26,9 +26,16 @@ export default function AdminDashboardPage() {
         )
     }
 
+    // Prepare user object for view
+    const viewUser = user ? {
+        name: user.employee ? `${user.employee.firstName} ${user.employee.lastName}`.trim() : user.user.email,
+        email: user.user.email,
+        role: user.user.role
+    } : undefined
+
     return (
         <AdminDashboardView
-            user={user}
+            user={viewUser}
             stats={stats}
             leaves={stats?.pendingLeaveRequests || []}
         />
