@@ -278,17 +278,62 @@ export class MemberService {
 
         // 3. RBAC: Strict Check (Lower cannot modify Higher/Equal)
         const targetRole = currentEmployee.user.role;
-        const newRole = data.role || targetRole;
+        // const newRole = data.role || targetRole; // Role update removed from here
 
         // "changing the role or editing the information ... should only be allowed to the lower roles by higher roles"
-        // This implies I cannot even EDIT if I am not strictly higher.
-        if (!canModifyRole(requesterRole, targetRole, newRole)) {
-            throw new AppError('You do not have permission to modify this member or assign this role.', 403);
+        if (!canManageRole(requesterRole, targetRole)) {
+            throw new AppError('You do not have permission to modify this member.', 403);
         }
 
-        // 4. Last Admin Protection
+        // Role update logic removed from here and moved to updateMemberRole
+
+
+        // 5. Update Transaction (Employee Details Only)
+        return await prisma.$transaction(async (tx) => {
+            // Role update logic removed - use updateMemberRole
+
+            return await tx.employee.update({
+                where: { id },
+                data: {
+                    firstName: data.firstName,
+                    lastName: data.lastName,
+                    code: data.code,
+                    status: data.status as any,
+                    joiningDate: data.joiningDate ? new Date(data.joiningDate) : undefined,
+                    // calendarId & leaveGradeId update removed - use dedicated endpoints
+                },
+                include: { user: { select: { email: true, role: true } } }
+            });
+        });
+    }
+
+    /**
+     * Update Member Role (Dedicated Endpoint)
+     */
+    static async updateMemberRole(organizationId: string, id: string, newRole: Role, requesterRole: Role) {
+        // 1. Fetch Current Data
+        const currentEmployee = await prisma.employee.findUnique({
+            where: { id },
+            include: { user: true }
+        });
+
+        if (!currentEmployee || !currentEmployee.user) {
+            throw new AppError('Employee or associated user not found', 404);
+        }
+
+        if (currentEmployee.organizationId !== organizationId) {
+            throw new AppError('Access denied', 403);
+        }
+
+        const targetRole = currentEmployee.user.role;
+
+        // 2. Strict RBAC Check
+        if (!canModifyRole(requesterRole, targetRole, newRole)) {
+            throw new AppError('You do not have permission to modify this role.', 403);
+        }
+
+        // 3. Last Admin Protection
         if (targetRole === Role.ORG_ADMIN && newRole !== Role.ORG_ADMIN) {
-            // We are demoting an Admin. Check if they are the last one.
             const adminCount = await prisma.user.count({
                 where: {
                     role: Role.ORG_ADMIN,
@@ -300,32 +345,67 @@ export class MemberService {
             }
         }
 
-        if (data.calendarId) await validateOrganizationResource('calendar', data.calendarId, organizationId, 'Calendar');
-        if (data.leaveGradeId) await validateOrganizationResource('leaveGrade', data.leaveGradeId, organizationId, 'Leave Grade');
-
-        // 5. Update Transaction (Update Employee AND User Role if needed)
+        // 4. Update Role
         return await prisma.$transaction(async (tx) => {
-            // Update Role if changed
-            if (data.role && data.role !== targetRole) {
-                await tx.user.update({
-                    where: { id: currentEmployee.userId! },
-                    data: { role: data.role }
-                });
-            }
-
-            return await tx.employee.update({
-                where: { id },
-                data: {
-                    firstName: data.firstName,
-                    lastName: data.lastName,
-                    code: data.code,
-                    status: data.status as any,
-                    joiningDate: data.joiningDate ? new Date(data.joiningDate) : undefined,
-                    calendarId: data.calendarId,
-                    leaveGradeId: data.leaveGradeId,
-                },
-                include: { user: { select: { email: true, role: true } } }
+            await tx.user.update({
+                where: { id: currentEmployee.userId! },
+                data: { role: newRole }
             });
+
+            return await tx.employee.findUnique({
+                where: { id },
+                include: { user: { select: { id: true, email: true, role: true, isEmailVerified: true } } }
+            });
+        });
+    }
+
+    /**
+     * Update Member Calendar (Dedicated Endpoint)
+     */
+    static async updateMemberCalendar(organizationId: string, id: string, calendarId: string, requesterRole: Role) {
+        // 1. Validate Resource
+        await validateOrganizationResource('calendar', calendarId, organizationId, 'Calendar');
+
+        // 2. Fetch Employee
+        const currentEmployee = await prisma.employee.findUnique({ where: { id }, include: { user: true } });
+        if (!currentEmployee) throw new AppError('Employee not found', 404);
+        if (currentEmployee.organizationId !== organizationId) throw new AppError('Access denied', 403);
+
+        // 3. RBAC Check
+        if (currentEmployee.user && !canManageRole(requesterRole, currentEmployee.user.role)) {
+            throw new AppError('You do not have permission to modify this member.', 403);
+        }
+
+        // 4. Update
+        return await prisma.employee.update({
+            where: { id },
+            data: { calendarId },
+            include: { calendar: true }
+        });
+    }
+
+    /**
+     * Update Member Leave Grade (Dedicated Endpoint)
+     */
+    static async updateMemberLeaveGrade(organizationId: string, id: string, leaveGradeId: string, requesterRole: Role) {
+        // 1. Validate Resource
+        await validateOrganizationResource('leaveGrade', leaveGradeId, organizationId, 'Leave Grade');
+
+        // 2. Fetch Employee
+        const currentEmployee = await prisma.employee.findUnique({ where: { id }, include: { user: true } });
+        if (!currentEmployee) throw new AppError('Employee not found', 404);
+        if (currentEmployee.organizationId !== organizationId) throw new AppError('Access denied', 403);
+
+        // 3. RBAC Check
+        if (currentEmployee.user && !canManageRole(requesterRole, currentEmployee.user.role)) {
+            throw new AppError('You do not have permission to modify this member.', 403);
+        }
+
+        // 4. Update
+        return await prisma.employee.update({
+            where: { id },
+            data: { leaveGradeId },
+            include: { leaveGrade: true }
         });
     }
 

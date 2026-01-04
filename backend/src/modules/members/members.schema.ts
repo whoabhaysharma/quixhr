@@ -60,11 +60,34 @@ export const updateEmployeeSchema = {
         code: z.string().max(20).optional(),
         status: z.enum(['ACTIVE', 'INACTIVE', 'TERMINATED']).optional(),
         joiningDate: z.coerce.date().optional(),
-        role: z.nativeEnum(Role).optional(),
+        // role, calendarId, leaveGradeId removed - use dedicated endpoints
+    }),
+};
 
-        // Relations
-        calendarId: z.string().uuid().optional(),
-        leaveGradeId: z.string().uuid().optional(),
+export const updateMemberRoleSchema = {
+    params: z.object({
+        id: z.string().uuid('Invalid member ID'),
+    }),
+    body: z.object({
+        role: z.nativeEnum(Role),
+    }),
+};
+
+export const updateMemberCalendarSchema = {
+    params: z.object({
+        id: z.string().uuid('Invalid member ID'),
+    }),
+    body: z.object({
+        calendarId: z.string().uuid('Invalid calendar ID'),
+    }),
+};
+
+export const updateMemberLeaveGradeSchema = {
+    params: z.object({
+        id: z.string().uuid('Invalid member ID'),
+    }),
+    body: z.object({
+        leaveGradeId: z.string().uuid('Invalid leave grade ID'),
     }),
 };
 

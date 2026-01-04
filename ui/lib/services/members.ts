@@ -37,7 +37,7 @@ export const membersService = {
         memberId: string,
         role: string
     ): Promise<ApiResponse<Member>> => {
-        const response = await api.patch(`/members/${memberId}`, { role });
+        const response = await api.patch(`/members/${memberId}/role`, { role });
         return response.data;
     },
 
@@ -46,7 +46,16 @@ export const membersService = {
         memberId: string,
         calendarId: string
     ): Promise<ApiResponse<Member>> => {
-        const response = await api.post(`/members/${memberId}/calendar`, { calendarId });
+        const response = await api.patch(`/members/${memberId}/calendar`, { calendarId });
+        return response.data;
+    },
+
+    // Assign leave grade to member
+    assignLeaveGrade: async (
+        memberId: string,
+        leaveGradeId: string
+    ): Promise<ApiResponse<Member>> => {
+        const response = await api.patch(`/members/${memberId}/leave-grade`, { leaveGradeId });
         return response.data;
     },
 };

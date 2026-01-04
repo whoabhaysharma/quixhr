@@ -141,3 +141,61 @@ export const deleteUser = catchAsync(async (req: Request, res: Response, next: N
         return next(new AppError('Global user deletion not implemented.', 501));
     }
 });
+
+
+/**
+ * Update Member Role
+ */
+export const updateMemberRole = catchAsync(async (req: Request, res: Response, next: NextFunction) => {
+    const organizationId = tryGetOrganizationContext(req);
+    const { id } = req.params;
+
+    if (organizationId) {
+        const user = (req as any).user;
+        if (!user) return next(new AppError('User not authenticated', 401));
+
+        const { role } = req.body;
+        const result = await MemberService.updateMemberRole(organizationId, id, role, user.role);
+        sendResponse(res, 200, result, 'Member role updated successfully');
+    } else {
+        return next(new AppError('Global user update not implemented via this route.', 501));
+    }
+});
+
+/**
+ * Update Member Calendar
+ */
+export const updateMemberCalendar = catchAsync(async (req: Request, res: Response, next: NextFunction) => {
+    const organizationId = tryGetOrganizationContext(req);
+    const { id } = req.params;
+
+    if (organizationId) {
+        const user = (req as any).user;
+        if (!user) return next(new AppError('User not authenticated', 401));
+
+        const { calendarId } = req.body;
+        const result = await MemberService.updateMemberCalendar(organizationId, id, calendarId, user.role);
+        sendResponse(res, 200, result, 'Member calendar updated successfully');
+    } else {
+        return next(new AppError('Global user update not implemented via this route.', 501));
+    }
+});
+
+/**
+ * Update Member Leave Grade
+ */
+export const updateMemberLeaveGrade = catchAsync(async (req: Request, res: Response, next: NextFunction) => {
+    const organizationId = tryGetOrganizationContext(req);
+    const { id } = req.params;
+
+    if (organizationId) {
+        const user = (req as any).user;
+        if (!user) return next(new AppError('User not authenticated', 401));
+
+        const { leaveGradeId } = req.body;
+        const result = await MemberService.updateMemberLeaveGrade(organizationId, id, leaveGradeId, user.role);
+        sendResponse(res, 200, result, 'Member leave grade updated successfully');
+    } else {
+        return next(new AppError('Global user update not implemented via this route.', 501));
+    }
+});

@@ -6,7 +6,10 @@ import {
     getUsersQuerySchema,
     userIdSchema,
     createEmployeeSchema,
-    updateEmployeeSchema
+    updateEmployeeSchema,
+    updateMemberRoleSchema,
+    updateMemberCalendarSchema,
+    updateMemberLeaveGradeSchema
 } from './members.schema';
 
 // Import related controllers for nested routes (Lazy load or direct import if clean)
@@ -83,6 +86,39 @@ router.delete(
     '/:id',
     restrictTo(Role.SUPER_ADMIN, Role.ORG_ADMIN),
     MemberController.deleteUser
+);
+
+/**
+ * @route   PATCH /api/v1/users/:id/role
+ * @desc    Update Member Role (Context & RBAC Aware)
+ */
+router.patch(
+    '/:id/role',
+    restrictTo(Role.SUPER_ADMIN, Role.ORG_ADMIN, Role.HR_ADMIN),
+    validate(updateMemberRoleSchema),
+    MemberController.updateMemberRole
+);
+
+/**
+ * @route   PATCH /api/v1/users/:id/calendar
+ * @desc    Update Member Calendar (Context & RBAC Aware)
+ */
+router.patch(
+    '/:id/calendar',
+    restrictTo(Role.SUPER_ADMIN, Role.ORG_ADMIN, Role.HR_ADMIN),
+    validate(updateMemberCalendarSchema),
+    MemberController.updateMemberCalendar
+);
+
+/**
+ * @route   PATCH /api/v1/users/:id/leave-grade
+ * @desc    Update Member Leave Grade (Context & RBAC Aware)
+ */
+router.patch(
+    '/:id/leave-grade',
+    restrictTo(Role.SUPER_ADMIN, Role.ORG_ADMIN, Role.HR_ADMIN),
+    validate(updateMemberLeaveGradeSchema),
+    MemberController.updateMemberLeaveGrade
 );
 
 // --- Nested Routes (Leaves, Allocations) ---

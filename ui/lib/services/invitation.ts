@@ -19,8 +19,8 @@ export const invitationService = {
     /**
      * Invite a new user
      */
-    inviteUser: async (data: CreateInvitationDto) => {
-        const response = await api.post('/invitations/invite', data);
+    inviteUser: async (organizationId: string, data: CreateInvitationDto) => {
+        const response = await api.post(`/org/${organizationId}/invitations`, data);
         return response.data;
     },
 

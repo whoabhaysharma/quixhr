@@ -28,10 +28,14 @@ export function useMembers(options?: { enabled?: boolean }) {
 
 export function useSendInvite() {
     const queryClient = useQueryClient()
+    const { user } = useAuth()
+    const organizationId = user?.organizationId || user?.employee?.organizationId
 
     return useMutation({
-        mutationFn: (data: { email: string; role: Role }) =>
-            invitationService.inviteUser(data),
+        mutationFn: (data: { email: string; role: Role }) => {
+            if (!organizationId) throw new Error("Organization ID is required")
+            return invitationService.inviteUser(organizationId, data)
+        },
         onSuccess: () => {
             // Optionally refetch members list
             queryClient.invalidateQueries({ queryKey: ['members'] })

@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
+import { Role } from '@/lib/constants/roles';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import {
@@ -20,12 +21,15 @@ import {
     DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { invitationService } from '@/lib/services/invitation';
+import { useSendInvite } from '@/lib/hooks/useMembers';
 import { toast } from 'sonner';
 import { ChevronDown } from 'lucide-react';
 
 const inviteSchema = z.object({
     email: z.string().email('Invalid email address'),
-    role: z.enum(['HR_ADMIN', 'MANAGER', 'EMPLOYEE']),
+    role: z.nativeEnum(Role).refine(val => [Role.HR_ADMIN, Role.MANAGER, Role.EMPLOYEE].includes(val), {
+        message: "Invalid role selected"
+    }),
 });
 
 type InviteFormData = z.infer<typeof inviteSchema>;
@@ -37,11 +41,13 @@ interface InviteUserModalProps {
 }
 
 export function InviteUserModal({ open, onOpenChange, onSuccess }: InviteUserModalProps) {
-    const [isLoading, setIsLoading] = useState(false);
+    // const [isLoading, setIsLoading] = useState(false); // Managed by mutation
+    const { mutateAsync: sendInvite, isPending: isLoading } = useSendInvite();
+
     const { register, handleSubmit, formState: { errors }, reset, setValue, watch } = useForm<InviteFormData>({
         resolver: zodResolver(inviteSchema),
         defaultValues: {
-            role: 'EMPLOYEE',
+            role: Role.EMPLOYEE,
         },
     });
 
@@ -49,16 +55,14 @@ export function InviteUserModal({ open, onOpenChange, onSuccess }: InviteUserMod
 
     const onSubmit = async (data: InviteFormData) => {
         try {
-            setIsLoading(true);
-            await invitationService.inviteUser(data);
-            toast.success('Invitation sent successfully');
+            await sendInvite(data);
+            // Toast handled by hook
             reset();
             onOpenChange(false);
             if (onSuccess) onSuccess();
         } catch (error: any) {
-            toast.error(error.response?.data?.error || 'Failed to send invitation');
-        } finally {
-            setIsLoading(false);
+            // Error toast handled by hook
+            console.error("Failed to send invite", error);
         }
     };
 
@@ -88,18 +92,18 @@ export function InviteUserModal({ open, onOpenChange, onSuccess }: InviteUserMod
                         <DropdownMenu>
                             <DropdownMenuTrigger asChild>
                                 <Button variant="outline" className="w-full justify-between font-normal">
-                                    {selectedRole === 'EMPLOYEE' ? 'Employee' : selectedRole === 'MANAGER' ? 'Manager' : 'HR Admin'}
+                                    {selectedRole === Role.EMPLOYEE ? 'Employee' : selectedRole === Role.MANAGER ? 'Manager' : 'HR Admin'}
                                     <ChevronDown className="h-4 w-4 opacity-50" />
                                 </Button>
                             </DropdownMenuTrigger>
                             <DropdownMenuContent className="w-full">
-                                <DropdownMenuItem onClick={() => setValue('role', 'EMPLOYEE')}>
+                                <DropdownMenuItem onClick={() => setValue('role', Role.EMPLOYEE)}>
                                     Employee
                                 </DropdownMenuItem>
-                                <DropdownMenuItem onClick={() => setValue('role', 'MANAGER')}>
+                                <DropdownMenuItem onClick={() => setValue('role', Role.MANAGER)}>
                                     Manager
                                 </DropdownMenuItem>
-                                <DropdownMenuItem onClick={() => setValue('role', 'HR_ADMIN')}>
+                                <DropdownMenuItem onClick={() => setValue('role', Role.HR_ADMIN)}>
                                     HR Admin
                                 </DropdownMenuItem>
                             </DropdownMenuContent>
