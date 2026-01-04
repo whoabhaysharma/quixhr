@@ -27,7 +27,7 @@ import { createEmployeeSchema } from '../members';
 
 // POST /api/v1/org/:organizationId/employees
 router.post(
-    '/:organizationId/employees',
+    '/:organizationId/members',
     resolveTenant,
     restrictTo(Role.ORG_ADMIN, Role.HR_ADMIN, Role.SUPER_ADMIN),
     validate(createEmployeeSchema),

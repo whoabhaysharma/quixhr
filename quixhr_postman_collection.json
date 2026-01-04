@@ -439,12 +439,12 @@
                         "method": "GET",
                         "header": [],
                         "url": {
-                            "raw": "{{baseUrl}}/employees?page=1&limit=20&search=&status=ACTIVE&sortBy=firstName&sortOrder=asc",
+                            "raw": "{{baseUrl}}/members?page=1&limit=20&search=&status=ACTIVE&sortBy=firstName&sortOrder=asc",
                             "host": [
                                 "{{baseUrl}}"
                             ],
                             "path": [
-                                "employees"
+                                "members"
                             ],
                             "query": [
                                 {
@@ -514,7 +514,7 @@
                             "path": [
                                 "org",
                                 "{{organizationId}}",
-                                "employees"
+                                "members"
                             ]
                         }
                     },
@@ -526,12 +526,12 @@
                         "method": "GET",
                         "header": [],
                         "url": {
-                            "raw": "{{baseUrl}}/employees/{{employeeId}}",
+                            "raw": "{{baseUrl}}/members/{{employeeId}}",
                             "host": [
                                 "{{baseUrl}}"
                             ],
                             "path": [
-                                "employees",
+                                "members",
                                 "{{employeeId}}"
                             ]
                         }
@@ -553,12 +553,12 @@
                             }
                         },
                         "url": {
-                            "raw": "{{baseUrl}}/employees/{{employeeId}}",
+                            "raw": "{{baseUrl}}/members/{{employeeId}}",
                             "host": [
                                 "{{baseUrl}}"
                             ],
                             "path": [
-                                "employees",
+                                "members",
                                 "{{employeeId}}"
                             ]
                         }
@@ -571,12 +571,12 @@
                         "method": "DELETE",
                         "header": [],
                         "url": {
-                            "raw": "{{baseUrl}}/employees/{{employeeId}}",
+                            "raw": "{{baseUrl}}/members/{{employeeId}}",
                             "host": [
                                 "{{baseUrl}}"
                             ],
                             "path": [
-                                "employees",
+                                "members",
                                 "{{employeeId}}"
                             ]
                         }
@@ -974,12 +974,12 @@
                             }
                         },
                         "url": {
-                            "raw": "{{baseUrl}}/employees/{{employeeId}}/allocations",
+                            "raw": "{{baseUrl}}/members/{{employeeId}}/allocations",
                             "host": [
                                 "{{baseUrl}}"
                             ],
                             "path": [
-                                "employees",
+                                "members",
                                 "{{employeeId}}",
                                 "allocations"
                             ]
@@ -993,12 +993,12 @@
                         "method": "GET",
                         "header": [],
                         "url": {
-                            "raw": "{{baseUrl}}/employees/{{employeeId}}/allocations?year=2024",
+                            "raw": "{{baseUrl}}/members/{{employeeId}}/allocations?year=2024",
                             "host": [
                                 "{{baseUrl}}"
                             ],
                             "path": [
-                                "employees",
+                                "members",
                                 "{{employeeId}}",
                                 "allocations"
                             ],
@@ -1158,12 +1158,12 @@
                             }
                         },
                         "url": {
-                            "raw": "{{baseUrl}}/employees/{{employeeId}}/leaves",
+                            "raw": "{{baseUrl}}/members/{{employeeId}}/leaves",
                             "host": [
                                 "{{baseUrl}}"
                             ],
                             "path": [
-                                "employees",
+                                "members",
                                 "{{employeeId}}",
                                 "leaves"
                             ]
@@ -1527,7 +1527,7 @@
             ]
         },
         {
-            "name": "Users (Super Admin)",
+            "name": "Members (Global)",
             "item": [
                 {
                     "name": "List Users",
@@ -1535,12 +1535,12 @@
                         "method": "GET",
                         "header": [],
                         "url": {
-                            "raw": "{{baseUrl}}/users?page=1&limit=20&role=EMPLOYEE&sortBy=createdAt&sortOrder=desc",
+                            "raw": "{{baseUrl}}/members?page=1&limit=20&role=EMPLOYEE&sortBy=createdAt&sortOrder=desc",
                             "host": [
                                 "{{baseUrl}}"
                             ],
                             "path": [
-                                "users"
+                                "members"
                             ],
                             "query": [
                                 {
@@ -1574,12 +1574,12 @@
                         "method": "GET",
                         "header": [],
                         "url": {
-                            "raw": "{{baseUrl}}/users/:userId",
+                            "raw": "{{baseUrl}}/members/:userId",
                             "host": [
                                 "{{baseUrl}}"
                             ],
                             "path": [
-                                "users",
+                                "members",
                                 ":userId"
                             ],
                             "variable": [

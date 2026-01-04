@@ -86,11 +86,9 @@ app.use('/api', apiLimiter);
 // Versioned Routes
 app.use('/api/v1/auth', authRoutes);
 app.use('/api/v1/webhooks', webhookRoutes);
-// app.use('/api/v1/plans', planRoutes);
 app.use('/api/v1/invitations', invitationRoutes);
 app.use('/api/v1/me', meRoutes);
 app.use('/api/v1/org', organizationRoutes);
-// app.use('/api/v1/employees', employeeRoutes);
 app.use('/api/v1/members', membersRoutes);
 app.use('/api/v1/calendars', calendarRoutes);
 app.use('/api/v1/leaves', leaveRoutes);
