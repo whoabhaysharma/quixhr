@@ -1,4 +1,5 @@
 import { prisma } from '@/utils/prisma';
+import { sendEmail } from '@/infra/email/email.service';
 import { AppError } from '@/utils/appError';
 import { LeaveStatus } from '@prisma/client';
 import { ParsedPagination } from '@/utils/pagination';
@@ -334,11 +335,46 @@ export class LeaveService {
                         id: true,
                         firstName: true,
                         lastName: true,
-                        code: true,
-                        userId: true,
+                        user: {
+                            select: {
+                                email: true,
+                            },
+                        },
+                        organization: {
+                            select: {
+                                name: true,
+                            },
+                        },
                     },
                 },
             },
         });
+
+        // Send Email Notification
+        if (
+            (updatedRequest.status === LeaveStatus.APPROVED || updatedRequest.status === LeaveStatus.REJECTED) &&
+            updatedRequest.employee.user?.email
+        ) {
+            const startDate = new Date(updatedRequest.startDate).toLocaleDateString();
+            const endDate = new Date(updatedRequest.endDate).toLocaleDateString();
+
+            await sendEmail({
+                to: updatedRequest.employee.user.email,
+                subject: `Leave Request ${updatedRequest.status}`,
+                template: 'leave-status',
+                data: {
+                    status: updatedRequest.status,
+                    employeeName: `${updatedRequest.employee.firstName} ${updatedRequest.employee.lastName}`,
+                    leaveType: updatedRequest.type,
+                    startDate,
+                    endDate,
+                    daysTaken: updatedRequest.daysTaken,
+                    organizationName: updatedRequest.employee.organization.name,
+                    reason: updatedRequest.reason,
+                },
+            });
+        }
+
+        return updatedRequest;
     }
 }

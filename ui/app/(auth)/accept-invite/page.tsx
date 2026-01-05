@@ -58,7 +58,7 @@ export default function AcceptInvitePage() {
         const verifyToken = async () => {
             try {
                 const response = await invitationService.validateToken(token)
-                if (response.success) {
+                if (response.status === 'success') {
                     setInviteDetails(response.data)
                 } else {
                     setError(response.message || "Failed to verify invitation")

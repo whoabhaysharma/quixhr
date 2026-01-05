@@ -5,7 +5,7 @@ import crypto from 'crypto';
 import bcrypt from 'bcryptjs';
 import { ParsedPagination } from '@/utils/pagination';
 import { buildOrderBy } from '@/utils/prismaHelpers';
-import { NotificationService, InvitationNotifications } from '@/modules/notifications';
+
 import {
     CreateInvitationInput,
     AcceptInvitationInput,
@@ -218,27 +218,7 @@ export class InvitationService {
                 data: { status: 'ACCEPTED' },
             });
 
-            // Notify organization admins about new team member
-            try {
-                const admins = await tx.user.findMany({
-                    where: {
-                        employee: { organizationId: invitation.organizationId },
-                        role: { in: [Role.SUPER_ADMIN, Role.ORG_ADMIN, Role.HR_ADMIN] }
-                    },
-                    select: { id: true }
-                });
 
-                const fullName = `${userData.firstName} ${userData.lastName}`;
-                const notification = InvitationNotifications.accepted(fullName, invitation.email, invitation.role);
-
-                await NotificationService.createBulkNotifications(
-                    admins.map(a => a.id),
-                    notification.title,
-                    notification.message
-                );
-            } catch (error) {
-                console.error('Failed to send invitation accepted notification:', error);
-            }
 
             return { user, employee };
         });

@@ -42,19 +42,15 @@ export const createInvitation = catchAsync(
         );
 
         const responseData = {
-            success: true,
-            message: 'Invitation sent successfully',
-            data: {
-                id: invitation.id,
-                organizationId: invitation.organizationId,
-                email: invitation.email,
-                role: invitation.role,
-                status: invitation.status,
-                expiresAt: invitation.expiresAt,
-            },
+            id: invitation.id,
+            organizationId: invitation.organizationId,
+            email: invitation.email,
+            role: invitation.role,
+            status: invitation.status,
+            expiresAt: invitation.expiresAt,
         };
 
-        sendResponse(res, 201, responseData);
+        sendResponse(res, 201, responseData, 'Invitation sent successfully');
     }
 );
 
@@ -86,13 +82,7 @@ export const getInvitations = catchAsync(
             { status, email }
         );
 
-        const responseData = {
-            success: true,
-            message: 'Invitations retrieved successfully',
-            data: result
-        };
-
-        sendResponse(res, 200, responseData);
+        sendResponse(res, 200, result, 'Invitations retrieved successfully');
     }
 );
 
@@ -107,13 +97,7 @@ export const verifyInvitation = catchAsync(
 
         const details = await InvitationService.verifyInvitationToken(token);
 
-        const responseData = {
-            success: true,
-            message: 'Invitation verified successfully',
-            data: details,
-        };
-
-        sendResponse(res, 200, responseData);
+        sendResponse(res, 200, details, 'Invitation verified successfully');
     }
 );
 
@@ -134,16 +118,12 @@ export const acceptInvitation = catchAsync(
         });
 
         const responseData = {
-            success: true,
-            message: 'Invitation accepted successfully. You can now login.',
-            data: {
-                userId: result.user.id,
-                email: result.user.email,
-                employeeId: result.employee.id,
-            },
+            userId: result.user.id,
+            email: result.user.email,
+            employeeId: result.employee.id,
         };
 
-        sendResponse(res, 200, responseData);
+        sendResponse(res, 200, responseData, 'Invitation accepted successfully. You can now login.');
     }
 );
 
@@ -167,16 +147,12 @@ export const resendInvitation = catchAsync(
         );
 
         const responseData = {
-            success: true,
-            message: 'Invitation resent successfully',
-            data: {
-                id: invitation.id,
-                email: invitation.email,
-                expiresAt: invitation.expiresAt,
-            },
+            id: invitation.id,
+            email: invitation.email,
+            expiresAt: invitation.expiresAt,
         };
 
-        sendResponse(res, 200, responseData);
+        sendResponse(res, 200, responseData, 'Invitation resent successfully');
     }
 );
 
@@ -200,15 +176,11 @@ export const cancelInvitation = catchAsync(
         );
 
         const responseData = {
-            success: true,
-            message: 'Invitation cancelled successfully',
-            data: {
-                id: invitation.id,
-                status: invitation.status,
-            },
+            id: invitation.id,
+            status: invitation.status,
         };
 
-        sendResponse(res, 200, responseData);
+        sendResponse(res, 200, responseData, 'Invitation cancelled successfully');
     }
 );
 
@@ -231,12 +203,6 @@ export const deleteInvitation = catchAsync(
             user.role
         );
 
-        const responseData = {
-            success: true,
-            message: 'Invitation deleted successfully',
-            data: null,
-        };
-
-        sendResponse(res, 200, responseData);
+        sendResponse(res, 200, null, 'Invitation deleted successfully');
     }
 );

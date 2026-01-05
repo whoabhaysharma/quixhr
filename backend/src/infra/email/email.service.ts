@@ -12,6 +12,8 @@ interface EmailOptions {
 import { verifyEmailTemplate } from './templates/verify-email.template';
 import { resetPasswordTemplate } from './templates/reset-password.template';
 import { inviteUserTemplate } from './templates/invite-user.template';
+import { leaveStatusTemplate } from './templates/leave-status.template';
+import { loginAlertTemplate } from './templates/login-alert.template';
 
 const getHtmlContent = (template: string, data: any): string => {
   switch (template) {
@@ -23,6 +25,8 @@ const getHtmlContent = (template: string, data: any): string => {
       return loginAlertTemplate(data);
     case 'invite-user':
       return inviteUserTemplate(data);
+    case 'leave-status':
+      return leaveStatusTemplate(data);
     default:
       return `<p>${JSON.stringify(data)}</p>`;
   }

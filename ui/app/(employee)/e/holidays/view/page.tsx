@@ -3,7 +3,7 @@
 import { useState } from "react"
 import ComingSoonView from "@/components/views/ComingSoonView"
 const COMING_SOON = true
-import { useParams, useRouter } from "next/navigation"
+import { useSearchParams, useRouter } from "next/navigation"
 import { useAuth } from "@/context/auth-context"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -62,11 +62,11 @@ export default function CalendarDetailPage() {
             backText="Back to Holidays"
         />
     }
-    const params = useParams()
+    const searchParams = useSearchParams()
     const router = useRouter()
     const { user } = useAuth()
     const queryClient = useQueryClient()
-    const calendarId = params.calendarId as string
+    const calendarId = searchParams.get('calendarId') as string
 
     // Hooks
     const assignBalanceMutation = useAssignLeaveBalance()

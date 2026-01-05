@@ -232,7 +232,7 @@ export default function HolidaysPage() {
             ) : (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                     {calendars.map((calendar: any) => (
-                        <Link key={calendar.id} href={`/holidays/${calendar.id}`} className="block h-full">
+                        <Link key={calendar.id} href={`/e/holidays/view?calendarId=${calendar.id}`} className="block h-full">
                             <div className="h-full bg-white rounded-xl border border-slate-200 hover:border-indigo-300 hover:shadow-md shadow-sm transition-all p-5 flex flex-col justify-between group">
                                 <div>
                                     <div className="flex justify-between items-start mb-3">
