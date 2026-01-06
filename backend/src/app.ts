@@ -27,6 +27,9 @@ import { apiLimiter } from './utils/rateLImiter';
 
 const app = express();
 
+// Trust Proxy (Required when running behind Nginx/Docker/Load Balancers)
+app.set('trust proxy', 1);
+
 // ==========================================
 // 1. GLOBAL MIDDLEWARES
 // ==========================================
