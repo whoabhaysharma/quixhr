@@ -29,6 +29,10 @@ COPY prisma ./prisma/
 # Install only production dependencies
 RUN npm install --only=production
 
+# Copy generated Prisma Client from builder
+COPY --from=builder /app/node_modules/.prisma ./node_modules/.prisma
+COPY --from=builder /app/node_modules/@prisma/client ./node_modules/@prisma/client
+
 COPY --from=builder /app/dist ./dist
 
 EXPOSE 3000
