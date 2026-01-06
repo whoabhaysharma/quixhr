@@ -28,10 +28,6 @@ export function WelcomeBanner({ name, role, showButton = true, message }: { name
                     </p>
                 </div>
             </div>
-            {/* Decorative Background Elements */}
-            <div className="absolute -top-24 -right-24 h-64 w-64 rounded-full bg-white/10 blur-3xl" />
-            <div className="absolute -bottom-24 -left-24 h-64 w-64 rounded-full bg-white/5 blur-3xl" />
-            <div className="absolute top-1/2 left-1/2 h-full w-full -translate-x-1/2 -translate-y-1/2 bg-[url('/grid.svg')] opacity-[0.03]" />
         </div>
     )
 }
@@ -45,7 +41,7 @@ export function StatCard({ label, value, icon: Icon, trend, trendValue, trendUp,
                         <p className="text-[11px] font-bold text-slate-400 uppercase tracking-widest leading-none">{label}</p>
                         <h3 className={`text-4xl font-extrabold tracking-tight ${color} mt-2`}>{value}</h3>
                     </div>
-                    <div className={`p-3 rounded-2xl ${alert ? 'bg-slate-200 text-slate-700' : 'bg-slate-50 text-slate-400'} group-hover:scale-110 transition-transform duration-300`}>
+                    <div className={`p-3 rounded-2xl ${alert ? 'bg-slate-200 text-slate-700' : 'bg-slate-50 text-slate-400'}`}>
                         <Icon className="w-6 h-6" />
                     </div>
                 </div>
@@ -61,10 +57,6 @@ export function StatCard({ label, value, icon: Icon, trend, trendValue, trendUp,
                     </div>
                 )}
             </div>
-
-            {/* Decorative Background Elements */}
-            <div className="absolute right-0 top-0 h-32 w-32 bg-gradient-to-br from-slate-50/50 to-transparent rounded-bl-full -mr-10 -mt-10 transition-all group-hover:from-slate-100/50" />
-            {alert && <div className="absolute bottom-0 right-0 h-16 w-16 bg-slate-200/20 blur-2xl rounded-full" />}
         </div>
     )
 }
