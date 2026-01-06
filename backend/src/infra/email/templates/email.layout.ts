@@ -52,13 +52,7 @@ export const emailLayout = ({ title, content, previewText }: EmailLayoutProps): 
                     <!-- Logo Header -->
                     <tr>
                         <td align="center" style="padding: 48px 0 32px 0; background-color: #ffffff;">
-                            <table role="presentation" cellspacing="0" cellpadding="0" border="0">
-                                <tr>
-                                    <td align="center" style="width: 64px; height: 64px; background-color: #000000; border-radius: 12px; font-family: 'Lexend', Arial, Helvetica, sans-serif; font-weight: 700; font-size: 36px; line-height: 64px; color: #ffffff; text-align: center;">
-                                        Q
-                                    </td>
-                                </tr>
-                            </table>
+                            <img src="https://pub-095b402ef0464a1a9e39d4606123a399.r2.dev/quixhr-logo.png" alt="QuixHR" width="64" height="64" style="display: block; border: 0; outline: none; text-decoration: none; -ms-interpolation-mode: bicubic;">
                         </td>
                     </tr>
                     
