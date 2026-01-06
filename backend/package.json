@@ -8,7 +8,7 @@
     "dev:server": "ts-node-dev -r tsconfig-paths/register --respawn --transpile-only src/index.ts",
     "dev:worker": "ts-node-dev -r tsconfig-paths/register --respawn --transpile-only src/workers/index.ts",
     "dev:watch": "ts-node-dev -r tsconfig-paths/register --respawn --transpile-only src/index.ts",
-    "build": "tsc",
+    "build": "tsc && tsc-alias",
     "start": "node dist/index.js",
     "worker": "node dist/workers/index.js",
     "test": "jest --runInBand --forceExit",
@@ -27,6 +27,7 @@
   "license": "MIT",
   "dependencies": {
     "@aws-sdk/client-ses": "^3.958.0",
+    "@prisma/client": "^6.19.1",
     "bcrypt": "^6.0.0",
     "bcryptjs": "^2.4.3",
     "bullmq": "^5.66.3",
@@ -49,8 +50,7 @@
     "rate-limit-redis": "^4.3.1",
     "razorpay": "^2.9.6",
     "redis": "^5.10.0",
-    "zod": "^4.2.1",
-    "@prisma/client": "^6.19.1"
+    "zod": "^4.2.1"
   },
   "devDependencies": {
     "@types/bcrypt": "^6.0.0",
@@ -76,6 +76,7 @@
     "ts-jest": "^29.4.6",
     "ts-node": "^10.9.1",
     "ts-node-dev": "^2.0.0",
+    "tsc-alias": "^1.8.16",
     "tsconfig-paths": "^4.2.0",
     "typescript": "^5.3.0"
   },
