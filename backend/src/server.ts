@@ -5,7 +5,7 @@ import app from './app';
 
 import { seedSuperAdmin } from './utils/seed-super-admin';
 
-const PORT = 4000; // process.env.PORT || 4000;
+const PORT = process.env.PORT || 3000;
 
 const startServer = async () => {
   await seedSuperAdmin();
