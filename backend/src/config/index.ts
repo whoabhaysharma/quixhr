@@ -56,8 +56,8 @@ export const config = {
 
     // Rate Limiting
     rateLimit: {
-        windowMs: parseInt(process.env.RATE_LIMIT_WINDOW_MS || '60000'), // 1 minute
-        maxRequests: parseInt(process.env.RATE_LIMIT_MAX_REQUESTS || '60'),
+        windowMs: parseInt(process.env.RATE_LIMIT_WINDOW_MS || '900000'), // 15 minutes default
+        maxRequests: parseInt(process.env.RATE_LIMIT_MAX_REQUESTS || '1000'), // 1000 requests default
         skipSuccessfulRequests: process.env.RATE_LIMIT_SKIP_SUCCESS === 'true',
         skipFailedRequests: process.env.RATE_LIMIT_SKIP_FAILED === 'true',
     },

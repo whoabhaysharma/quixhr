@@ -6,7 +6,6 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Badge } from "@/components/ui/badge"
-import { Card } from "@/components/ui/card"
 import { Skeleton } from "@/components/ui/skeleton"
 import { Spinner } from "@/components/ui/spinner"
 import { Textarea } from "@/components/ui/textarea"
@@ -33,7 +32,6 @@ import {
     Plus,
     Calendar,
     X,
-    Clock,
     CalendarDays
 } from "lucide-react"
 import { cn } from "@/lib/utils"
@@ -146,12 +144,12 @@ export default function LeavesView() {
     }
 
     return (
-        <div className="space-y-8 max-w-[1400px] mx-auto p-4 md:p-8">
+        <div className="space-y-6">
             {/* Header */}
-            <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
-                <div className="space-y-2">
-                    <h1 className="text-3xl font-bold tracking-tight text-slate-900">Time Off</h1>
-                    <p className="text-slate-500 text-base max-w-2xl leading-relaxed">
+            <div className="flex flex-col lg:flex-row lg:items-end justify-between gap-6">
+                <div>
+                    <h1 className="text-2xl font-bold tracking-tight text-slate-900">Time Off</h1>
+                    <p className="text-slate-500 text-sm mt-1">
                         Manage your leave requests and track your approval status.
                     </p>
                 </div>
@@ -321,55 +319,54 @@ export default function LeavesView() {
             </div>
 
             {/* Leaves List */}
-            <div className="space-y-6">
+            <div className="space-y-4">
                 <div className="flex items-center justify-between">
-                    <h2 className="text-sm font-bold text-slate-500 uppercase tracking-widest flex items-center gap-3">
-                        <Clock className="w-4 h-4 text-indigo-500" />
-                        Request History
-                        <Badge variant="secondary" className="ml-2 font-bold bg-slate-100 text-slate-600">
-                            {leaves.length}
-                        </Badge>
+                    <h2 className="text-sm font-bold text-slate-900 uppercase tracking-wide">
+                        Request History ({leaves.length})
                     </h2>
                 </div>
-                <Card className="border-none shadow-sm overflow-hidden bg-white rounded-2xl ring-1 ring-slate-100">
+                <div className="bg-white rounded-xl border border-slate-200 overflow-hidden">
                     <Table>
-                        <TableHeader className="bg-slate-50/50 border-b border-slate-100">
-                            <TableRow className="hover:bg-transparent">
-                                <TableHead className="px-6 py-4 text-xs font-bold text-slate-400 uppercase tracking-wider">Type</TableHead>
-                                <TableHead className="px-6 py-4 text-xs font-bold text-slate-400 uppercase tracking-wider">Dates</TableHead>
-                                <TableHead className="px-6 py-4 text-xs font-bold text-slate-400 uppercase tracking-wider">Reason</TableHead>
-                                <TableHead className="px-6 py-4 text-xs font-bold text-slate-400 uppercase tracking-wider w-[140px] text-right">Status</TableHead>
+                        <TableHeader className="bg-slate-50 border-b border-slate-100">
+                            <TableRow className="hover:bg-transparent border-slate-100">
+                                <TableHead className="px-6 py-3 text-[11px] font-bold text-slate-500 uppercase tracking-wider">Type</TableHead>
+                                <TableHead className="px-6 py-3 text-[11px] font-bold text-slate-500 uppercase tracking-wider">Dates</TableHead>
+                                <TableHead className="px-6 py-3 text-[11px] font-bold text-slate-500 uppercase tracking-wider">Reason</TableHead>
+                                <TableHead className="px-6 py-3 text-[11px] font-bold text-slate-500 uppercase tracking-wider w-[120px]">Status</TableHead>
                             </TableRow>
                         </TableHeader>
                         <TableBody className="divide-y divide-slate-100">
                             {isLoading ? (
-                                Array.from({ length: 3 }).map((_, i) => (
-                                    <TableRow key={i}>
-                                        <TableCell className="px-6 py-6"><Skeleton className="h-5 w-24 rounded-md" /></TableCell>
-                                        <TableCell className="px-6 py-6"><Skeleton className="h-4 w-48 rounded-md" /></TableCell>
-                                        <TableCell className="px-6 py-6"><Skeleton className="h-4 w-64 rounded-md" /></TableCell>
-                                        <TableCell className="px-6 py-6 flex justify-end"><Skeleton className="h-7 w-20 rounded-full" /></TableCell>
+                                Array.from({ length: 5 }).map((_, i) => (
+                                    <TableRow key={i} className="border-slate-100">
+                                        <TableCell className="px-6 py-4">
+                                            <div className="flex items-center gap-3">
+                                                <Skeleton className="h-9 w-9 rounded-lg" />
+                                                <div className="space-y-1">
+                                                    <Skeleton className="h-4 w-24" />
+                                                    <Skeleton className="h-3 w-16" />
+                                                </div>
+                                            </div>
+                                        </TableCell>
+                                        <TableCell className="px-6 py-4"><Skeleton className="h-4 w-32" /></TableCell>
+                                        <TableCell className="px-6 py-4"><Skeleton className="h-4 w-40" /></TableCell>
+                                        <TableCell className="px-6 py-4"><Skeleton className="h-6 w-20 rounded-lg" /></TableCell>
                                     </TableRow>
                                 ))
                             ) : leaves.length === 0 ? (
                                 <TableRow>
-                                    <TableCell colSpan={4} className="p-16 text-center">
-                                        <div className="flex flex-col items-center gap-3">
-                                            <div className="w-12 h-12 rounded-full bg-slate-100 flex items-center justify-center">
-                                                <Calendar className="w-6 h-6 text-slate-400" />
-                                            </div>
-                                            <p className="text-slate-500 font-medium">No leave requests found</p>
-                                            <p className="text-sm text-slate-400">Create a new request to get started.</p>
-                                        </div>
+                                    <TableCell colSpan={4} className="p-12 text-center text-slate-500">
+                                        <p className="text-sm font-medium">No leave requests found</p>
+                                        <p className="text-xs text-slate-400 mt-1">Create a new request to get started.</p>
                                     </TableCell>
                                 </TableRow>
                             ) : (
                                 leaves.map((leave: Leave) => (
-                                    <TableRow key={leave.id} className="group hover:bg-indigo-50/30 transition-colors">
-                                        <TableCell className="px-6 py-5 align-top">
+                                    <TableRow key={leave.id} className="hover:bg-slate-50 transition-colors border-slate-100 group">
+                                        <TableCell className="px-6 py-4">
                                             <div className="flex items-center gap-3">
                                                 <div className={cn(
-                                                    "w-10 h-10 rounded-xl flex items-center justify-center font-bold text-lg",
+                                                    "w-9 h-9 rounded-lg flex items-center justify-center font-bold text-sm",
                                                     leave.type === 'ANNUAL' ? "bg-blue-100 text-blue-600" :
                                                         leave.type === 'SICK' ? "bg-rose-100 text-rose-600" :
                                                             "bg-purple-100 text-purple-600"
@@ -377,31 +374,33 @@ export default function LeavesView() {
                                                     {getLeaveTypeDisplay(leave.type).charAt(0)}
                                                 </div>
                                                 <div>
-                                                    <p className="font-bold text-slate-900">{getLeaveTypeDisplay(leave.type)}</p>
-                                                    <p className="text-xs text-slate-500 font-medium">
-                                                        {leave.totalDays} day{leave.totalDays !== 1 && 's'}
+                                                    <p className="font-semibold text-slate-900 text-sm leading-tight">{getLeaveTypeDisplay(leave.type)}</p>
+                                                    <p className="text-xs text-slate-500 mt-0.5">
+                                                        {leave.totalDays} {leave.totalDays === 1 ? 'day' : 'days'}
                                                     </p>
                                                 </div>
                                             </div>
                                         </TableCell>
-                                        <TableCell className="px-6 py-5 align-top">
-                                            <div className="flex flex-col gap-1">
-                                                <span className="font-semibold text-slate-700">
+                                        <TableCell className="px-6 py-4">
+                                            <div className="flex flex-col gap-0.5">
+                                                <span className="text-sm font-semibold text-slate-900">
                                                     {format(new Date(leave.startDate), "MMM d, yyyy")}
-                                                    <span className="text-slate-400 mx-2">→</span>
+                                                    <span className="text-slate-400 mx-1.5">→</span>
                                                     {format(new Date(leave.endDate), "MMM d, yyyy")}
                                                 </span>
-                                                <span className="text-xs text-slate-500">{format(new Date(leave.startDate), "EEEE")} to {format(new Date(leave.endDate), "EEEE")}</span>
+                                                <span className="text-[10px] text-slate-400 font-medium uppercase tracking-wide">
+                                                    {new Date(leave.startDate).toDateString() === new Date(leave.endDate).toDateString() ? 'Single Day' : 'Date Range'}
+                                                </span>
                                             </div>
                                         </TableCell>
-                                        <TableCell className="px-6 py-5 align-top">
-                                            <p className="text-slate-600 text-sm leading-relaxed max-w-md">
+                                        <TableCell className="px-6 py-4">
+                                            <p className="text-sm text-slate-600 max-w-xs truncate font-medium leading-relaxed">
                                                 {leave.reason || "No reason provided"}
                                             </p>
                                         </TableCell>
-                                        <TableCell className="px-6 py-5 align-top text-right">
+                                        <TableCell className="px-6 py-4">
                                             <Badge className={cn(
-                                                "border-0 px-3 py-1 text-xs uppercase tracking-wider font-bold shadow-none",
+                                                "font-bold border-0 px-2.5 py-1 text-[10px] uppercase tracking-tight rounded-lg shadow-none",
                                                 leave.status === 'APPROVED' ? 'bg-emerald-100 text-emerald-700 hover:bg-emerald-100' :
                                                     leave.status === 'REJECTED' ? 'bg-rose-100 text-rose-700 hover:bg-rose-100' :
                                                         'bg-amber-100 text-amber-700 hover:bg-amber-100'
@@ -414,7 +413,7 @@ export default function LeavesView() {
                             )}
                         </TableBody>
                     </Table>
-                </Card>
+                </div>
             </div>
         </div>
     )

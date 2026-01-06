@@ -2,14 +2,15 @@ import rateLimit from 'express-rate-limit';
 import RedisStore from 'rate-limit-redis';
 import { AppError } from './appError';
 import { redis } from '@/infra/redis/redis.connection';
+import { config } from '@/config';
 
 export const apiLimiter = rateLimit({
-    windowMs: 15 * 60 * 1000, // 15 minutes
-    max: 100, // Limit each IP to 100 requests per windowMs
+    windowMs: config.rateLimit.windowMs,
+    max: config.rateLimit.maxRequests,
     standardHeaders: true, // Return rate limit info in the `RateLimit-*` headers
     legacyHeaders: false, // Disable the `X-RateLimit-*` headers
     skip: () => {
-        return process.env.NODE_ENV === 'test';
+        return config.nodeEnv === 'test';
     },
 
     // Use Redis store for distributed rate limiting
@@ -22,5 +23,6 @@ export const apiLimiter = rateLimit({
     handler: (req, res, next, options) => {
         next(new AppError('Too many requests, please try again later.', 429));
     },
-    skipSuccessfulRequests: false,
+    skipSuccessfulRequests: config.rateLimit.skipSuccessfulRequests,
+    skipFailedRequests: config.rateLimit.skipFailedRequests,
 });

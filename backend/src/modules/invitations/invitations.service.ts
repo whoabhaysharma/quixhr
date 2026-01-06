@@ -70,7 +70,7 @@ export class InvitationService {
 
         // Construct invite link (User will click this to accept)
         // Adjust frontend URL as needed
-        const inviteLink = `${config.clientUrl}/accept-invite?token=${token}`;
+        const inviteLink = `${config.frontend.url}/accept-invite?token=${token}`;
 
         await sendEmail({
             to: data.email,
@@ -267,7 +267,7 @@ export class InvitationService {
         // Send Email
         const { sendEmail } = require('@/infra/email/email.service');
         const { config } = require('@/config');
-        const inviteLink = `${config.clientUrl}/accept-invite?token=${token}`;
+        const inviteLink = `${config.frontend.url}/accept-invite?token=${token}`;
 
         if (organization) {
             await sendEmail({
