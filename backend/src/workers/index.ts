@@ -1,6 +1,7 @@
 import { parentPort } from 'worker_threads';
+import './email.worker'; // Import to register the worker
 
-console.log('Worker thread started');
+console.log('Worker process started');
 
 // Keep the worker alive
 if (parentPort) {
@@ -9,7 +10,6 @@ if (parentPort) {
     });
 } else {
     // If not running as a worker thread (e.g. dev mode standalone), keep process alive or just exit if just testing
-    console.log('Running in standalone mode');
-    // Simple interval to keep it alive for dev purposes if needed, or just let it sit. 
-    // For dev:worker script it runs indefinitely with --respawn, so just logging is enough.
+    console.log('Running in standalone mode - Workers active');
 }
+

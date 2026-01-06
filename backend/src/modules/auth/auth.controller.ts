@@ -3,7 +3,7 @@ import jwt from 'jsonwebtoken';
 import bcrypt from 'bcryptjs';
 import crypto from 'crypto';
 import { prisma } from '@/utils/prisma';
-import { sendEmail } from '@/infra/email/email.service';
+import { addEmailToQueue } from '@/infra/queues/email.producer';
 import { AppError } from '@/utils/appError';
 import { catchAsync } from '@/utils/catchAsync';
 import { sendResponse } from '@/utils/sendResponse';
@@ -160,7 +160,7 @@ export const register = catchAsync(
     const verificationToken = generateToken(tokenPayload, '24h');
 
     // Send verification email
-    await sendEmail({
+    await addEmailToQueue({
       to: email,
       subject: 'Verify your email',
       template: 'verify-email',
@@ -224,7 +224,7 @@ export const login = catchAsync(
     };
 
     // Send Login Alert (Fire and Forget)
-    sendEmail({
+    addEmailToQueue({
       to: user.email,
       subject: 'New Login Alert - QuixHR',
       template: 'login-alert',
@@ -233,7 +233,7 @@ export const login = catchAsync(
         device: req.headers['user-agent'] || 'Unknown Device',
         time: new Date().toLocaleString()
       }
-    }).catch(err => console.error('Failed to send login alert:', err));
+    }).catch(err => console.error('Failed to queue login alert:', err));
 
     sendResponse(res, 200, response, 'User logged in successfully');
   }
@@ -329,7 +329,7 @@ export const forgotPassword = catchAsync(
 
     // Send reset email
     try {
-      await sendEmail({
+      await addEmailToQueue({
         to: email,
         subject: 'Password Reset Request',
         template: 'reset-password',

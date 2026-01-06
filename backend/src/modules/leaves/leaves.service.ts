@@ -1,5 +1,5 @@
 import { prisma } from '@/utils/prisma';
-import { sendEmail } from '@/infra/email/email.service';
+import { addEmailToQueue } from '@/infra/queues/email.producer';
 import { AppError } from '@/utils/appError';
 import { LeaveStatus } from '@prisma/client';
 import { ParsedPagination } from '@/utils/pagination';
@@ -358,7 +358,7 @@ export class LeaveService {
             const startDate = new Date(updatedRequest.startDate).toLocaleDateString();
             const endDate = new Date(updatedRequest.endDate).toLocaleDateString();
 
-            await sendEmail({
+            await addEmailToQueue({
                 to: updatedRequest.employee.user.email,
                 subject: `Leave Request ${updatedRequest.status}`,
                 template: 'leave-status',
