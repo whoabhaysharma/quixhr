@@ -7,7 +7,7 @@ services:
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
       POSTGRES_DB: ${POSTGRES_DB:-quixhr}
     volumes:
-      - postgres_data:/var/lib/postgresql/data
+      - postgres_data_prod:/var/lib/postgresql/data
     healthcheck:
       test: [ "CMD-SHELL", "pg_isready -U postgres" ]
       interval: 5s
@@ -18,7 +18,7 @@ services:
     image: redis:alpine
     restart: always
     volumes:
-      - redis_data:/data
+      - redis_data_prod:/data
     healthcheck:
       test: [ "CMD", "redis-cli", "ping" ]
       interval: 5s
@@ -52,5 +52,5 @@ services:
         condition: service_healthy
 
 volumes:
-  postgres_data:
-  redis_data:
+  postgres_data_prod:
+  redis_data_prod:
