@@ -2,10 +2,7 @@ import { Queue } from 'bullmq';
 import { config } from '@/config';
 import { QUEUE_NAMES } from './queue.names';
 
-const connection = {
-    host: process.env.REDIS_HOST || 'redis',
-    port: parseInt(process.env.REDIS_PORT || '6379'),
-};
+const connection = config.redis;
 
 export const emailQueue = new Queue(QUEUE_NAMES.EMAIL_NOTIFICATIONS, {
     connection,

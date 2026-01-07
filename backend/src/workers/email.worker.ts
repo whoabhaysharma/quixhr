@@ -4,10 +4,9 @@ import { sendEmail } from '../infra/email/email.service';
 import { EmailJobData } from '../infra/queues/email.producer';
 import { Logger } from '../utils/logger';
 
-const connection = {
-    host: process.env.REDIS_HOST || 'redis',
-    port: parseInt(process.env.REDIS_PORT || '6379'),
-};
+import { config } from '@/config';
+
+const connection = config.redis;
 
 export const emailWorker = new Worker<EmailJobData>(
     QUEUE_NAMES.EMAIL_NOTIFICATIONS,
