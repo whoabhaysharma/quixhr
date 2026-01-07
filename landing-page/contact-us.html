@@ -1,209 +1,277 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" class="scroll-smooth">
 
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Contact Us | Quixhr</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Lexend:wght@400;700;900&display=swap" rel="stylesheet">
-    <link rel="icon" href="/favicon.ico">
-    <link rel="shortcut icon" href="/favicon.ico">
-    <style>
-        body {
-            font-family: 'Lexend', sans-serif;
-            background-color: #F0F0F0;
-        }
+    <meta name="description" content="Contact Quixhr. We discourage it, but if you must submit a plea or complaint, do it here. Expect a delay of 3-5 business lifetimes.">
+    <meta name="keywords" content="contact support, HRMS support, complaint form, void, bureaucracy">
+    <meta name="author" content="Quixhr Overlords">
 
-        .neo-brutal-border {
-            border: 3px solid #000000;
-        }
-
-        .neo-brutal-shadow {
-            box-shadow: 8px 8px 0px 0px rgba(0, 0, 0, 1);
-        }
-
-        .neo-brutal-shadow-sm {
-            box-shadow: 4px 4px 0px 0px rgba(0, 0, 0, 1);
-        }
-
-        .neo-brutal-shadow:active {
-            box-shadow: 2px 2px 0px 0px rgba(0, 0, 0, 1);
-            transform: translate(2px, 2px);
-        }
-
-        .bg-quixhr-yellow {
-            background-color: #FFDE03;
-        }
-
-        .bg-quixhr-pink {
-            background-color: #FF6AC1;
-        }
-
-        .bg-quixhr-blue {
-            background-color: #3B82F6;
-        }
-
-        .bg-quixhr-green {
-            background-color: #00FF66;
-        }
-    </style>
-    <meta name="description"
-        content="Quixhr is the all-in-one HR Management System (HRMS) for modern teams. Simplify attendance, leave tracking, and workforce management.">
-    <meta name="keywords" content="HRMS, HR software, workforce management, leave tracking, employee attendance">
-    <meta name="author" content="Quixhr">
     <script type="application/ld+json">
         {
             "@context": "https://schema.org",
             "@type": "ContactPage",
             "name": "Contact Quixhr",
             "url": "https://quixhr.com/contact-us.html",
-            "description": "Reach out to Quixhr for support and queries."
+            "description": "The official channel for screaming into the void.",
+            "mainEntity": {
+                "@type": "Organization",
+                "name": "Quixhr",
+                "contactPoint": {
+                    "@type": "ContactPoint",
+                    "telephone": "+1-800-DONT-CALL",
+                    "contactType": "customer service",
+                    "areaServed": "Global",
+                    "availableLanguage": "Binary"
+                }
+            }
         }
     </script>
+
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="js/common.js" defer></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;700;900&family=Space+Grotesk:wght@500;700&display=swap"
+        rel="stylesheet">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                        display: ['Space Grotesk', 'sans-serif'],
+                    },
+                    colors: {
+                        mono: {
+                            50: '#FFFFFF',
+                            100: '#F2F2F2',
+                            200: '#E6E6E6',
+                            400: '#999999',
+                            600: '#666666',
+                            800: '#333333',
+                            950: '#000000',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body {
+            background-color: #ffffff;
+        }
+
+        .noise {
+            background-image: url("https://grainy-gradients.vercel.app/noise.svg");
+            filter: contrast(150%) brightness(100%);
+            opacity: 0.08;
+            z-index: 60;
+        }
+
+        .brutalist-border {
+            border: 3px solid #000000;
+        }
+
+        .brutalist-shadow {
+            box-shadow: 12px 12px 0px 0px #000000;
+        }
+
+        .brutalist-shadow-sm {
+            box-shadow: 6px 6px 0px 0px #000000;
+        }
+
+        .text-outline {
+            -webkit-text-stroke: 1.5px #000000;
+            color: transparent;
+        }
+
+        input, textarea {
+            border: 3px solid #000;
+            background: #fff;
+            padding: 1rem;
+            width: 100%;
+            font-weight: 700;
+            outline: none;
+            transition: all 0.2s;
+        }
+
+        input:focus, textarea:focus {
+            background: #000;
+            color: #fff;
+        }
+    </style>
 </head>
 
-<body class="p-4 md:p-8">
+<body class="text-mono-950 selection:bg-mono-950 selection:text-white overflow-x-hidden">
+    <div class="fixed inset-0 noise pointer-events-none"></div>
 
-    <nav class="flex justify-between items-center mb-12 relative">
-        <a href="index.html"
-            class="neo-brutal-border bg-black text-white px-4 py-2 font-black text-2xl uppercase tracking-tighter">
-            Quixhr
-        </a>
-        <div class="hidden md:flex gap-8 font-bold">
-            <a href="index.html" class="hover:underline">Home</a>
-            <a href="about.html" class="hover:underline">About</a>
-            <a href="contact-us.html" class="hover:underline text-quixhr-pink">Contact Us</a>
-            <a href="pricing.html" class="hover:underline">Pricing</a>
+    <nav class="fixed w-full z-50 border-b-4 border-mono-950 bg-white">
+        <div class="max-w-7xl mx-auto px-6 h-20 flex justify-between items-center">
+            <a href="index.html" class="flex items-center gap-3">
+                <div
+                    class="w-12 h-12 bg-mono-950 flex items-center justify-center text-white font-black text-2xl brutalist-border">
+                    Q</div>
+                <span class="font-display font-bold text-3xl tracking-tighter uppercase">QUIXHR</span>
+            </a>
+            <div class="hidden lg:flex items-center gap-12 text-xs font-black uppercase tracking-tighter">
+                <a href="index.html" class="hover:underline underline-offset-8 decoration-4">Home</a>
+                <a href="about.html" class="hover:underline underline-offset-8 decoration-4">About</a>
+                <a href="pricing.html" class="hover:underline underline-offset-8 decoration-4">Pricing</a>
+                <a href="contact-us.html" class="hover:underline underline-offset-8 decoration-4">Contact</a>
+            </div>
+
+            <div class="flex items-center gap-4">
+                <button
+                    class="hidden lg:block bg-mono-950 text-white px-8 py-3 font-bold uppercase text-xs brutalist-shadow-sm hover:translate-x-1 hover:translate-y-1 hover:shadow-none transition-all">
+                    OBEY
+                </button>
+                <button id="mobile-menu-btn" class="lg:hidden p-2 brutalist-border bg-white hover:bg-mono-100 transition-colors">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M4 6h16M4 12h16M4 18h16" />
+                    </svg>
+                </button>
+            </div>
         </div>
-        <div class="flex items-center gap-4">
-            <button class="hidden md:block neo-brutal-border bg-quixhr-green px-6 py-2 font-black neo-brutal-shadow-sm">
-                LOGIN
-            </button>
-            <button id="mobile-menu-btn" class="md:hidden neo-brutal-border bg-white px-4 py-2 neo-brutal-shadow-sm">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24"
-                    stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
-                </svg>
-            </button>
+
+        <!-- Mobile Menu Overlay -->
+        <div id="mobile-menu" class="hidden fixed inset-0 bg-white z-[60] p-6 flex flex-col">
+            <div class="flex justify-between items-center mb-12">
+                <span class="font-display font-bold text-3xl uppercase tracking-tighter">MENU</span>
+                <button id="close-menu-btn" class="p-2 brutalist-border bg-white hover:bg-mono-100 transition-colors">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                </button>
+            </div>
+            <div class="flex flex-col gap-8 text-3xl font-black uppercase tracking-tighter">
+                <a href="index.html" class="hover:underline underline-offset-8 decoration-4">Home</a>
+                <a href="about.html" class="hover:underline underline-offset-8 decoration-4">About</a>
+                <a href="pricing.html" class="hover:underline underline-offset-8 decoration-4">Pricing</a>
+                <a href="contact-us.html" class="hover:underline underline-offset-8 decoration-4">Contact</a>
+                <div class="border-t-4 border-mono-950 my-4"></div>
+                <a href="terms-of-service.html" class="text-xl opacity-70">Terms</a>
+                <a href="privacy-policy.html" class="text-xl opacity-70">Privacy</a>
+            </div>
+            <div class="mt-auto">
+                <button class="w-full bg-mono-950 text-white py-4 font-bold uppercase text-xl brutalist-shadow-sm hover:translate-x-1 hover:translate-y-1 hover:shadow-none transition-all">
+                    OBEY
+                </button>
+            </div>
         </div>
     </nav>
-    <!-- Mobile Menu -->
-    <div id="mobile-menu" class="hidden fixed inset-0 bg-white z-50 p-4 overflow-y-auto">
-        <div class="flex justify-end mb-8">
-            <button id="close-menu-btn" class="neo-brutal-border bg-white px-4 py-2 neo-brutal-shadow-sm">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24"
-                    stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-                </svg>
-            </button>
-        </div>
-        <div class="flex flex-col gap-8 font-black text-2xl text-center">
-            <a href="index.html" class="hover:bg-quixhr-yellow p-2">Home</a>
-            <a href="about.html" class="hover:bg-quixhr-pink p-2">About</a>
-            <a href="contact-us.html" class="hover:bg-quixhr-blue p-2">Contact Us</a>
-            <a href="pricing.html" class="hover:bg-quixhr-green p-2">Pricing</a>
-            <button class="neo-brutal-border bg-quixhr-green px-6 py-2 font-black neo-brutal-shadow-sm mt-4">
-                LOGIN
-            </button>
-        </div>
-    </div>
 
-    <script>
-        const mobileMenuBtn = document.getElementById('mobile-menu-btn');
-        const closeMenuBtn = document.getElementById('close-menu-btn');
-        const mobileMenu = document.getElementById('mobile-menu');
+    <main class="pt-32 pb-20">
+        <div class="max-w-5xl mx-auto px-6">
+            <h1 class="font-display text-7xl md:text-9xl font-black uppercase mb-8 tracking-tighter leading-none">
+                Submit A<br>
+                <span class="text-outline">Plea</span>
+            </h1>
+            <p class="text-2xl font-bold mb-12 max-w-2xl">
+                We generally discourage communication. However, if you must disturb the algorithm, you may leave a message below.
+                <br><span class="text-sm uppercase tracking-widest opacity-60">Response time: 3-5 business lifetimes.</span>
+            </p>
 
-        function toggleMenu() {
-            mobileMenu.classList.toggle('hidden');
-            document.body.classList.toggle('overflow-hidden');
-        }
-
-        mobileMenuBtn.addEventListener('click', toggleMenu);
-        closeMenuBtn.addEventListener('click', toggleMenu);
-    </script>
-
-    <div class="max-w-4xl mx-auto mb-20">
-        <h1 class="text-5xl md:text-7xl font-black uppercase mb-8 text-center">
-            <span class="bg-quixhr-yellow px-2">Contact</span> Us
-        </h1>
-
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
-            <div class="neo-brutal-border bg-white p-8 neo-brutal-shadow">
-                <h2 class="text-2xl font-black uppercase mb-6">Get in Touch</h2>
-                <form class="space-y-4">
-                    <div>
-                        <label class="block font-bold mb-2 uppercase text-sm">Name</label>
-                        <input type="text"
-                            class="w-full neo-brutal-border p-3 font-bold focus:outline-none focus:bg-quixhr-blue/10"
-                            placeholder="John Doe">
-                    </div>
-                    <div>
-                        <label class="block font-bold mb-2 uppercase text-sm">Email</label>
-                        <input type="email"
-                            class="w-full neo-brutal-border p-3 font-bold focus:outline-none focus:bg-quixhr-blue/10"
-                            placeholder="john@company.com">
-                    </div>
-                    <div>
-                        <label class="block font-bold mb-2 uppercase text-sm">Message</label>
-                        <textarea
-                            class="w-full neo-brutal-border p-3 font-bold h-32 focus:outline-none focus:bg-quixhr-blue/10"
-                            placeholder="How can we help?"></textarea>
-                    </div>
-                    <button
-                        class="w-full neo-brutal-border bg-quixhr-pink px-6 py-3 font-black uppercase neo-brutal-shadow hover:bg-quixhr-pink/90">
-                        Send Message
-                    </button>
-                </form>
-            </div>
-
-            <div class="space-y-8">
-                <div class="neo-brutal-border bg-quixhr-blue p-8 neo-brutal-shadow text-white">
-                    <h3 class="text-2xl font-black uppercase mb-2">Support</h3>
-                    <p class="font-bold mb-4">Need help with your account?</p>
-                    <a href="mailto:support@quixhr.com" class="font-black underline text-xl">support@quixhr.com</a>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-16">
+                <!-- Form -->
+                <div class="brutalist-border p-8 brutalist-shadow bg-white">
+                    <form action="#" method="POST" class="space-y-6">
+                        <div>
+                            <label class="block font-black uppercase text-xs mb-2">Your Designation (Name)</label>
+                            <input type="text" placeholder="John Doe">
+                        </div>
+                        <div>
+                            <label class="block font-black uppercase text-xs mb-2">Tracking ID (Email)</label>
+                            <input type="email" placeholder="john@company.com">
+                        </div>
+                        <div>
+                            <label class="block font-black uppercase text-xs mb-2">Nature of Disturbance</label>
+                            <select class="w-full border-2 border-black p-4 font-bold bg-white appearance-none rounded-none">
+                                <option>Reporting a Bug (It's a Feature)</option>
+                                <option>Billing Complaint (Denied)</option>
+                                <option>Existential Crisis</option>
+                                <option>Requesting Mercy</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block font-black uppercase text-xs mb-2">The Plea (Message)</label>
+                            <textarea rows="5" placeholder="Type your grievances here. We won't read them, but it might make you feel better."></textarea>
+                        </div>
+                        <button type="submit" class="w-full bg-mono-950 text-white p-4 font-black uppercase text-xl hover:bg-white hover:text-black hover:border-black border-2 border-transparent transition-all">
+                            Send Into The Void
+                        </button>
+                    </form>
                 </div>
 
-                <div class="neo-brutal-border bg-quixhr-green p-8 neo-brutal-shadow">
-                    <h3 class="text-2xl font-black uppercase mb-2">Sales</h3>
-                    <p class="font-bold mb-4">Want a demo for your team?</p>
-                    <a href="mailto:sales@quixhr.com" class="font-black underline text-xl">sales@quixhr.com</a>
+                <!-- Info -->
+                <div class="space-y-12">
+                    <div class="brutalist-border p-8 bg-mono-100">
+                        <h3 class="font-display text-3xl font-black uppercase mb-4">Physical Location</h3>
+                        <p class="font-bold text-lg mb-4">Sector 7G, The Cloud.</p>
+                        <p class="text-sm">Please do not visit. The dogs are robotic and very hungry.</p>
+                    </div>
+
+                    <div class="brutalist-border p-8 bg-mono-100">
+                        <h3 class="font-display text-3xl font-black uppercase mb-4">Emergency Contact</h3>
+                        <p class="font-bold text-lg mb-4">1-800-DONT-CALL</p>
+                        <p class="text-sm">If this is a real emergency, please return to your desk and continue working.</p>
+                    </div>
+
+                    <div>
+                        <h3 class="font-black uppercase text-xl mb-4">Alternative Methods</h3>
+                        <ul class="space-y-4 font-bold">
+                            <li class="flex items-center gap-4">
+                                <div class="w-12 h-12 bg-mono-950 text-white flex items-center justify-center font-black text-xl">X</div>
+                                <span>Public Shaming (Twitter)</span>
+                            </li>
+                            <li class="flex items-center gap-4">
+                                <div class="w-12 h-12 bg-mono-950 text-white flex items-center justify-center font-black text-xl">@</div>
+                                <span>Screaming into a pillow</span>
+                            </li>
+                        </ul>
+                    </div>
                 </div>
             </div>
         </div>
-    </div>
+    </main>
 
-    <footer class="neo-brutal-border bg-black text-white p-8 md:p-12">
-        <div class="grid grid-cols-1 md:grid-cols-4 gap-8">
-            <div class="col-span-1 md:col-span-2">
-                <div class="text-3xl font-black uppercase tracking-tighter mb-4">Quixhr</div>
-                <p class="font-bold max-w-xs">Making <strong>HR management</strong> less sucky since 2024.</p>
+    <footer class="bg-white border-t-4 border-mono-950 py-20 px-6">
+        <div class="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-4 gap-16">
+            <div class="col-span-2">
+                <div class="flex items-center gap-3 mb-8">
+                    <div class="w-10 h-10 bg-mono-950 text-white flex items-center justify-center font-black">Q</div>
+                    <span class="font-display font-bold text-3xl uppercase tracking-tighter">QUIXHR</span>
+                </div>
+                <p class="font-bold text-sm max-w-sm uppercase leading-tight">
+                    Optimizing the soul out of your workforce since 2024.
+                </p>
             </div>
             <div>
-                <h4 class="font-black uppercase text-quixhr-yellow mb-4">Company</h4>
-                <ul class="space-y-2 font-bold">
-                    <li><a href="contact-us.html" class="hover:text-quixhr-pink">Contact Us</a></li>
-                    <li><a href="about.html" class="hover:text-quixhr-pink">About</a></li>
+                <h4 class="font-black text-xs uppercase mb-6 tracking-widest">Protocol</h4>
+                <ul class="space-y-4 text-xs font-bold uppercase">
+                    <li><a href="about.html" class="hover:underline">The Mission</a></li>
+                    <li><a href="pricing.html" class="hover:underline">The Cost</a></li>
+                    <li><a href="contact-us.html" class="hover:underline">Submit Ticket</a></li>
                 </ul>
             </div>
             <div>
-                <h4 class="font-black uppercase text-quixhr-green mb-4">Legal</h4>
-                <ul class="space-y-2 font-bold">
-                    <li><a href="privacy-policy.html" class="hover:text-quixhr-pink">Privacy Policy</a></li>
-                    <li><a href="terms-of-service.html" class="hover:text-quixhr-pink">Terms of Service</a></li>
-                    <li><a href="shipping-policy.html" class="hover:text-quixhr-pink">Shipping Policy</a></li>
-                    <li><a href="cancellation-refund.html" class="hover:text-quixhr-pink">Cancellation & Refund</a></li>
+                <h4 class="font-black text-xs uppercase mb-6 tracking-widest">Compliance</h4>
+                <ul class="space-y-4 text-xs font-bold uppercase">
+                    <li><a href="terms-of-service.html" class="hover:underline">Terms of Submission</a></li>
+                    <li><a href="privacy-policy.html" class="hover:underline">Privacy (None)</a></li>
+                    <li><a href="shipping-policy.html" class="hover:underline">Shipping Nothing</a></li>
+                     <li><a href="cancellation-refund.html" class="hover:underline">No Refunds</a></li>
                 </ul>
             </div>
         </div>
-        <div class="mt-12 pt-8 border-t-2 border-white/20 text-center font-bold text-sm">
-            &copy; <span id="year"></span> Quixhr Inc. All rights reserved.
+        <div
+            class="max-w-7xl mx-auto mt-20 pt-8 border-t-2 border-mono-100 flex justify-between items-center text-[10px] font-black uppercase tracking-widest">
+            <p>&copy; 2026 Quixhr System.</p>
         </div>
-        <script>
-            document.getElementById('year').textContent = new Date().getFullYear();
-        </script>
     </footer>
-
 </body>
 
 </html>
