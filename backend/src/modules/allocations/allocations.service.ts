@@ -1,5 +1,6 @@
 import { prisma } from '@/utils/prisma';
 import { AppError } from '@/utils/appError';
+import { Logger } from '@/utils/logger';
 import { LeaveType } from '@prisma/client';
 import { ParsedPagination } from '@/utils/pagination';
 import { buildOrderBy, validateOrganizationResource } from '@/utils/prismaHelpers';
@@ -286,8 +287,8 @@ export class LeaveAllocationService {
                         },
                     });
                     allocatedCount++;
-                } catch (error) {
-                    console.error(`Failed to allocate for employee ${employee.id}:`, error);
+                } catch (error: any) {
+                    Logger.error(`Failed to allocate for employee ${employee.id}:`, { error: error.message });
                 }
             }
 

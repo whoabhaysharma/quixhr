@@ -6,6 +6,7 @@ import compression from 'compression';
 import hpp from 'hpp';
 
 import { globalErrorHandler } from './shared/middleware';
+import { loggerMiddleware } from './shared/middleware/logger.middleware';
 import { AppError } from './utils/appError';
 
 // Route Imports
@@ -64,15 +65,18 @@ app.use(cors({
 // Performance
 app.use(compression());
 
-// Logging
-if (process.env.NODE_ENV === 'development') {
-  app.use(morgan('dev'));
-}
-
 // Body Parsing & Security
 app.use(express.json({ limit: '10kb' })); // Protection against large payloads
 app.use(express.urlencoded({ extended: true, limit: '10kb' }));
 app.use(hpp()); // Prevent Parameter Pollution
+
+// Logging (Custom Middleware) - Placed after body parsing to capture body
+app.use(loggerMiddleware);
+
+// Logging (Morgan for dev dev - optional, can be removed if winston is enough)
+if (process.env.NODE_ENV === 'development') {
+  app.use(morgan('dev'));
+}
 
 // ==========================================
 // 2. ROUTES

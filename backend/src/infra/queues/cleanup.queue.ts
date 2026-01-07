@@ -1,6 +1,7 @@
 import { Queue } from 'bullmq';
 import { redis } from '../redis/redis.connection';
 import { QUEUE_NAMES } from './queue.names';
+import { Logger } from '../../utils/logger';
 
 /**
  * Cleanup Queue
@@ -57,5 +58,5 @@ export const setupCleanupQueue = async (): Promise<void> => {
         }
     );
 
-    console.log(`✅ ${QUEUE_NAMES.CLEANUP_JOBS} queue initialized with cleanup schedules.`);
+    Logger.info(`✅ ${QUEUE_NAMES.CLEANUP_JOBS} queue initialized with cleanup schedules.`);
 };

@@ -1,6 +1,7 @@
 import { prisma } from '../utils/prisma';
 import bcrypt from 'bcryptjs';
 import { config } from '@/config';
+import { Logger } from './logger';
 
 /**
  * Seed Super Admin User
@@ -17,11 +18,11 @@ export const seedSuperAdmin = async () => {
     });
 
     if (existingAdmin) {
-        // console.log('✅ Super Admin already exists');
+        // Logger.info('✅ Super Admin already exists');
         return;
     }
 
-    console.log('🌱 Seeding Super Admin...');
+    Logger.info('🌱 Seeding Super Admin...');
 
     const salt = await bcrypt.genSalt(10);
     const hashedPassword = await bcrypt.hash(password, salt);
@@ -42,5 +43,5 @@ export const seedSuperAdmin = async () => {
         },
     });
 
-    console.log(`✅ Super Admin created: ${email} `);
+    Logger.info(`✅ Super Admin created: ${email} `);
 };

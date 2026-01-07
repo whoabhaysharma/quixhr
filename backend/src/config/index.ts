@@ -14,6 +14,12 @@ export const config = {
     port: parseInt(process.env.PORT || '3000'),
     nodeEnv: process.env.NODE_ENV || 'development',
 
+    // Logging
+    logging: {
+        level: process.env.LOG_LEVEL || 'info',
+        dir: process.env.LOG_DIR || 'logs',
+    },
+
     // JWT
     jwt: {
         secret: process.env.JWT_SECRET || 'your-secret-key',

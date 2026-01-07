@@ -1,4 +1,5 @@
 import { Request, Response, NextFunction } from 'express';
+import { Logger } from '@/utils/logger';
 
 // ============================================================================
 // TYPES
@@ -82,6 +83,17 @@ export const globalErrorHandler = (
     res: Response,
     next: NextFunction
 ): void => {
+    // Log the error
+    Logger.error('Global Error Handler', {
+        message: err.message,
+        stack: err.stack,
+        statusCode: err.statusCode,
+        status: err.status,
+        path: req.path,
+        method: req.method,
+        ip: req.ip
+    });
+
     const normalizedError = normalizeError(err);
     const isDevelopment = process.env.NODE_ENV === ENVIRONMENT.DEVELOPMENT;
 

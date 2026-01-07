@@ -1,5 +1,6 @@
 import { SESClient } from '@aws-sdk/client-ses';
 import { config } from '../../config';
+import { Logger } from '../../utils/logger';
 
 export class SESClientManager {
     private static instance: SESClientManager | null = null;
@@ -14,7 +15,7 @@ export class SESClientManager {
             },
         });
 
-        console.log('✅ SES client initialized');
+        Logger.info('✅ SES client initialized');
     }
 
     public static getInstance(): SESClientManager {
@@ -32,7 +33,7 @@ export class SESClientManager {
         if (this.client) {
             this.client.destroy();
             SESClientManager.instance = null;
-            console.log('✅ SES client closed');
+            Logger.info('✅ SES client closed');
         }
     }
 }
