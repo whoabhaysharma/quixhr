@@ -27,12 +27,22 @@ import {
     DialogTitle,
     DialogTrigger,
 } from "@/components/ui/dialog"
+import {
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuItem,
+    DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
 import { useAuth } from "@/context/auth-context"
 import {
-    Plus,
     Calendar,
     X,
-    CalendarDays
+    CalendarDays,
+    Search,
+    Filter,
+    ChevronDown,
+    Check,
+    Plus
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { useLeaves, useCreateLeave } from "@/lib/hooks/useLeaves"
@@ -59,6 +69,10 @@ export default function LeavesView() {
     const [mode, setMode] = useState<"single" | "range" | "custom">("single")
     const [leaveType, setLeaveType] = useState("Vacation")
     const [reason, setReason] = useState("")
+
+    // Filter State
+    const [searchQuery, setSearchQuery] = useState("")
+    const [statusFilter, setStatusFilter] = useState<string>("all")
 
     // Date State
     const [singleDate, setSingleDate] = useState<Date>()
@@ -320,17 +334,74 @@ export default function LeavesView() {
 
             {/* Leaves List */}
             <div className="space-y-4">
-                <div className="flex items-center justify-between">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                     <h2 className="text-sm font-bold text-slate-900 uppercase tracking-wide">
                         Request History ({leaves.length})
                     </h2>
+                    <div className="flex items-center gap-3 w-full sm:w-auto">
+                        <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                                <Button variant="outline" className="w-[140px] h-9 bg-white justify-between">
+                                    <div className="flex items-center gap-2">
+                                        <Filter className="w-4 h-4 text-slate-400" />
+                                        <span className="text-sm">
+                                            {statusFilter === "all" ? "All Status" :
+                                                statusFilter === "PENDING" ? "Pending" :
+                                                    statusFilter === "APPROVED" ? "Approved" : "Rejected"}
+                                        </span>
+                                    </div>
+                                    <ChevronDown className="w-4 h-4 text-slate-400" />
+                                </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end" className="w-[140px]">
+                                <DropdownMenuItem
+                                    onClick={() => setStatusFilter("all")}
+                                    className="cursor-pointer"
+                                >
+                                    <Check className={`w-4 h-4 mr-2 ${statusFilter === "all" ? "opacity-100" : "opacity-0"}`} />
+                                    All Status
+                                </DropdownMenuItem>
+                                <DropdownMenuItem
+                                    onClick={() => setStatusFilter("PENDING")}
+                                    className="cursor-pointer"
+                                >
+                                    <Check className={`w-4 h-4 mr-2 ${statusFilter === "PENDING" ? "opacity-100" : "opacity-0"}`} />
+                                    Pending
+                                </DropdownMenuItem>
+                                <DropdownMenuItem
+                                    onClick={() => setStatusFilter("APPROVED")}
+                                    className="cursor-pointer"
+                                >
+                                    <Check className={`w-4 h-4 mr-2 ${statusFilter === "APPROVED" ? "opacity-100" : "opacity-0"}`} />
+                                    Approved
+                                </DropdownMenuItem>
+                                <DropdownMenuItem
+                                    onClick={() => setStatusFilter("REJECTED")}
+                                    className="cursor-pointer"
+                                >
+                                    <Check className={`w-4 h-4 mr-2 ${statusFilter === "REJECTED" ? "opacity-100" : "opacity-0"}`} />
+                                    Rejected
+                                </DropdownMenuItem>
+                            </DropdownMenuContent>
+                        </DropdownMenu>
+                        <div className="relative w-full max-w-xs">
+                            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                            <Input
+                                placeholder="Search reason..."
+                                className="pl-9 h-9 bg-white"
+                                value={searchQuery}
+                                onChange={(e) => setSearchQuery(e.target.value)}
+                            />
+                        </div>
+                    </div>
                 </div>
                 <div className="bg-white rounded-xl border border-slate-200 overflow-hidden">
                     <Table>
                         <TableHeader className="bg-slate-50 border-b border-slate-100">
                             <TableRow className="hover:bg-transparent border-slate-100">
                                 <TableHead className="px-6 py-3 text-[11px] font-bold text-slate-500 uppercase tracking-wider">Type</TableHead>
-                                <TableHead className="px-6 py-3 text-[11px] font-bold text-slate-500 uppercase tracking-wider">Dates</TableHead>
+                                <TableHead className="px-6 py-3 text-[11px] font-bold text-slate-500 uppercase tracking-wider">Period</TableHead>
+                                <TableHead className="px-6 py-3 text-[11px] font-bold text-slate-500 uppercase tracking-wider">Duration</TableHead>
                                 <TableHead className="px-6 py-3 text-[11px] font-bold text-slate-500 uppercase tracking-wider">Reason</TableHead>
                                 <TableHead className="px-6 py-3 text-[11px] font-bold text-slate-500 uppercase tracking-wider w-[120px]">Status</TableHead>
                             </TableRow>
@@ -349,67 +420,114 @@ export default function LeavesView() {
                                             </div>
                                         </TableCell>
                                         <TableCell className="px-6 py-4"><Skeleton className="h-4 w-32" /></TableCell>
+                                        <TableCell className="px-6 py-4"><Skeleton className="h-4 w-16" /></TableCell>
                                         <TableCell className="px-6 py-4"><Skeleton className="h-4 w-40" /></TableCell>
                                         <TableCell className="px-6 py-4"><Skeleton className="h-6 w-20 rounded-lg" /></TableCell>
                                     </TableRow>
                                 ))
-                            ) : leaves.length === 0 ? (
+                            ) : leaves.filter(leave => {
+                                // Status Filter
+                                if (statusFilter !== "all" && leave.status !== statusFilter) return false;
+
+                                // Search Filter (Reason)
+                                if (searchQuery) {
+                                    const searchLower = searchQuery.toLowerCase();
+                                    return leave.reason?.toLowerCase().includes(searchLower) ||
+                                        getLeaveTypeDisplay(leave.type).toLowerCase().includes(searchLower);
+                                }
+
+                                return true;
+                            }).length === 0 ? (
                                 <TableRow>
-                                    <TableCell colSpan={4} className="p-12 text-center text-slate-500">
+                                    <TableCell colSpan={5} className="p-12 text-center text-slate-500">
                                         <p className="text-sm font-medium">No leave requests found</p>
-                                        <p className="text-xs text-slate-400 mt-1">Create a new request to get started.</p>
+                                        {(searchQuery || statusFilter !== "all") ? (
+                                            <p className="text-xs text-slate-400 mt-1">Try adjusting your filters</p>
+                                        ) : (
+                                            <p className="text-xs text-slate-400 mt-1">Create a new request to get started.</p>
+                                        )}
                                     </TableCell>
                                 </TableRow>
                             ) : (
-                                leaves.map((leave: Leave) => (
-                                    <TableRow key={leave.id} className="hover:bg-slate-50 transition-colors border-slate-100 group">
-                                        <TableCell className="px-6 py-4">
-                                            <div className="flex items-center gap-3">
-                                                <div className={cn(
-                                                    "w-9 h-9 rounded-lg flex items-center justify-center font-bold text-sm",
-                                                    leave.type === 'ANNUAL' ? "bg-blue-100 text-blue-600" :
-                                                        leave.type === 'SICK' ? "bg-rose-100 text-rose-600" :
-                                                            "bg-purple-100 text-purple-600"
-                                                )}>
-                                                    {getLeaveTypeDisplay(leave.type).charAt(0)}
-                                                </div>
-                                                <div>
-                                                    <p className="font-semibold text-slate-900 text-sm leading-tight">{getLeaveTypeDisplay(leave.type)}</p>
-                                                    <p className="text-xs text-slate-500 mt-0.5">
-                                                        {leave.totalDays} {leave.totalDays === 1 ? 'day' : 'days'}
+                                leaves
+                                    .filter(leave => {
+                                        // Status Filter
+                                        if (statusFilter !== "all" && leave.status !== statusFilter) return false;
+
+                                        // Search Filter (Reason)
+                                        if (searchQuery) {
+                                            const searchLower = searchQuery.toLowerCase();
+                                            return leave.reason?.toLowerCase().includes(searchLower) ||
+                                                getLeaveTypeDisplay(leave.type).toLowerCase().includes(searchLower);
+                                        }
+
+                                        return true;
+                                    })
+                                    .map((leave: Leave) => {
+                                        const startDate = new Date(leave.startDate);
+                                        const endDate = new Date(leave.endDate);
+                                        const isSingleDay = startDate.toDateString() === endDate.toDateString();
+
+                                        return (
+                                            <TableRow key={leave.id} className="hover:bg-slate-50 transition-colors border-slate-100 group">
+                                                <TableCell className="px-6 py-4">
+                                                    <div className="flex items-center gap-3">
+                                                        <div className={cn(
+                                                            "w-9 h-9 rounded-lg flex items-center justify-center font-bold text-sm",
+                                                            leave.type === 'ANNUAL' ? "bg-blue-100 text-blue-600" :
+                                                                leave.type === 'SICK' ? "bg-rose-100 text-rose-600" :
+                                                                    "bg-purple-100 text-purple-600"
+                                                        )}>
+                                                            {getLeaveTypeDisplay(leave.type).charAt(0)}
+                                                        </div>
+                                                        <div>
+                                                            <p className="font-semibold text-slate-900 text-sm leading-tight">{getLeaveTypeDisplay(leave.type)}</p>
+
+                                                        </div>
+                                                    </div>
+                                                </TableCell>
+                                                <TableCell className="px-6 py-4">
+                                                    <div className="flex flex-col gap-0.5">
+                                                        {isSingleDay ? (
+                                                            <span className="text-sm font-semibold text-slate-900">
+                                                                {startDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+                                                            </span>
+                                                        ) : (
+                                                            <span className="text-sm font-semibold text-slate-900">
+                                                                {startDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+                                                                <span className="text-slate-400 mx-1.5">→</span>
+                                                                {endDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+                                                            </span>
+                                                        )}
+                                                        <span className="text-[10px] text-slate-400 font-medium uppercase tracking-wide">
+                                                            {isSingleDay ? 'Single Day' : 'Date Range'}
+                                                        </span>
+                                                    </div>
+                                                </TableCell>
+                                                <TableCell className="px-6 py-4">
+                                                    <div className="flex items-center gap-1.5">
+                                                        <span className="text-sm font-bold text-slate-900">{leave.totalDays}</span>
+                                                        <span className="text-xs text-slate-500 font-medium">{leave.totalDays === 1 ? 'day' : 'days'}</span>
+                                                    </div>
+                                                </TableCell>
+                                                <TableCell className="px-6 py-4">
+                                                    <p className="text-sm text-slate-600 max-w-xs truncate font-medium leading-relaxed">
+                                                        {leave.reason || "No reason provided"}
                                                     </p>
-                                                </div>
-                                            </div>
-                                        </TableCell>
-                                        <TableCell className="px-6 py-4">
-                                            <div className="flex flex-col gap-0.5">
-                                                <span className="text-sm font-semibold text-slate-900">
-                                                    {format(new Date(leave.startDate), "MMM d, yyyy")}
-                                                    <span className="text-slate-400 mx-1.5">→</span>
-                                                    {format(new Date(leave.endDate), "MMM d, yyyy")}
-                                                </span>
-                                                <span className="text-[10px] text-slate-400 font-medium uppercase tracking-wide">
-                                                    {new Date(leave.startDate).toDateString() === new Date(leave.endDate).toDateString() ? 'Single Day' : 'Date Range'}
-                                                </span>
-                                            </div>
-                                        </TableCell>
-                                        <TableCell className="px-6 py-4">
-                                            <p className="text-sm text-slate-600 max-w-xs truncate font-medium leading-relaxed">
-                                                {leave.reason || "No reason provided"}
-                                            </p>
-                                        </TableCell>
-                                        <TableCell className="px-6 py-4">
-                                            <Badge className={cn(
-                                                "font-bold border-0 px-2.5 py-1 text-[10px] uppercase tracking-tight rounded-lg shadow-none",
-                                                leave.status === 'APPROVED' ? 'bg-emerald-100 text-emerald-700 hover:bg-emerald-100' :
-                                                    leave.status === 'REJECTED' ? 'bg-rose-100 text-rose-700 hover:bg-rose-100' :
-                                                        'bg-amber-100 text-amber-700 hover:bg-amber-100'
-                                            )}>
-                                                {leave.status}
-                                            </Badge>
-                                        </TableCell>
-                                    </TableRow>
-                                ))
+                                                </TableCell>
+                                                <TableCell className="px-6 py-4">
+                                                    <Badge className={cn(
+                                                        "font-bold border-0 px-2.5 py-1 text-[10px] uppercase tracking-tight rounded-lg shadow-none",
+                                                        leave.status === 'APPROVED' ? 'bg-emerald-100 text-emerald-700 hover:bg-emerald-100' :
+                                                            leave.status === 'REJECTED' ? 'bg-rose-100 text-rose-700 hover:bg-rose-100' :
+                                                                'bg-amber-100 text-amber-700 hover:bg-amber-100'
+                                                    )}>
+                                                        {leave.status}
+                                                    </Badge>
+                                                </TableCell>
+                                            </TableRow>
+                                        )
+                                    })
                             )}
                         </TableBody>
                     </Table>

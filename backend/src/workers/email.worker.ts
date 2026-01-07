@@ -2,6 +2,7 @@ import { Worker, Job } from 'bullmq';
 import { QUEUE_NAMES } from '../infra/queues/queue.names';
 import { sendEmail } from '../infra/email/email.service';
 import { EmailJobData } from '../infra/queues/email.producer';
+import { Logger } from '../utils/logger';
 
 const connection = {
     host: process.env.REDIS_HOST || 'redis',
@@ -11,9 +12,14 @@ const connection = {
 export const emailWorker = new Worker<EmailJobData>(
     QUEUE_NAMES.EMAIL_NOTIFICATIONS,
     async (job: Job<EmailJobData>) => {
-        console.log(`Processing email job ${job.id} for ${job.data.to}`);
-        await sendEmail(job.data);
-        console.log(`Email job ${job.id} completed`);
+        try {
+            Logger.info(`Processing email job ${job.id}: ${job.data.template} to ${job.data.to}`);
+            await sendEmail(job.data);
+            Logger.info(`Email job ${job.id} completed successfully`);
+        } catch (error: any) {
+            Logger.error(`Failed to process email job ${job.id}: ${error.message}`, { stack: error.stack });
+            throw error;
+        }
     },
     {
         connection,
@@ -26,9 +32,9 @@ export const emailWorker = new Worker<EmailJobData>(
 );
 
 emailWorker.on('completed', (job) => {
-    console.log(`Job ${job.id} has completed!`);
+    Logger.debug(`Job ${job.id} has completed!`);
 });
 
 emailWorker.on('failed', (job, err) => {
-    console.log(`Job ${job?.id} has failed with ${err.message}`);
+    Logger.error(`Job ${job?.id} has failed with ${err.message}`);
 });
