@@ -8,6 +8,7 @@ import { AppError } from '@/utils/appError';
 import { catchAsync } from '@/utils/catchAsync';
 import { sendResponse } from '@/utils/sendResponse';
 import { config } from '@/config';
+import { Logger } from '@/utils/logger';
 import { TokenPayload } from './auth.types';
 import {
   AuthResponseDto,
@@ -233,7 +234,7 @@ export const login = catchAsync(
         device: req.headers['user-agent'] || 'Unknown Device',
         time: new Date().toLocaleString()
       }
-    }).catch(err => console.error('Failed to queue login alert:', err));
+    }).catch(err => Logger.error('Failed to queue login alert:', { error: err.message }));
 
     sendResponse(res, 200, response, 'User logged in successfully');
   }

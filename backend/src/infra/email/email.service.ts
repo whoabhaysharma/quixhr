@@ -1,6 +1,7 @@
 import { SendEmailCommand } from '@aws-sdk/client-ses';
 import { sesClient } from './ses.client';
 import { config } from '../../config';
+import { Logger } from '../../utils/logger';
 
 interface EmailOptions {
   to: string;
@@ -34,8 +35,8 @@ const getHtmlContent = (template: string, data: any): string => {
 
 export const sendEmail = async (options: EmailOptions): Promise<void> => {
   if (!config.aws.accessKeyId || !config.aws.secretAccessKey) {
-    console.warn('⚠️ AWS credentials not found. Emails will behave as mock.');
-    console.log(`[MOCK EMAIL] To: ${options.to} | Subject: ${options.subject}`);
+    Logger.warn('⚠️ AWS credentials not found. Emails will behave as mock.');
+    Logger.info(`[MOCK EMAIL] To: ${options.to} | Subject: ${options.subject}`);
     return;
   }
 
@@ -60,8 +61,8 @@ export const sendEmail = async (options: EmailOptions): Promise<void> => {
     });
 
     const response = await sesClient.send(command);
-    console.log('Message sent: %s', response.MessageId);
-  } catch (error) {
-    console.error('Error sending email via SES:', error);
+    Logger.info('Message sent: %s', { messageId: response.MessageId });
+  } catch (error: any) {
+    Logger.error('Error sending email via SES:', { error: error.message });
   }
 };
