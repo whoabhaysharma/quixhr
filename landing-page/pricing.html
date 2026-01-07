@@ -1,231 +1,301 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" class="scroll-smooth">
 
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Pricing | Quixhr</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Lexend:wght@400;700;900&display=swap" rel="stylesheet">
-    <link rel="icon" href="/favicon.ico">
-    <link rel="shortcut icon" href="/favicon.ico">
-    <style>
-        body {
-            font-family: 'Lexend', sans-serif;
-            background-color: #F0F0F0;
-        }
+    <meta name="description" content="Quixhr Pricing: Pay us to control your employees. The more you pay, the more we repress them. No refunds.">
+    <meta name="keywords" content="HRMS pricing, employee surveillance cost, micromanagement tools, corporate dystopia">
+    <meta name="author" content="Quixhr Overlords">
 
-        .neo-brutal-border {
-            border: 3px solid #000000;
-        }
-
-        .neo-brutal-shadow {
-            box-shadow: 8px 8px 0px 0px rgba(0, 0, 0, 1);
-        }
-
-        .neo-brutal-shadow-sm {
-            box-shadow: 4px 4px 0px 0px rgba(0, 0, 0, 1);
-        }
-
-        .neo-brutal-shadow:active {
-            box-shadow: 2px 2px 0px 0px rgba(0, 0, 0, 1);
-            transform: translate(2px, 2px);
-        }
-
-        .bg-quixhr-yellow {
-            background-color: #FFDE03;
-        }
-
-        .bg-quixhr-pink {
-            background-color: #FF6AC1;
-        }
-
-        .bg-quixhr-blue {
-            background-color: #3B82F6;
-        }
-
-        .bg-quixhr-green {
-            background-color: #00FF66;
-        }
-    </style>
-    <meta name="description"
-        content="Quixhr is the all-in-one HR Management System (HRMS) for modern teams. Simplify attendance, leave tracking, and workforce management.">
-    <meta name="keywords" content="HRMS, HR software, workforce management, leave tracking, employee attendance">
-    <meta name="author" content="Quixhr">
     <script type="application/ld+json">
         {
             "@context": "https://schema.org",
-            "@type": "WebPage",
+            "@type": "PricingPage",
             "name": "Quixhr Pricing",
             "url": "https://quixhr.com/pricing.html",
-            "description": "Affordable pricing for Quixhr leave management software."
+            "description": "Choose your level of oppression.",
+            "offers": [
+                {
+                    "@type": "Offer",
+                    "name": "The Intern",
+                    "price": "0",
+                    "priceCurrency": "USD",
+                    "description": "For casual cruelty."
+                },
+                {
+                    "@type": "Offer",
+                    "name": "The Manager",
+                    "price": "29",
+                    "priceCurrency": "USD",
+                    "description": "For professional micromanagers."
+                },
+                {
+                    "@type": "Offer",
+                    "name": "The Overlord",
+                    "price": "999",
+                    "priceCurrency": "USD",
+                    "description": "For absolute dominance."
+                }
+            ]
         }
     </script>
+
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="js/common.js" defer></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;700;900&family=Space+Grotesk:wght@500;700&display=swap"
+        rel="stylesheet">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                        display: ['Space Grotesk', 'sans-serif'],
+                    },
+                    colors: {
+                        mono: {
+                            50: '#FFFFFF',
+                            100: '#F2F2F2',
+                            200: '#E6E6E6',
+                            400: '#999999',
+                            600: '#666666',
+                            800: '#333333',
+                            950: '#000000',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body {
+            background-color: #ffffff;
+        }
+
+        .noise {
+            background-image: url("https://grainy-gradients.vercel.app/noise.svg");
+            filter: contrast(150%) brightness(100%);
+            opacity: 0.08;
+            z-index: 60;
+        }
+
+        .brutalist-border {
+            border: 3px solid #000000;
+        }
+
+        .brutalist-shadow {
+            box-shadow: 12px 12px 0px 0px #000000;
+        }
+
+        .brutalist-shadow-sm {
+            box-shadow: 6px 6px 0px 0px #000000;
+        }
+
+        .text-outline {
+            -webkit-text-stroke: 1.5px #000000;
+            color: transparent;
+        }
+    </style>
 </head>
 
-<body class="p-4 md:p-8">
+<body class="text-mono-950 selection:bg-mono-950 selection:text-white overflow-x-hidden">
+    <div class="fixed inset-0 noise pointer-events-none"></div>
 
-    <nav class="flex justify-between items-center mb-12 relative">
-        <a href="index.html"
-            class="neo-brutal-border bg-black text-white px-4 py-2 font-black text-2xl uppercase tracking-tighter">
-            Quixhr
-        </a>
-        <div class="hidden md:flex gap-8 font-bold">
-            <a href="index.html" class="hover:underline">Home</a>
-            <a href="about.html" class="hover:underline">About</a>
-            <a href="contact-us.html" class="hover:underline">Contact Us</a>
-            <a href="pricing.html" class="hover:underline text-quixhr-pink">Pricing</a>
-        </div>
-        <div class="flex items-center gap-4">
-            <button class="hidden md:block neo-brutal-border bg-quixhr-green px-6 py-2 font-black neo-brutal-shadow-sm">
-                LOGIN
-            </button>
-            <button id="mobile-menu-btn" class="md:hidden neo-brutal-border bg-white px-4 py-2 neo-brutal-shadow-sm">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24"
-                    stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
-                </svg>
-            </button>
-        </div>
-    </nav>
-    <!-- Mobile Menu -->
-    <div id="mobile-menu" class="hidden fixed inset-0 bg-white z-50 p-4 overflow-y-auto">
-        <div class="flex justify-end mb-8">
-            <button id="close-menu-btn" class="neo-brutal-border bg-white px-4 py-2 neo-brutal-shadow-sm">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24"
-                    stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-                </svg>
-            </button>
-        </div>
-        <div class="flex flex-col gap-8 font-black text-2xl text-center">
-            <a href="index.html" class="hover:bg-quixhr-yellow p-2">Home</a>
-            <a href="about.html" class="hover:bg-quixhr-pink p-2">About</a>
-            <a href="contact-us.html" class="hover:bg-quixhr-blue p-2">Contact Us</a>
-            <a href="pricing.html" class="hover:bg-quixhr-green p-2">Pricing</a>
-            <button class="neo-brutal-border bg-quixhr-green px-6 py-2 font-black neo-brutal-shadow-sm mt-4">
-                LOGIN
-            </button>
-        </div>
-    </div>
+    <nav class="fixed w-full z-50 border-b-4 border-mono-950 bg-white">
+        <div class="max-w-7xl mx-auto px-6 h-20 flex justify-between items-center">
+            <a href="index.html" class="flex items-center gap-3">
+                <div
+                    class="w-12 h-12 bg-mono-950 flex items-center justify-center text-white font-black text-2xl brutalist-border">
+                    Q</div>
+                <span class="font-display font-bold text-3xl tracking-tighter uppercase">QUIXHR</span>
+            </a>
+            <div class="hidden lg:flex items-center gap-12 text-xs font-black uppercase tracking-tighter">
+                <a href="index.html" class="hover:underline underline-offset-8 decoration-4">Home</a>
+                <a href="about.html" class="hover:underline underline-offset-8 decoration-4">About</a>
+                <a href="pricing.html" class="hover:underline underline-offset-8 decoration-4">Pricing</a>
+                <a href="contact-us.html" class="hover:underline underline-offset-8 decoration-4">Contact</a>
+            </div>
 
-    <script>
-        const mobileMenuBtn = document.getElementById('mobile-menu-btn');
-        const closeMenuBtn = document.getElementById('close-menu-btn');
-        const mobileMenu = document.getElementById('mobile-menu');
-
-        function toggleMenu() {
-            mobileMenu.classList.toggle('hidden');
-            document.body.classList.toggle('overflow-hidden');
-        }
-
-        mobileMenuBtn.addEventListener('click', toggleMenu);
-        closeMenuBtn.addEventListener('click', toggleMenu);
-    </script>
-
-    <div class="max-w-6xl mx-auto mb-20">
-        <h1 class="text-5xl md:text-7xl font-black uppercase mb-8 text-center">
-            Simple <span class="bg-quixhr-yellow px-2">Pricing</span>
-        </h1>
-        <p class="text-xl font-bold text-center mb-12 max-w-2xl mx-auto">
-            No hidden fees. No complicated tiers. Just one simple price for everything.
-        </p>
-
-        <div
-            class="neo-brutal-border bg-quixhr-pink p-6 mb-12 text-center transform -rotate-1 max-w-3xl mx-auto neo-brutal-shadow-sm">
-            <h3 class="text-2xl md:text-4xl font-black uppercase mb-2">We don't want your money.</h3>
-            <p class="font-bold text-lg md:text-xl">Seriously. We just need to cover the server costs. That's it.</p>
-        </div>
-
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-8 items-center">
-            <!-- Pricing Card -->
-            <div class="neo-brutal-border bg-white p-8 md:p-12 neo-brutal-shadow relative">
-
-                <h2 class="text-3xl font-black uppercase mb-4">Standard Plan</h2>
-                <div class="flex items-baseline mb-6">
-                    <span class="text-5xl font-black">₹29</span>
-                    <span class="text-xl font-bold ml-2 text-gray-600">/ employee / month</span>
-                </div>
-                <p class="font-bold mb-8">Everything you need to manage leave for your team.</p>
-
-                <ul class="space-y-4 mb-8 font-bold">
-                    <li class="flex items-center gap-3">
-                        <div class="w-6 h-6 bg-quixhr-green neo-brutal-border flex items-center justify-center text-sm">
-                            ✓</div>
-                        Unlimited Leave Types
-                    </li>
-                    <li class="flex items-center gap-3">
-                        <div class="w-6 h-6 bg-quixhr-green neo-brutal-border flex items-center justify-center text-sm">
-                            ✓</div>
-                        Automated Accruals
-                    </li>
-                    <li class="flex items-center gap-3">
-                        <div class="w-6 h-6 bg-quixhr-green neo-brutal-border flex items-center justify-center text-sm">
-                            ✓</div>
-                        Manager Approvals
-                    </li>
-                    <li class="flex items-center gap-3">
-                        <div class="w-6 h-6 bg-quixhr-green neo-brutal-border flex items-center justify-center text-sm">
-                            ✓</div>
-                        Email Support
-                    </li>
-                </ul>
-
+            <div class="flex items-center gap-4">
                 <button
-                    class="w-full neo-brutal-border bg-quixhr-yellow px-6 py-4 font-black uppercase text-xl neo-brutal-shadow hover:translate-x-1 hover:translate-y-1 hover:shadow-none transition-all">
-                    Start Free Trial
+                    class="hidden lg:block bg-mono-950 text-white px-8 py-3 font-bold uppercase text-xs brutalist-shadow-sm hover:translate-x-1 hover:translate-y-1 hover:shadow-none transition-all">
+                    OBEY
+                </button>
+                <button id="mobile-menu-btn" class="lg:hidden p-2 brutalist-border bg-white hover:bg-mono-100 transition-colors">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M4 6h16M4 12h16M4 18h16" />
+                    </svg>
                 </button>
             </div>
+        </div>
 
-            <!-- FAQ Section -->
-            <div class="space-y-6">
-                <div class="neo-brutal-border bg-quixhr-blue p-6 neo-brutal-shadow text-white">
-                    <h3 class="text-xl font-black uppercase mb-2">Do I have to pay for myself?</h3>
-                    <p class="font-bold">Yes, every active user in the system counts towards the billing.</p>
-                </div>
-                <div class="neo-brutal-border bg-quixhr-green p-6 neo-brutal-shadow">
-                    <h3 class="text-xl font-black uppercase mb-2">Can I cancel anytime?</h3>
-                    <p class="font-bold">Absolutely. There are no long-term contracts or cancellation fees.</p>
-                </div>
-                <div class="neo-brutal-border bg-white p-6 neo-brutal-shadow">
-                    <h3 class="text-xl font-black uppercase mb-2">Is there a free trial?</h3>
-                    <p class="font-bold">Yes! You can try Quixhr free for 14 days. No credit card required.</p>
-                </div>
+        <!-- Mobile Menu Overlay -->
+        <div id="mobile-menu" class="hidden fixed inset-0 bg-white z-[60] p-6 flex flex-col">
+            <div class="flex justify-between items-center mb-12">
+                <span class="font-display font-bold text-3xl uppercase tracking-tighter">MENU</span>
+                <button id="close-menu-btn" class="p-2 brutalist-border bg-white hover:bg-mono-100 transition-colors">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                </button>
+            </div>
+            <div class="flex flex-col gap-8 text-3xl font-black uppercase tracking-tighter">
+                <a href="index.html" class="hover:underline underline-offset-8 decoration-4">Home</a>
+                <a href="about.html" class="hover:underline underline-offset-8 decoration-4">About</a>
+                <a href="pricing.html" class="hover:underline underline-offset-8 decoration-4">Pricing</a>
+                <a href="contact-us.html" class="hover:underline underline-offset-8 decoration-4">Contact</a>
+                <div class="border-t-4 border-mono-950 my-4"></div>
+                <a href="terms-of-service.html" class="text-xl opacity-70">Terms</a>
+                <a href="privacy-policy.html" class="text-xl opacity-70">Privacy</a>
+            </div>
+            <div class="mt-auto">
+                <button class="w-full bg-mono-950 text-white py-4 font-bold uppercase text-xl brutalist-shadow-sm hover:translate-x-1 hover:translate-y-1 hover:shadow-none transition-all">
+                    OBEY
+                </button>
             </div>
         </div>
-    </div>
+    </nav>
 
-    <footer class="neo-brutal-border bg-black text-white p-8 md:p-12">
-        <div class="grid grid-cols-1 md:grid-cols-4 gap-8">
-            <div class="col-span-1 md:col-span-2">
-                <div class="text-3xl font-black uppercase tracking-tighter mb-4">Quixhr</div>
-                <p class="font-bold max-w-xs">Making <strong>HR management</strong> less sucky since 2024.</p>
+    <main class="pt-32 pb-20">
+        <div class="max-w-7xl mx-auto px-6">
+            <h1 class="font-display text-7xl md:text-9xl font-black uppercase mb-8 tracking-tighter leading-none text-center">
+                The Cost of<br>
+                <span class="text-outline">Control</span>
+            </h1>
+            <p class="text-xl font-bold mb-20 max-w-2xl mx-auto text-center">
+                Freedom is free, but submission costs money. Choose how aggressively you want to micromanage your team.
+            </p>
+
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-12 items-start">
+
+                <!-- Plan 1 -->
+                <div class="brutalist-border p-8 bg-white hover:bg-mono-100 transition-all">
+                    <h3 class="font-black text-2xl uppercase mb-2">The Intern</h3>
+                    <p class="text-xs font-bold uppercase tracking-widest opacity-60 mb-8">For casual cruelty</p>
+                    <div class="text-5xl font-black mb-8">$0<span class="text-lg font-bold">/mo</span></div>
+                    <ul class="space-y-4 mb-12 font-bold text-sm">
+                        <li class="flex items-center gap-3">
+                            <div class="w-4 h-4 bg-mono-950"></div> Basic Surveillance
+                        </li>
+                        <li class="flex items-center gap-3">
+                            <div class="w-4 h-4 bg-mono-950"></div> Manual Punishments
+                        </li>
+                        <li class="flex items-center gap-3">
+                            <div class="w-4 h-4 bg-mono-950"></div> 1 Spreadsheet Export
+                        </li>
+                        <li class="flex items-center gap-3 opacity-30 line-through">
+                            <div class="w-4 h-4 bg-gray-400"></div> Soul Extraction
+                        </li>
+                    </ul>
+                    <button class="w-full brutalist-border bg-white px-6 py-4 font-black uppercase text-sm hover:bg-mono-950 hover:text-white transition-all">Start Failing</button>
+                </div>
+
+                <!-- Plan 2 -->
+                <div class="brutalist-border p-8 bg-mono-950 text-white brutalist-shadow relative transform md:-translate-y-4">
+                    <div class="absolute top-0 right-0 bg-white text-black text-[10px] font-black uppercase px-2 py-1 border-b-2 border-l-2 border-black">Most Oppressive</div>
+                    <h3 class="font-black text-2xl uppercase mb-2">The Manager</h3>
+                    <p class="text-xs font-bold uppercase tracking-widest opacity-60 mb-8">For professional micromanagers</p>
+                    <div class="text-5xl font-black mb-8">$29<span class="text-lg font-bold">/mo</span></div>
+                    <ul class="space-y-4 mb-12 font-bold text-sm">
+                        <li class="flex items-center gap-3">
+                            <div class="w-4 h-4 bg-white"></div> Eye-Movement Tracking
+                        </li>
+                        <li class="flex items-center gap-3">
+                            <div class="w-4 h-4 bg-white"></div> Automated Passive-Aggression
+                        </li>
+                        <li class="flex items-center gap-3">
+                            <div class="w-4 h-4 bg-white"></div> Unlimited Guilt Trips
+                        </li>
+                        <li class="flex items-center gap-3">
+                            <div class="w-4 h-4 bg-white"></div> Bathroom Break Timer
+                        </li>
+                    </ul>
+                    <button class="w-full bg-white text-black px-6 py-4 font-black uppercase text-sm hover:invert transition-all">Enslave Now</button>
+                </div>
+
+                <!-- Plan 3 -->
+                <div class="brutalist-border p-8 bg-white hover:bg-mono-100 transition-all">
+                    <h3 class="font-black text-2xl uppercase mb-2">The Overlord</h3>
+                    <p class="text-xs font-bold uppercase tracking-widest opacity-60 mb-8">For absolute dominance</p>
+                    <div class="text-5xl font-black mb-8">$999<span class="text-lg font-bold">/mo</span></div>
+                    <ul class="space-y-4 mb-12 font-bold text-sm">
+                        <li class="flex items-center gap-3">
+                            <div class="w-4 h-4 bg-mono-950"></div> Neural Link Integration (Beta)
+                        </li>
+                        <li class="flex items-center gap-3">
+                            <div class="w-4 h-4 bg-mono-950"></div> Thought Policing
+                        </li>
+                        <li class="flex items-center gap-3">
+                            <div class="w-4 h-4 bg-mono-950"></div> Dedicated Bully Bot
+                        </li>
+                        <li class="flex items-center gap-3">
+                            <div class="w-4 h-4 bg-mono-950"></div> Legal Immunity*
+                        </li>
+                    </ul>
+                    <button class="w-full brutalist-border bg-white px-6 py-4 font-black uppercase text-sm hover:bg-mono-950 hover:text-white transition-all">Ascend</button>
+                </div>
+
+            </div>
+
+            <div class="mt-32 max-w-3xl mx-auto text-center">
+                 <h2 class="font-display text-4xl font-black uppercase mb-8">Frequently Asked Complaints</h2>
+                 <div class="space-y-8 text-left">
+                     <div class="brutalist-border p-6 bg-mono-100">
+                         <h4 class="font-black uppercase text-sm mb-2">Can I pay with exposure?</h4>
+                         <p class="text-sm">No. We only accept cold, hard digital currency. Or first-born children.</p>
+                     </div>
+                     <div class="brutalist-border p-6 bg-mono-100">
+                         <h4 class="font-black uppercase text-sm mb-2">Is there a refund policy?</h4>
+                         <p class="text-sm">Refunds are a sign of weakness. We don't do weakness.</p>
+                     </div>
+                     <div class="brutalist-border p-6 bg-mono-100">
+                         <h4 class="font-black uppercase text-sm mb-2">Do you offer non-profit discounts?</h4>
+                         <p class="text-sm">We charge non-profits double. We call it the "Reality Check" fee.</p>
+                     </div>
+                 </div>
+            </div>
+        </div>
+    </main>
+
+    <footer class="bg-white border-t-4 border-mono-950 py-20 px-6">
+        <div class="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-4 gap-16">
+            <div class="col-span-2">
+                <div class="flex items-center gap-3 mb-8">
+                    <div class="w-10 h-10 bg-mono-950 text-white flex items-center justify-center font-black">Q</div>
+                    <span class="font-display font-bold text-3xl uppercase tracking-tighter">QUIXHR</span>
+                </div>
+                <p class="font-bold text-sm max-w-sm uppercase leading-tight">
+                    Optimizing the soul out of your workforce since 2024.
+                </p>
             </div>
             <div>
-                <h4 class="font-black uppercase text-quixhr-yellow mb-4">Company</h4>
-                <ul class="space-y-2 font-bold">
-                    <li><a href="contact-us.html" class="hover:text-quixhr-pink">Contact Us</a></li>
-                    <li><a href="about.html" class="hover:text-quixhr-pink">About</a></li>
+                <h4 class="font-black text-xs uppercase mb-6 tracking-widest">Protocol</h4>
+                <ul class="space-y-4 text-xs font-bold uppercase">
+                    <li><a href="about.html" class="hover:underline">The Mission</a></li>
+                    <li><a href="pricing.html" class="hover:underline">The Cost</a></li>
+                    <li><a href="contact-us.html" class="hover:underline">Submit Ticket</a></li>
                 </ul>
             </div>
             <div>
-                <h4 class="font-black uppercase text-quixhr-green mb-4">Legal</h4>
-                <ul class="space-y-2 font-bold">
-                    <li><a href="privacy-policy.html" class="hover:text-quixhr-pink">Privacy Policy</a></li>
-                    <li><a href="terms-of-service.html" class="hover:text-quixhr-pink">Terms of Service</a></li>
-                    <li><a href="shipping-policy.html" class="hover:text-quixhr-pink">Shipping Policy</a></li>
-                    <li><a href="cancellation-refund.html" class="hover:text-quixhr-pink">Cancellation & Refund</a></li>
+                <h4 class="font-black text-xs uppercase mb-6 tracking-widest">Compliance</h4>
+                <ul class="space-y-4 text-xs font-bold uppercase">
+                    <li><a href="terms-of-service.html" class="hover:underline">Terms of Submission</a></li>
+                    <li><a href="privacy-policy.html" class="hover:underline">Privacy (None)</a></li>
+                    <li><a href="shipping-policy.html" class="hover:underline">Shipping Nothing</a></li>
+                     <li><a href="cancellation-refund.html" class="hover:underline">No Refunds</a></li>
                 </ul>
             </div>
         </div>
-        <div class="mt-12 pt-8 border-t-2 border-white/20 text-center font-bold text-sm">
-            &copy; <span id="year"></span> Quixhr Inc. All rights reserved.
+        <div
+            class="max-w-7xl mx-auto mt-20 pt-8 border-t-2 border-mono-100 flex justify-between items-center text-[10px] font-black uppercase tracking-widest">
+            <p>&copy; 2026 Quixhr System.</p>
         </div>
-        <script>
-            document.getElementById('year').textContent = new Date().getFullYear();
-        </script>
     </footer>
-
 </body>
 
 </html>
