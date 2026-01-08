@@ -1,4 +1,5 @@
-import api, { ApiResponse } from '../api';
+import api from '../api';
+import { ApiResponse, ApiError } from '@/types/api';
 
 export interface Leave {
     id: string;
@@ -26,24 +27,48 @@ export interface LeaveListResponse {
 export const leavesService = {
     // Get leaves for current user
     getMyLeaves: async (page = 1, limit = 10, status?: string): Promise<ApiResponse<LeaveListResponse>> => {
-        const response = await api.get('/me/leaves/requests', {
-            params: { page, limit, status }
-        });
-        return response.data;
+        try {
+            const response = await api.get<ApiResponse<LeaveListResponse>>('/me/leaves/requests', {
+                params: { page, limit, status }
+            });
+            return response.data;
+        } catch (error: any) {
+            throw new ApiError(
+                error.response?.data?.message || 'Failed to fetch leaves',
+                error.response?.data?.status,
+                error.response?.status
+            );
+        }
     },
 
     // Get leave balance for current user
     getMyLeaveBalance: async (year?: number): Promise<ApiResponse<any>> => {
-        const response = await api.get('/me/leaves/balance', {
-            params: { year }
-        });
-        return response.data;
+        try {
+            const response = await api.get<ApiResponse<any>>('/me/leaves/balance', {
+                params: { year }
+            });
+            return response.data;
+        } catch (error: any) {
+            throw new ApiError(
+                error.response?.data?.message || 'Failed to fetch leave balance',
+                error.response?.data?.status,
+                error.response?.status
+            );
+        }
     },
 
     // Get leave policies for current user
     getMyLeavePolicies: async (): Promise<ApiResponse<any>> => {
-        const response = await api.get('/me/leaves/policies');
-        return response.data;
+        try {
+            const response = await api.get<ApiResponse<any>>('/me/leaves/policies');
+            return response.data;
+        } catch (error: any) {
+            throw new ApiError(
+                error.response?.data?.message || 'Failed to fetch leave policies',
+                error.response?.data?.status,
+                error.response?.status
+            );
+        }
     },
 
     // Create a new leave request (Employee)
@@ -54,8 +79,16 @@ export const leavesService = {
         reason?: string;
         dayDetails?: any;
     }): Promise<ApiResponse<Leave>> => {
-        const response = await api.post('/me/leaves/requests', leaveData);
-        return response.data;
+        try {
+            const response = await api.post<ApiResponse<Leave>>('/me/leaves/requests', leaveData);
+            return response.data;
+        } catch (error: any) {
+            throw new ApiError(
+                error.response?.data?.message || 'Failed to create leave request',
+                error.response?.data?.status,
+                error.response?.status
+            );
+        }
     },
 
     // Get all leave requests for an organization (Admin/Manager)
@@ -73,14 +106,22 @@ export const leavesService = {
             search?: string;
         }
     ): Promise<ApiResponse<LeaveListResponse>> => {
-        const response = await api.get(`/org/${organizationId}/leaves`, {
-            params: {
-                page: params?.page || 1,
-                limit: params?.limit || 100,
-                ...params
-            }
-        });
-        return response.data;
+        try {
+            const response = await api.get<ApiResponse<LeaveListResponse>>(`/org/${organizationId}/leaves`, {
+                params: {
+                    page: params?.page || 1,
+                    limit: params?.limit || 100,
+                    ...params
+                }
+            });
+            return response.data;
+        } catch (error: any) {
+            throw new ApiError(
+                error.response?.data?.message || 'Failed to fetch organization leave requests',
+                error.response?.data?.status,
+                error.response?.status
+            );
+        }
     },
 
     // Update leave status (Admin/Manager) - Flat API
@@ -89,27 +130,43 @@ export const leavesService = {
         status: 'APPROVED' | 'REJECTED',
         remarks?: string
     ): Promise<ApiResponse<Leave>> => {
-        const response = await api.patch(`/leaves/requests/${requestId}/status`, { status, remarks });
-        return response.data;
+        try {
+            const response = await api.patch<ApiResponse<Leave>>(`/leaves/requests/${requestId}/status`, { status, remarks });
+            return response.data;
+        } catch (error: any) {
+            throw new ApiError(
+                error.response?.data?.message || 'Failed to update leave status',
+                error.response?.data?.status,
+                error.response?.status
+            );
+        }
     },
 
     // Delete a leave request (if pending)
     deleteLeave: async (requestId: string): Promise<ApiResponse<void>> => {
-        const response = await api.delete(`/me/leaves/requests/${requestId}`);
-        return response.data;
+        try {
+            const response = await api.delete<ApiResponse<void>>(`/me/leaves/requests/${requestId}`);
+            return response.data;
+        } catch (error: any) {
+            throw new ApiError(
+                error.response?.data?.message || 'Failed to delete leave request',
+                error.response?.data?.status,
+                error.response?.status
+            );
+        }
     },
 
     // Assign leave balance (admin) - Uses Allocation Endpoint technically
     assignLeaveBalance: async (data: { employeeId: string, type: string, allocated: number, year: number }): Promise<ApiResponse<any>> => {
-        // Need to check where this endpoint actually lives now. 
-        // Previously it was /leaves/assign-balance.
-        // It should probably be under allocations now.
-        // For now, restoring the previous path but noting it might need update if backend changed.
-        // Assuming /allocations is the right place but let's stick to what was there or leave it "broken" but typed to fix lint.
-        // Actually, looking at organizations.routes.ts, allocations are at /org/:orgId/allocations
-        // But this service call doesn't have orgId.
-        // Let's assume there is a flat or employee-scoped allocation route or just restore the old path.
-        const response = await api.post('/leaves/assign-balance', data);
-        return response.data;
+        try {
+            const response = await api.post<ApiResponse<any>>('/leaves/assign-balance', data);
+            return response.data;
+        } catch (error: any) {
+            throw new ApiError(
+                error.response?.data?.message || 'Failed to assign leave balance',
+                error.response?.data?.status,
+                error.response?.status
+            );
+        }
     }
 };

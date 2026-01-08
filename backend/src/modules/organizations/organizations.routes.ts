@@ -226,15 +226,7 @@ router.get(
     OrganizationController.getOrganizationAuditLogs
 );
 
-/**
- * @route   GET /api/v1/org/:organizationId/notifications
- */
-router.get(
-    '/:organizationId/notifications',
-    resolveTenant,
-    restrictTo(Role.ORG_ADMIN, Role.HR_ADMIN, Role.SUPER_ADMIN),
-    OrganizationController.getOrganizationNotifications
-);
+
 
 // =========================================================================
 // MEMBER MANAGEMENT ROUTES (Restricted Strict RBAC)

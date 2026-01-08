@@ -1,5 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import notificationService, { type Notification } from '../services/notification';
+import notificationService from '../services/notification';
+import { ApiError } from '@/types/api';
 
 /**
  * Hook to fetch user notifications
@@ -38,6 +39,9 @@ export function useMarkAsRead() {
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['notifications'] });
         },
+        onError: (error: ApiError | Error) => {
+            console.error("Mark as read failed:", error.message);
+        }
     });
 }
 
@@ -52,5 +56,8 @@ export function useMarkAllAsRead() {
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['notifications'] });
         },
+        onError: (error: ApiError | Error) => {
+            console.error("Mark all as read failed:", error.message);
+        }
     });
 }

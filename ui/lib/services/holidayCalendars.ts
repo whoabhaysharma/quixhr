@@ -1,4 +1,5 @@
-import api, { ApiResponse } from '../api';
+import api, { ApiResponse } from '../api'; // Used original import style for response but should use global type
+import { ApiResponse as GlobalApiResponse, ApiError } from '@/types/api';
 
 export interface HolidayCalendar {
     id: string;
@@ -32,15 +33,31 @@ export interface Holiday {
 
 export const holidayCalendarsService = {
     // Get all calendars for organization
-    getAllCalendars: async (): Promise<ApiResponse<{ calendars: HolidayCalendar[] }>> => {
-        const response = await api.get('/holiday-calendars');
-        return response.data;
+    getAllCalendars: async (): Promise<GlobalApiResponse<{ calendars: HolidayCalendar[] }>> => {
+        try {
+            const response = await api.get<GlobalApiResponse<{ calendars: HolidayCalendar[] }>>('/holiday-calendars');
+            return response.data;
+        } catch (error: any) {
+            throw new ApiError(
+                error.response?.data?.message || 'Failed to fetch holiday calendars',
+                error.response?.data?.status,
+                error.response?.status
+            );
+        }
     },
 
     // Get calendar by ID
-    getCalendarById: async (id: string): Promise<ApiResponse<{ calendar: HolidayCalendar }>> => {
-        const response = await api.get(`/holiday-calendars/${id}`);
-        return response.data;
+    getCalendarById: async (id: string): Promise<GlobalApiResponse<{ calendar: HolidayCalendar }>> => {
+        try {
+            const response = await api.get<GlobalApiResponse<{ calendar: HolidayCalendar }>>(`/holiday-calendars/${id}`);
+            return response.data;
+        } catch (error: any) {
+            throw new ApiError(
+                error.response?.data?.message || 'Failed to fetch calendar details',
+                error.response?.data?.status,
+                error.response?.status
+            );
+        }
     },
 
     // Create calendar
@@ -48,9 +65,17 @@ export const holidayCalendarsService = {
         name: string;
         description?: string;
         year: number;
-    }): Promise<ApiResponse<{ calendar: HolidayCalendar }>> => {
-        const response = await api.post('/holiday-calendars', data);
-        return response.data;
+    }): Promise<GlobalApiResponse<{ calendar: HolidayCalendar }>> => {
+        try {
+            const response = await api.post<GlobalApiResponse<{ calendar: HolidayCalendar }>>('/holiday-calendars', data);
+            return response.data;
+        } catch (error: any) {
+            throw new ApiError(
+                error.response?.data?.message || 'Failed to create holiday calendar',
+                error.response?.data?.status,
+                error.response?.status
+            );
+        }
     },
 
     // Update calendar
@@ -61,23 +86,47 @@ export const holidayCalendarsService = {
             description?: string;
             year?: number;
         }
-    ): Promise<ApiResponse<{ calendar: HolidayCalendar }>> => {
-        const response = await api.put(`/holiday-calendars/${id}`, data);
-        return response.data;
+    ): Promise<GlobalApiResponse<{ calendar: HolidayCalendar }>> => {
+        try {
+            const response = await api.put<GlobalApiResponse<{ calendar: HolidayCalendar }>>(`/holiday-calendars/${id}`, data);
+            return response.data;
+        } catch (error: any) {
+            throw new ApiError(
+                error.response?.data?.message || 'Failed to update holiday calendar',
+                error.response?.data?.status,
+                error.response?.status
+            );
+        }
     },
 
     // Delete calendar
-    deleteCalendar: async (id: string): Promise<ApiResponse<{ message: string }>> => {
-        const response = await api.delete(`/holiday-calendars/${id}`);
-        return response.data;
+    deleteCalendar: async (id: string): Promise<GlobalApiResponse<{ message: string }>> => {
+        try {
+            const response = await api.delete<GlobalApiResponse<{ message: string }>>(`/holiday-calendars/${id}`);
+            return response.data;
+        } catch (error: any) {
+            throw new ApiError(
+                error.response?.data?.message || 'Failed to delete holiday calendar',
+                error.response?.data?.status,
+                error.response?.status
+            );
+        }
     },
 
     // Assign calendar to users
     assignCalendarToUsers: async (
         calendarId: string,
         userIds: string[]
-    ): Promise<ApiResponse<{ message: string }>> => {
-        const response = await api.post(`/holiday-calendars/${calendarId}/assign`, { userIds });
-        return response.data;
+    ): Promise<GlobalApiResponse<{ message: string }>> => {
+        try {
+            const response = await api.post<GlobalApiResponse<{ message: string }>>(`/holiday-calendars/${calendarId}/assign`, { userIds });
+            return response.data;
+        } catch (error: any) {
+            throw new ApiError(
+                error.response?.data?.message || 'Failed to assign calendar to users',
+                error.response?.data?.status,
+                error.response?.status
+            );
+        }
     },
 };

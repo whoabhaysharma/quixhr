@@ -475,29 +475,27 @@ export class MeService {
      * Get notifications
      */
     static async getNotifications(userId: string, page: number = 1, limit: number = 10): Promise<NotificationsListResponseDto> {
-        const skip = (page - 1) * limit;
+        // We need to construct a ParsedPagination object to match NotificationService's expected input
+        const pagination = {
+            page,
+            limit,
+            skip: (page - 1) * limit,
+            sortBy: 'createdAt',
+            sortOrder: 'desc' as const,
+        };
 
-        const [notifications, total] = await Promise.all([
-            prisma.notification.findMany({
-                where: { userId },
-                skip,
-                take: limit,
-                orderBy: { createdAt: 'desc' },
-            }),
-            prisma.notification.count({
-                where: { userId },
-            }),
-        ]);
+        const result = await import('../notifications/notifications.service').then(m =>
+            m.NotificationService.getUserNotifications(userId, pagination, {})
+        );
 
-        const unreadCount = await prisma.notification.count({
-            where: {
-                userId,
-                isRead: false,
-            },
-        });
+        // Map the result to match NotificationsListResponseDto structure if needed
+        // NotificationService returns { data, pagination }
+        // We need { notifications, total, unreadCount }
+
+        const unreadCount = await this.getUnreadNotificationCount(userId);
 
         return {
-            notifications: notifications.map((n) => ({
+            notifications: result.data.map((n) => ({
                 id: n.id,
                 userId: n.userId,
                 title: n.title,
@@ -505,8 +503,8 @@ export class MeService {
                 isRead: n.isRead,
                 createdAt: n.createdAt,
             })),
-            total,
-            unreadCount,
+            total: result.pagination.total,
+            unreadCount: unreadCount.unreadCount,
         };
     }
 

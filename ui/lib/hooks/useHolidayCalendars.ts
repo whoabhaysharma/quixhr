@@ -1,6 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { holidayCalendarsService, HolidayCalendar } from '../services/holidayCalendars';
+import { holidayCalendarsService } from '../services/holidayCalendars';
 import { toast } from 'sonner';
+import { ApiError } from '@/types/api';
 
 export function useHolidayCalendars() {
     return useQuery({
@@ -10,7 +11,8 @@ export function useHolidayCalendars() {
                 const response = await holidayCalendarsService.getAllCalendars();
                 return response.data.calendars;
             } catch (error: any) {
-                toast.error(error.response?.data?.message || 'Failed to load holiday calendars');
+                const msg = error instanceof ApiError ? error.message : (error.message || 'Failed to load holiday calendars');
+                toast.error(msg);
                 throw error;
             }
         },
@@ -25,7 +27,8 @@ export function useHolidayCalendar(id: string) {
                 const response = await holidayCalendarsService.getCalendarById(id);
                 return response.data.calendar;
             } catch (error: any) {
-                toast.error(error.response?.data?.message || 'Failed to load holiday calendar details');
+                const msg = error instanceof ApiError ? error.message : (error.message || 'Failed to load holiday calendar details');
+                toast.error(msg);
                 throw error;
             }
         },
@@ -43,8 +46,9 @@ export function useCreateCalendar() {
             queryClient.invalidateQueries({ queryKey: ['holidayCalendars'] });
             toast.success('Holiday calendar created successfully');
         },
-        onError: (error: any) => {
-            toast.error(error.response?.data?.message || 'Failed to create holiday calendar');
+        onError: (error: ApiError | Error) => {
+            const msg = error.message || 'Failed to create holiday calendar';
+            toast.error(msg);
         },
     });
 }
@@ -65,8 +69,9 @@ export function useUpdateCalendar() {
             queryClient.invalidateQueries({ queryKey: ['holidayCalendars', variables.id] });
             toast.success('Holiday calendar updated successfully');
         },
-        onError: (error: any) => {
-            toast.error(error.response?.data?.message || 'Failed to update holiday calendar');
+        onError: (error: ApiError | Error) => {
+            const msg = error.message || 'Failed to update holiday calendar';
+            toast.error(msg);
         },
     });
 }
@@ -80,8 +85,9 @@ export function useDeleteCalendar() {
             queryClient.invalidateQueries({ queryKey: ['holidayCalendars'] });
             toast.success('Holiday calendar deleted successfully');
         },
-        onError: (error: any) => {
-            toast.error(error.response?.data?.message || 'Failed to delete holiday calendar');
+        onError: (error: ApiError | Error) => {
+            const msg = error.message || 'Failed to delete holiday calendar';
+            toast.error(msg);
         },
     });
 }
@@ -97,8 +103,9 @@ export function useAssignCalendar() {
             queryClient.invalidateQueries({ queryKey: ['members'] });
             toast.success('Calendar access updated successfully');
         },
-        onError: (error: any) => {
-            toast.error(error.response?.data?.message || 'Failed to update calendar access');
+        onError: (error: ApiError | Error) => {
+            const msg = error.message || 'Failed to update calendar access';
+            toast.error(msg);
         },
     });
 }

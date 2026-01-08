@@ -1,6 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { leavesService, Leave } from '../services/leaves'
 import { toast } from 'sonner'
+import { ApiError } from '@/types/api'
 
 // For Employee: Get my leaves
 export function useLeaves(userId?: string) {
@@ -8,12 +9,11 @@ export function useLeaves(userId?: string) {
         queryKey: ['my-leaves'],
         queryFn: async () => {
             try {
-                // userId is not needed for getMyLeaves as it uses the token
                 const response = await leavesService.getMyLeaves()
-                // Return the requests array
                 return response.data.requests
             } catch (error: any) {
-                toast.error(error.response?.data?.message || 'Failed to load leave records')
+                const msg = error instanceof ApiError ? error.message : (error.message || 'Failed to load leave records');
+                toast.error(msg)
                 throw error
             }
         },
@@ -39,25 +39,37 @@ export function useOrgLeaves(
         queryKey: ['org-leaves', organizationId, filters],
         queryFn: async () => {
             try {
-                // The backend returns a different structure for Org leaves: { data: [], pagination: {} }
                 const response = await leavesService.getOrgLeaveRequests(organizationId, filters)
-                const responseData = response.data as any; // Type assertion since service type is currently incorrectly typed for this endpoint
+                // The backend returns a structure like: { status, message, data: { requests: [], total: 0 } }
+                // So response.data IS the object { requests: [], total: 0 } if standardized
+                // Let's inspect response.data more closely based on service:
+                // createLeave -> ApiResponse<Leave>
+                // getOrgLeaveRequests -> ApiResponse<LeaveListResponse> where LeaveListResponse = { requests: [], total: number }
 
-                // Handle both possible structures (requests array or data array)
-                const rawRequests = responseData.requests || responseData.data || [];
+                // The service getOrgLeaveRequests returns Promise<ApiResponse<LeaveListResponse>>
+                // So response.data is LeaveListResponse which is { requests: Leave[], total: number }
+                // There is no need for `as any` or handling `responseData.data`.
+                const result = response.data;
+                const requests = result.requests || [];
 
-                // Map to frontend Leave interface
-                return rawRequests.map((req: any) => ({
+                // Map to frontend Leave interface if needed, or if backend types match we are good.
+                // Assuming backend now returns populated user/employee correctly in 'requests'
+                // If the backend structure is actually nesting 'data' again (e.g. paginated), we need to check.
+                // Based on `leaves.ts` service update, we expect ApiResponse<LeaveListResponse>.
+
+                // Just in case of legacy structure drift, we can robustly handle it, but better to trust types.
+                return requests.map((req: any) => ({
                     ...req,
-                    totalDays: req.daysTaken,
-                    user: req.employee ? {
+                    totalDays: req.daysTaken ?? req.totalDays, // fallback/compatibility
+                    user: req.user || (req.employee ? {
                         id: req.employee.id,
                         name: `${req.employee.firstName} ${req.employee.lastName}`.trim(),
-                        email: req.employee.code || 'N/A' // Fallback since email isn't in default query
-                    } : undefined
+                        email: req.employee.code || 'N/A'
+                    } : undefined)
                 }));
             } catch (error: any) {
-                toast.error(error.response?.data?.message || 'Failed to load organization leave requests')
+                const msg = error instanceof ApiError ? error.message : (error.message || 'Failed to load organization leave requests');
+                toast.error(msg)
                 throw error
             }
         },
@@ -75,16 +87,16 @@ export function useCreateLeave() {
             endDate: string
             reason?: string
             dayDetails?: any
-            customDates?: string[] // Kept for types, but should map to dayDetails or backend handles it
+            customDates?: string[]
         }) => leavesService.createLeave(data),
         onSuccess: () => {
-            // Invalidate and refetch leaves queries
             queryClient.invalidateQueries({ queryKey: ['my-leaves'] })
             queryClient.invalidateQueries({ queryKey: ['dashboard'] })
             toast.success('Leave request submitted successfully');
         },
-        onError: (error: any) => {
-            toast.error(error.response?.data?.message || 'Failed to submit leave request');
+        onError: (error: ApiError | Error) => {
+            const msg = error.message || 'Failed to submit leave request';
+            toast.error(msg);
         },
     })
 }
@@ -107,8 +119,9 @@ export function useUpdateLeaveStatus() {
             queryClient.invalidateQueries({ queryKey: ['dashboard'] })
             toast.success(`Leave request ${variables.status.toLowerCase()} successfully`);
         },
-        onError: (error: any) => {
-            toast.error(error.response?.data?.message || 'Failed to update leave status');
+        onError: (error: ApiError | Error) => {
+            const msg = error.message || 'Failed to update leave status';
+            toast.error(msg);
         },
     })
 }
@@ -123,8 +136,9 @@ export function useDeleteLeave() {
             queryClient.invalidateQueries({ queryKey: ['dashboard'] })
             toast.success('Leave request deleted successfully');
         },
-        onError: (error: any) => {
-            toast.error(error.response?.data?.message || 'Failed to delete leave request');
+        onError: (error: ApiError | Error) => {
+            const msg = error.message || 'Failed to delete leave request';
+            toast.error(msg);
         },
     })
 }
@@ -133,18 +147,14 @@ export function useAssignLeaveBalance() {
     const queryClient = useQueryClient()
 
     return useMutation({
-        // Note: assignLeaveBalance was removed from leavesService in previous step? 
-        // Let me check leavesService.ts content again.
-        // It seems I might have removed it from the service too.
-        // Re-adding it here assuming I will fix service or it exists.
-        // Actually, let's check service first to be safe.
         mutationFn: (data: { employeeId: string, type: string, allocated: number, year: number }) => leavesService.assignLeaveBalance(data),
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['org-leaves'] })
             toast.success('Leave balance assigned successfully');
         },
-        onError: (error: any) => {
-            toast.error(error.response?.data?.message || 'Failed to assign leave balance');
+        onError: (error: ApiError | Error) => {
+            const msg = error.message || 'Failed to assign leave balance';
+            toast.error(msg);
         },
     })
 }

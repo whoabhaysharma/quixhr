@@ -1,4 +1,5 @@
 import apiClient from '../api';
+import { ApiResponse, ApiError } from '@/types/api';
 
 export interface Notification {
     id: string;
@@ -12,13 +13,13 @@ export interface Notification {
 }
 
 export interface NotificationResponse {
-    success: boolean;
-    data: Notification[];
+    notifications: Notification[];
+    total: number;
+    unreadCount: number;
 }
 
 export interface UnreadCountResponse {
-    success: boolean;
-    data: { count: number };
+    count: number;
 }
 
 /**
@@ -28,37 +29,69 @@ export async function getNotifications(
     limit: number = 20,
     offset: number = 0,
     unreadOnly?: boolean
-): Promise<NotificationResponse> {
+): Promise<ApiResponse<NotificationResponse>> {
     const params = new URLSearchParams({
         limit: limit.toString(),
         offset: offset.toString(),
         ...(unreadOnly !== undefined ? { unreadOnly: unreadOnly.toString() } : {}),
     });
 
-    const response = await apiClient.get(`/notifications?${params}`);
-    return response.data;
+    try {
+        const response = await apiClient.get<ApiResponse<NotificationResponse>>(`/me/notifications?${params}`);
+        return response.data;
+    } catch (error: any) {
+        throw new ApiError(
+            error.response?.data?.message || 'Failed to fetch notifications',
+            error.response?.data?.status,
+            error.response?.status
+        );
+    }
 }
 
 /**
  * Get unread notification count
  */
-export async function getUnreadCount(): Promise<UnreadCountResponse> {
-    const response = await apiClient.get('/notifications/unread-count');
-    return response.data;
+export async function getUnreadCount(): Promise<ApiResponse<UnreadCountResponse>> {
+    try {
+        const response = await apiClient.get<ApiResponse<UnreadCountResponse>>('/me/notifications/unread-count');
+        return response.data;
+    } catch (error: any) {
+        throw new ApiError(
+            error.response?.data?.message || 'Failed to get unread count',
+            error.response?.data?.status,
+            error.response?.status
+        );
+    }
 }
 
 /**
  * Mark notification as read
  */
 export async function markAsRead(notificationId: string): Promise<void> {
-    await apiClient.patch(`/notifications/${notificationId}/read`);
+    try {
+        await apiClient.patch(`/notifications/${notificationId}/read`);
+    } catch (error: any) {
+        throw new ApiError(
+            error.response?.data?.message || 'Failed to mark notification as read',
+            error.response?.data?.status,
+            error.response?.status
+        );
+    }
 }
 
 /**
  * Mark all notifications as read
  */
 export async function markAllAsRead(): Promise<void> {
-    await apiClient.patch('/notifications/mark-all-read');
+    try {
+        await apiClient.patch('/notifications/mark-all-read');
+    } catch (error: any) {
+        throw new ApiError(
+            error.response?.data?.message || 'Failed to mark all notifications as read',
+            error.response?.data?.status,
+            error.response?.status
+        );
+    }
 }
 
 const notificationService = {

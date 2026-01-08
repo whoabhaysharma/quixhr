@@ -1,5 +1,19 @@
-import api, { ApiResponse, PaginatedResponse } from '../api';
+import api from '../api';
+import { ApiResponse, ApiError } from '@/types/api';
 import { Role } from '../constants/roles';
+
+export interface PaginatedResponse<T> {
+    success: boolean;
+    data: {
+        data: T;
+        pagination?: {
+            total: number;
+            page: number;
+            limit: number;
+            pages: number;
+        };
+    };
+}
 
 export interface Member {
     id: string;
@@ -22,14 +36,30 @@ export const membersService = {
         if (search) params.append('search', search);
 
         const url = organizationId ? `/org/${organizationId}/members` : '/members';
-        const response = await api.get(`${url}?${params.toString()}`);
-        return response.data;
+        try {
+            const response = await api.get<PaginatedResponse<Member[]>>(`${url}?${params.toString()}`);
+            return response.data;
+        } catch (error: any) {
+            throw new ApiError(
+                error.response?.data?.message || 'Failed to fetch members',
+                error.response?.data?.status,
+                error.response?.status
+            );
+        }
     },
 
     // Delete a member
     deleteMember: async (memberId: string): Promise<ApiResponse<void>> => {
-        const response = await api.delete(`/members/${memberId}`);
-        return response.data;
+        try {
+            const response = await api.delete<ApiResponse<void>>(`/members/${memberId}`);
+            return response.data;
+        } catch (error: any) {
+            throw new ApiError(
+                error.response?.data?.message || 'Failed to delete member',
+                error.response?.data?.status,
+                error.response?.status
+            );
+        }
     },
 
     // Update member role
@@ -37,8 +67,16 @@ export const membersService = {
         memberId: string,
         role: string
     ): Promise<ApiResponse<Member>> => {
-        const response = await api.patch(`/members/${memberId}/role`, { role });
-        return response.data;
+        try {
+            const response = await api.patch<ApiResponse<Member>>(`/members/${memberId}/role`, { role });
+            return response.data;
+        } catch (error: any) {
+            throw new ApiError(
+                error.response?.data?.message || 'Failed to update member role',
+                error.response?.data?.status,
+                error.response?.status
+            );
+        }
     },
 
     // Assign calendar to member
@@ -46,8 +84,16 @@ export const membersService = {
         memberId: string,
         calendarId: string
     ): Promise<ApiResponse<Member>> => {
-        const response = await api.patch(`/members/${memberId}/calendar`, { calendarId });
-        return response.data;
+        try {
+            const response = await api.patch<ApiResponse<Member>>(`/members/${memberId}/calendar`, { calendarId });
+            return response.data;
+        } catch (error: any) {
+            throw new ApiError(
+                error.response?.data?.message || 'Failed to assign calendar',
+                error.response?.data?.status,
+                error.response?.status
+            );
+        }
     },
 
     // Assign leave grade to member
@@ -55,7 +101,15 @@ export const membersService = {
         memberId: string,
         leaveGradeId: string
     ): Promise<ApiResponse<Member>> => {
-        const response = await api.patch(`/members/${memberId}/leave-grade`, { leaveGradeId });
-        return response.data;
+        try {
+            const response = await api.patch<ApiResponse<Member>>(`/members/${memberId}/leave-grade`, { leaveGradeId });
+            return response.data;
+        } catch (error: any) {
+            throw new ApiError(
+                error.response?.data?.message || 'Failed to assign leave grade',
+                error.response?.data?.status,
+                error.response?.status
+            );
+        }
     },
 };

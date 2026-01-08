@@ -94,6 +94,27 @@ export const markAllMyNotificationsAsRead = catchAsync(
 // =========================================================================
 
 /**
+ * @desc    Get all notifications (Super Admin only)
+ * @route   GET /api/v1/notifications
+ * @access  Protected (Super Admin only)
+ */
+export const getAllNotifications = catchAsync(
+    async (req: Request, res: Response, next: NextFunction) => {
+        const pagination = getPaginationParams(req);
+        const filters = {
+            isRead: req.query.isRead as 'true' | 'false' | undefined,
+        };
+
+        const result = await NotificationService.getAllNotifications(
+            pagination,
+            filters
+        );
+
+        sendResponse(res, 200, result, 'All notifications retrieved successfully');
+    }
+);
+
+/**
  * @desc    Get all notifications for an organization
  * @route   GET /api/v1/org/:organizationId/notifications
  * @access  Protected (Admin only)
@@ -128,15 +149,15 @@ export const getOrganizationNotifications = catchAsync(
  */
 export const getNotificationById = catchAsync(
     async (req: Request, res: Response, next: NextFunction) => {
-        const userId = (req as any).user?.userId;
-        if (!userId) {
+        const user = req.user;
+        if (!user) {
             return next(new AppError('User not authenticated', 401));
         }
 
         const { notificationId } = req.params;
         const notification = await NotificationService.getNotificationById(
             notificationId,
-            userId
+            user
         );
 
         sendResponse(res, 200, notification, 'Notification retrieved successfully');
@@ -150,13 +171,13 @@ export const getNotificationById = catchAsync(
  */
 export const deleteNotification = catchAsync(
     async (req: Request, res: Response, next: NextFunction) => {
-        const userId = (req as any).user?.userId;
-        if (!userId) {
+        const user = req.user;
+        if (!user) {
             return next(new AppError('User not authenticated', 401));
         }
 
         const { notificationId } = req.params;
-        await NotificationService.deleteNotification(notificationId, userId);
+        await NotificationService.deleteNotification(notificationId, user);
 
         sendResponse(res, 200, null, 'Notification deleted successfully');
     }
@@ -169,8 +190,8 @@ export const deleteNotification = catchAsync(
  */
 export const updateNotificationStatus = catchAsync(
     async (req: Request, res: Response, next: NextFunction) => {
-        const userId = (req as any).user?.userId;
-        if (!userId) {
+        const user = req.user;
+        if (!user) {
             return next(new AppError('User not authenticated', 401));
         }
 
@@ -183,7 +204,7 @@ export const updateNotificationStatus = catchAsync(
 
         const notification = await NotificationService.updateNotificationStatus(
             notificationId,
-            userId,
+            user,
             isRead
         );
 
@@ -198,13 +219,13 @@ export const updateNotificationStatus = catchAsync(
  */
 export const markAsRead = catchAsync(
     async (req: Request, res: Response, next: NextFunction) => {
-        const userId = (req as any).user?.userId;
-        if (!userId) {
+        const user = req.user;
+        if (!user) {
             return next(new AppError('User not authenticated', 401));
         }
 
         const { notificationId } = req.params;
-        const notification = await NotificationService.markAsRead(notificationId, userId);
+        const notification = await NotificationService.markAsRead(notificationId, user);
         sendResponse(res, 200, notification, 'Notification marked as read');
     }
 );
@@ -216,13 +237,13 @@ export const markAsRead = catchAsync(
  */
 export const markAsUnread = catchAsync(
     async (req: Request, res: Response, next: NextFunction) => {
-        const userId = (req as any).user?.userId;
-        if (!userId) {
+        const user = req.user;
+        if (!user) {
             return next(new AppError('User not authenticated', 401));
         }
 
         const { notificationId } = req.params;
-        const notification = await NotificationService.markAsUnread(notificationId, userId);
+        const notification = await NotificationService.markAsUnread(notificationId, user);
         sendResponse(res, 200, notification, 'Notification marked as unread');
     }
 );
@@ -234,13 +255,13 @@ export const markAsUnread = catchAsync(
  */
 export const markMultipleAsRead = catchAsync(
     async (req: Request, res: Response, next: NextFunction) => {
-        const userId = (req as any).user?.userId;
-        if (!userId) {
+        const user = req.user;
+        if (!user) {
             return next(new AppError('User not authenticated', 401));
         }
 
         const { notificationIds } = req.body;
-        const result = await NotificationService.markMultipleAsRead(userId, notificationIds);
+        const result = await NotificationService.markMultipleAsRead(user, notificationIds);
         sendResponse(res, 200, result, 'Notifications marked as read');
     }
 );

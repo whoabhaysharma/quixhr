@@ -1,4 +1,5 @@
-import api, { ApiResponse } from '../api';
+import api from '../api';
+import { ApiResponse, ApiError } from '@/types/api';
 
 export interface UserData {
     user: {
@@ -60,8 +61,15 @@ export interface RegisterResponse {
 export const authService = {
     // Login with email and password
     login: async (email: string, password: string): Promise<ApiResponse<LoginResponse>> => {
-        const response = await api.post('/auth/login', { email, password });
-        return response.data;
+        try {
+            const response = await api.post<ApiResponse<LoginResponse>>('/auth/login', { email, password });
+            return response.data;
+        } catch (error: any) {
+            const message = error.response?.data?.message || 'Invalid email or password';
+            const status = error.response?.data?.status || 'fail';
+            const statusCode = error.response?.status;
+            throw new ApiError(message, status, statusCode);
+        }
     },
 
     // Register new company/user
@@ -73,8 +81,15 @@ export const authService = {
         confirmPassword: string;
         organizationName: string;
     }): Promise<ApiResponse<RegisterResponse>> => {
-        const response = await api.post('/auth/register', data);
-        return response.data;
+        try {
+            const response = await api.post<ApiResponse<RegisterResponse>>('/auth/register', data);
+            return response.data;
+        } catch (error: any) {
+            const message = error.response?.data?.message || 'Registration failed';
+            const status = error.response?.data?.status || 'fail';
+            const statusCode = error.response?.status;
+            throw new ApiError(message, status, statusCode);
+        }
     },
 
     // Validate invite token (Get details)
@@ -83,8 +98,20 @@ export const authService = {
         role: string;
         organization: { name: string };
     }>> => {
-        const response = await api.get(`/invitations/verify/${token}`);
-        return response.data;
+        try {
+            const response = await api.get<ApiResponse<{
+                email: string;
+                role: string;
+                organization: { name: string };
+            }>>(`/invitations/verify/${token}`);
+            return response.data;
+        } catch (error: any) {
+            throw new ApiError(
+                error.response?.data?.message || 'Invalid or expired invite token',
+                error.response?.data?.status || 'fail',
+                error.response?.status
+            );
+        }
     },
 
     // Accept invite and register new user
@@ -93,31 +120,71 @@ export const authService = {
         name: string;
         password: string;
     }): Promise<ApiResponse<LoginResponse>> => {
-        // Invitations module handles acceptance
-        const response = await api.post('/invitations/accept', data);
-        return response.data;
+        try {
+            // Invitations module handles acceptance
+            const response = await api.post<ApiResponse<LoginResponse>>('/invitations/accept', data);
+            return response.data;
+        } catch (error: any) {
+            throw new ApiError(
+                error.response?.data?.message || 'Failed to join organization',
+                error.response?.data?.status || 'fail',
+                error.response?.status
+            );
+        }
     },
 
     // Get current user - returns raw /me response
     getCurrentUser: async (): Promise<ApiResponse<UserData>> => {
-        const response = await api.get('/me');
-        return response.data;
+        try {
+            const response = await api.get<ApiResponse<UserData>>('/me');
+            return response.data;
+        } catch (error: any) {
+            throw new ApiError(
+                error.response?.data?.message || 'Failed to fetch user profile',
+                error.response?.data?.status || 'fail',
+                error.response?.status
+            );
+        }
     },
     // Forgot password
     forgotPassword: async (email: string): Promise<ApiResponse<string>> => {
-        const response = await api.post('/auth/forgot-password', { email });
-        return response.data;
+        try {
+            const response = await api.post<ApiResponse<string>>('/auth/forgot-password', { email });
+            return response.data;
+        } catch (error: any) {
+            throw new ApiError(
+                error.response?.data?.message || 'Failed to send reset link',
+                error.response?.data?.status || 'fail',
+                error.response?.status
+            );
+        }
     },
 
     // Reset password
     resetPassword: async (token: string, password: string, confirmPassword: string): Promise<ApiResponse<string>> => {
-        const response = await api.post('/auth/reset-password', { token, password, confirmPassword });
-        return response.data;
+        try {
+            const response = await api.post<ApiResponse<string>>('/auth/reset-password', { token, password, confirmPassword });
+            return response.data;
+        } catch (error: any) {
+            throw new ApiError(
+                error.response?.data?.message || 'Failed to reset password',
+                error.response?.data?.status || 'fail',
+                error.response?.status
+            );
+        }
     },
 
     // Verify email
     verifyEmail: async (token: string): Promise<ApiResponse<string>> => {
-        const response = await api.post('/auth/verify-email', { token });
-        return response.data;
+        try {
+            const response = await api.post<ApiResponse<string>>('/auth/verify-email', { token });
+            return response.data;
+        } catch (error: any) {
+            throw new ApiError(
+                error.response?.data?.message || 'Email verification failed',
+                error.response?.data?.status || 'fail',
+                error.response?.status
+            );
+        }
     },
 };

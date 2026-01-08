@@ -107,7 +107,7 @@ export function AppShell({
         return null
     }
 
-    const notifications = notificationsData?.data || []
+    const notifications = notificationsData?.data?.notifications || []
     const unreadCount = unreadCountData?.data?.count || 0
 
     const handleMarkAsRead = (notificationId: string) => {

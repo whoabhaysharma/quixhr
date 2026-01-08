@@ -1,6 +1,7 @@
 import { useMutation, useQuery } from '@tanstack/react-query'
 import { authService } from '../services/auth'
 import { toast } from 'sonner'
+import { ApiError } from '@/types/api'
 
 export function useCurrentUser(options?: { enabled?: boolean }) {
     return useQuery({
@@ -24,13 +25,12 @@ export function useLogin() {
         onSuccess: () => {
             toast.success('Logged in successfully');
         },
-        onError: (error: any) => {
-            toast.error(error.response?.data?.message || 'Invalid email or password');
+        onError: (error: ApiError | Error) => {
+            const msg = error.message || 'Invalid email or password';
+            toast.error(msg);
         },
     })
 }
-
-
 
 export function useRegister() {
     return useMutation({
@@ -45,8 +45,9 @@ export function useRegister() {
         onSuccess: () => {
             toast.success('Registration successful');
         },
-        onError: (error: any) => {
-            toast.error(error.response?.data?.message || 'Registration failed');
+        onError: (error: ApiError | Error) => {
+            const msg = error.message || 'Registration failed';
+            toast.error(msg);
         },
     })
 }
@@ -54,9 +55,10 @@ export function useRegister() {
 export function useValidateInvite() {
     return useMutation({
         mutationFn: (token: string) => authService.validateInvite(token),
-        onError: (error: any) => {
+        onError: (error: ApiError | Error) => {
             // Toast removed to avoid double error showing (handled in UI) or keep if desired
-            // toast.error(error.response?.data?.message || 'Invalid or expired invite token');
+            // const msg = error.message || 'Invalid or expired invite token';
+            // toast.error(msg);
         },
     })
 }
@@ -68,8 +70,9 @@ export function useAcceptInvite() {
         onSuccess: () => {
             toast.success('Account created and joined successfully');
         },
-        onError: (error: any) => {
-            toast.error(error.response?.data?.message || 'Failed to join organization');
+        onError: (error: ApiError | Error) => {
+            const msg = error.message || 'Failed to join organization';
+            toast.error(msg);
         },
     })
 }
@@ -80,8 +83,9 @@ export function useForgotPassword() {
         onSuccess: () => {
             toast.success('Password reset link sent to your email');
         },
-        onError: (error: any) => {
-            toast.error(error.response?.data?.message || 'Failed to send reset link');
+        onError: (error: ApiError | Error) => {
+            const msg = error.message || 'Failed to send reset link';
+            toast.error(msg);
         },
     })
 }
@@ -93,8 +97,9 @@ export function useResetPassword() {
         onSuccess: () => {
             toast.success('Password reset successfully');
         },
-        onError: (error: any) => {
-            toast.error(error.response?.data?.message || 'Failed to reset password');
+        onError: (error: ApiError | Error) => {
+            const msg = error.message || 'Failed to reset password';
+            toast.error(msg);
         },
     })
 }
@@ -114,11 +119,12 @@ export function useVerifyEmail() {
         },
         onSuccess: (data) => {
             console.log('useVerifyEmail: onSuccess called with data:', data)
-            toast.success(data.message || 'Email verified successfully');
+            toast.success(typeof data === 'string' ? data : (data as any).message || 'Email verified successfully');
         },
-        onError: (error: any) => {
+        onError: (error: ApiError | Error) => {
             console.error('useVerifyEmail: onError called with error:', error)
-            toast.error(error.response?.data?.error || 'Email verification failed');
+            const msg = error.message || 'Email verification failed';
+            toast.error(msg);
         },
     })
 }

@@ -3,12 +3,13 @@ import { membersService } from '../services/members'
 import { invitationService } from '../services/invitation'
 import { Role } from '@/lib/constants/roles'
 import { toast } from 'sonner'
+import { ApiError } from '@/types/api' // Import consistent error type
 
 import { useAuth } from '@/context/auth-context'
 
 export function useMembers(options?: { enabled?: boolean }) {
     const { user } = useAuth()
-    const organizationId = user?.organizationId || user?.employee?.organizationId
+    const organizationId = user?.organization?.id || user?.employee?.organizationId
 
     return useQuery({
         queryKey: ['members', organizationId],
@@ -17,8 +18,9 @@ export function useMembers(options?: { enabled?: boolean }) {
                 const response = await membersService.getAllMembers(organizationId)
                 return response
             } catch (error: any) {
-                const errorMessage = error.response?.data?.error || error.response?.data?.message || 'Failed to load members list'
-                toast.error(errorMessage)
+                // Services now throw ApiError or Error with a message
+                const msg = error instanceof ApiError ? error.message : (error.message || 'Failed to load members list');
+                toast.error(msg)
                 throw error
             }
         },
@@ -29,7 +31,7 @@ export function useMembers(options?: { enabled?: boolean }) {
 export function useSendInvite() {
     const queryClient = useQueryClient()
     const { user } = useAuth()
-    const organizationId = user?.organizationId || user?.employee?.organizationId
+    const organizationId = user?.organization?.id || user?.employee?.organizationId
 
     return useMutation({
         mutationFn: (data: { email: string; role: Role }) => {
@@ -42,8 +44,8 @@ export function useSendInvite() {
             queryClient.invalidateQueries({ queryKey: ['invitations'] })
             toast.success('Invitation sent successfully');
         },
-        onError: (error: any) => {
-            const errorMessage = error.response?.data?.error || error.response?.data?.message || 'Failed to send invitation';
+        onError: (error: ApiError | Error) => {
+            const errorMessage = error.message || 'Failed to send invitation';
             toast.error(errorMessage);
         },
     })
@@ -58,8 +60,8 @@ export function useDeleteMember() {
             queryClient.invalidateQueries({ queryKey: ['members'] })
             toast.success('Member removed successfully');
         },
-        onError: (error: any) => {
-            const errorMessage = error.response?.data?.error || error.response?.data?.message || 'Failed to remove member';
+        onError: (error: ApiError | Error) => {
+            const errorMessage = error.message || 'Failed to remove member';
             toast.error(errorMessage);
         },
     })
@@ -80,8 +82,8 @@ export function useUpdateMemberRole() {
             queryClient.invalidateQueries({ queryKey: ['members'] })
             toast.success('Member role updated successfully');
         },
-        onError: (error: any) => {
-            const errorMessage = error.response?.data?.error || error.response?.data?.message || 'Failed to update member role';
+        onError: (error: ApiError | Error) => {
+            const errorMessage = error.message || 'Failed to update member role';
             toast.error(errorMessage);
         },
     })
@@ -91,13 +93,22 @@ export function useInvitations() {
     return useQuery({
         queryKey: ['invitations'],
         queryFn: async () => {
-            const response = await invitationService.getAll()
-            console.log("DEBUG: useInvitations response", response)
-            // Backend returns: { success: true, data: { data: [], pagination: {} } }
-            // response.data is the 'data' field of the body
-            const result = response.data?.data;
-            console.log("DEBUG: useInvitations extracted result", result)
-            return Array.isArray(result) ? result : []
+            try {
+                const response = await invitationService.getAll()
+                // Backend returns: { status: 'success', data: { data: [], pagination: {} } }
+                // response.data is the 'data' field of the body
+                const result = response.data;
+                // Since the service already returns response.data, let's check structure
+                // With new typing: invitationService.getAll() returns ApiResponse<any>
+                // So response.data is { data: [], pagination: ... } if standardized,
+                // OR likely response.data IS the array if the backend structure is flat
+                // Let's assume standard { data: [], pagination: {} } -> returns data property.
+                return Array.isArray(result) ? result : (result?.data || [])
+            } catch (error: any) {
+                const msg = error instanceof ApiError ? error.message : (error.message || 'Failed to load invitations');
+                toast.error(msg)
+                throw error
+            }
         }
     })
 }
@@ -110,8 +121,8 @@ export function useResendInvitation() {
         onSuccess: () => {
             toast.success('Invitation resent successfully')
         },
-        onError: (error: any) => {
-            const errorMessage = error.response?.data?.error || error.response?.data?.message || 'Failed to resend invitation'
+        onError: (error: ApiError | Error) => {
+            const errorMessage = error.message || 'Failed to resend invitation'
             toast.error(errorMessage)
         }
     })
@@ -126,8 +137,8 @@ export function useDeleteInvitation() {
             queryClient.invalidateQueries({ queryKey: ['invitations'] })
             toast.success('Invitation removed successfully')
         },
-        onError: (error: any) => {
-            const errorMessage = error.response?.data?.error || error.response?.data?.message || 'Failed to remove invitation'
+        onError: (error: ApiError | Error) => {
+            const errorMessage = error.message || 'Failed to remove invitation'
             toast.error(errorMessage)
         }
     })
@@ -143,8 +154,8 @@ export function useAssignCalendar() {
             queryClient.invalidateQueries({ queryKey: ['members'] })
             toast.success('Calendar assigned successfully')
         },
-        onError: (error: any) => {
-            const errorMessage = error.response?.data?.error || error.response?.data?.message || 'Failed to assign calendar'
+        onError: (error: ApiError | Error) => {
+            const errorMessage = error.message || 'Failed to assign calendar'
             toast.error(errorMessage)
         }
     })

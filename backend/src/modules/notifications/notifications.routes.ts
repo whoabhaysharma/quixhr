@@ -1,13 +1,15 @@
 import { Router } from 'express';
-import { protect } from '@/shared/middleware/auth.middleware';
+import { protect, restrictTo } from '@/shared/middleware/auth.middleware';
+import { Role } from '@prisma/client';
 import {
     getNotificationById,
     updateNotificationStatus,
     markAsRead,
     markAsUnread,
+    deleteNotification,
     markMultipleAsRead,
     markAllAsRead,
-    deleteNotification,
+    getAllNotifications,
 } from './notifications.controller';
 
 const router = Router();
@@ -15,6 +17,18 @@ const router = Router();
 // =========================================================================
 // FLAT ROUTES - /api/v1/notifications - Direct notification access by ID
 // =========================================================================
+
+/**
+ * @desc    Get all notifications (Super Admin only)
+ * @route   GET /api/v1/notifications
+ * @access  Protected, Restricted to SUPER_ADMIN
+ */
+router.get(
+    '/notifications',
+    protect,
+    restrictTo(Role.SUPER_ADMIN),
+    getAllNotifications
+);
 
 /**
  * @desc    Get a single notification by ID
