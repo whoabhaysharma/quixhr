@@ -67,25 +67,30 @@ export interface EmployeeStats {
     }>;
 }
 
-export const dashboardService = {
-    // Get dashboard statistics (Role based)
-    getStats: async (): Promise<ApiResponse<AdminStats | EmployeeStats>> => {
-        try {
-            const response = await api.get<ApiResponse<AdminStats | EmployeeStats>>('/dashboard/stats');
-            return response.data;
-        } catch (error: any) {
-            throw new ApiError(
-                error.response?.data?.message || 'Failed to fetch dashboard stats',
-                error.response?.data?.status || 'fail',
-                error.response?.status
-            );
-        }
-    },
+export interface AvailabilityData {
+    dates: {
+        date: string;
+        dayName: string;
+    }[];
+    employees: {
+        id: string;
+        name: string;
+        role: string;
+        dept: string;
+        avatar: string;
+        availability: string[];
+    }[];
+}
 
-    // Legacy support or specific if needed (deprecated)
-    getAdminStats: async (companyId?: string): Promise<ApiResponse<AdminStats>> => {
+// Get dashboard statistics (Role based)
+// NOTE: This usually requires context to know IF we are acting as admin or employee.
+// Ideally this refactoring implies the frontend knows "Who am I" and calls distinct methods.
+
+export const dashboardService = {
+    // Get Admin Stats
+    getAdminStats: async (organizationId: string): Promise<ApiResponse<AdminStats>> => {
         try {
-            const response = await api.get<ApiResponse<AdminStats>>('/dashboard/stats');
+            const response = await api.get<ApiResponse<AdminStats>>(`/org/${organizationId}/dashboard/stats`);
             return response.data;
         } catch (error: any) {
             throw new ApiError(
@@ -99,7 +104,7 @@ export const dashboardService = {
     // Get employee dashboard statistics
     getEmployeeStats: async (): Promise<ApiResponse<EmployeeStats>> => {
         try {
-            const response = await api.get<ApiResponse<EmployeeStats>>('/dashboard/stats');
+            const response = await api.get<ApiResponse<EmployeeStats>>('/me/dashboard');
             return response.data;
         } catch (error: any) {
             throw new ApiError(
@@ -109,4 +114,35 @@ export const dashboardService = {
             );
         }
     },
+
+    getAvailability: async (organizationId: string, startDate?: string, endDate?: string): Promise<AvailabilityData> => {
+        try {
+            const query = new URLSearchParams();
+            if (startDate) query.append('startDate', startDate);
+            if (endDate) query.append('endDate', endDate);
+
+            const response = await api.get<ApiResponse<AvailabilityData>>(`/org/${organizationId}/dashboard/availability?${query.toString()}`);
+            return response.data.data!;
+        } catch (error: any) {
+            throw new ApiError(
+                error.response?.data?.message || 'Failed to fetch availability',
+                error.response?.data?.status || 'fail',
+                error.response?.status
+            );
+        }
+    },
+
+    // Super Admin Stats
+    getSuperAdminStats: async (): Promise<ApiResponse<any>> => {
+        try {
+            const response = await api.get<ApiResponse<any>>('/dashboard/stats');
+            return response.data;
+        } catch (error: any) {
+            throw new ApiError(
+                error.response?.data?.message || 'Failed to fetch super admin stats',
+                error.response?.data?.status || 'fail',
+                error.response?.status
+            );
+        }
+    }
 };

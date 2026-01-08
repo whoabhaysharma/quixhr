@@ -17,6 +17,7 @@ import {
     LeaveDistributionWidget,
     PendingActionsWidget
 } from "@/components/dashboard/DashboardWidgets"
+import { AvailabilityWeekView } from "@/components/dashboard/AvailabilityWeekView"
 
 export default function AdminDashboardView({ user, stats, leaves }: any) {
     const presentCount = stats?.presentToday || 0
@@ -89,8 +90,11 @@ export default function AdminDashboardView({ user, stats, leaves }: any) {
             <div className="grid grid-cols-1 xl:grid-cols-3 gap-8">
                 {/* Main Column: Pending Action + Leave Stats */}
                 <div className="xl:col-span-2 space-y-8">
+                    {/* People Availability Week View */}
+                    <AvailabilityWeekView />
+
                     {/* Action Center - Coming Soon */}
-                    <div className="relative group overflow-hidden rounded-xl">
+                    <div className="relative group overflow-hidden rounded-xl hidden">
                         <div className="blur-[2px] pointer-events-none">
                             <PendingActionsWidget leaves={leaves} />
                         </div>

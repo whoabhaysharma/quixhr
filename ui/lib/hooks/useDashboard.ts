@@ -2,19 +2,20 @@ import { useQuery } from '@tanstack/react-query'
 import { dashboardService, AdminStats, EmployeeStats } from '../services/dashboard'
 import { ApiError } from '@/types/api'
 
-export function useAdminStats() {
+export function useAdminStats(organizationId?: string) {
     return useQuery({
-        queryKey: ['dashboard', 'stats'],
+        queryKey: ['dashboard', 'stats', organizationId],
         queryFn: async () => {
+            if (!organizationId) throw new Error("Organization ID is required");
             try {
-                const response = await dashboardService.getStats()
+                const response = await dashboardService.getAdminStats(organizationId)
                 return response.data as AdminStats
             } catch (error: any) {
                 console.error("Failed to fetch dashboard stats:", error);
-                // error is likely ApiError now
                 throw error
             }
-        }
+        },
+        enabled: !!organizationId
     })
 }
 

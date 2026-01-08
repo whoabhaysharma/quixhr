@@ -8,7 +8,8 @@ import { Loader2 } from "lucide-react"
 
 export default function AdminDashboardPage() {
     const { user } = useAuth()
-    const { data: stats, isLoading, error } = useAdminStats()
+    const organizationId = user?.organization?.id || user?.employee?.organizationId;
+    const { data: stats, isLoading, error } = useAdminStats(organizationId)
 
     if (isLoading) {
         return (
