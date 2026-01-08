@@ -535,6 +535,114 @@ export class MeService {
     }
 
     /**
+     * Get unread notification count
+     */
+    static async getUnreadNotificationCount(userId: string) {
+        const unreadCount = await prisma.notification.count({
+            where: {
+                userId,
+                isRead: false,
+            },
+        });
+
+        return { unreadCount };
+    }
+
+    /**
+     * Mark multiple notifications as read
+     */
+    static async markNotificationsAsRead(userId: string, notificationIds: string[]) {
+        // Verify all notifications belong to the user
+        const notifications = await prisma.notification.findMany({
+            where: {
+                id: { in: notificationIds },
+            },
+        });
+
+        const invalidIds = notifications.filter(n => n.userId !== userId);
+        if (invalidIds.length > 0) {
+            throw new AppError('Some notifications do not belong to you', 403);
+        }
+
+        await prisma.notification.updateMany({
+            where: {
+                id: { in: notificationIds },
+                userId,
+            },
+            data: {
+                isRead: true,
+            },
+        });
+
+        return { updated: notificationIds.length };
+    }
+
+    /**
+     * Mark all notifications as read
+     */
+    static async markAllNotificationsAsRead(userId: string) {
+        const result = await prisma.notification.updateMany({
+            where: {
+                userId,
+                isRead: false,
+            },
+            data: {
+                isRead: true,
+            },
+        });
+
+        return { updated: result.count };
+    }
+
+    /**
+     * Mark notification as unread
+     */
+    static async markNotificationAsUnread(userId: string, notificationId: string) {
+        const notification = await prisma.notification.findUnique({
+            where: { id: notificationId },
+        });
+
+        if (!notification) {
+            throw new AppError('Notification not found', 404);
+        }
+
+        if (notification.userId !== userId) {
+            throw new AppError('Not authorized to update this notification', 403);
+        }
+
+        const updatedNotification = await prisma.notification.update({
+            where: { id: notificationId },
+            data: { isRead: false },
+        });
+
+        return updatedNotification;
+    }
+
+    /**
+     * Update notification status (read/unread)
+     */
+    static async updateNotificationStatus(userId: string, notificationId: string, isRead: boolean) {
+        const notification = await prisma.notification.findUnique({
+            where: { id: notificationId },
+        });
+
+        if (!notification) {
+            throw new AppError('Notification not found', 404);
+        }
+
+        if (notification.userId !== userId) {
+            throw new AppError('Not authorized to update this notification', 403);
+        }
+
+        const updatedNotification = await prisma.notification.update({
+            where: { id: notificationId },
+            data: { isRead },
+        });
+
+        return updatedNotification;
+    }
+
+    /**
      * Get audit logs
      */
     static async getAuditLogs(userId: string, page: number = 1, limit: number = 10, action?: string, resource?: string): Promise<AuditLogsListResponseDto> {

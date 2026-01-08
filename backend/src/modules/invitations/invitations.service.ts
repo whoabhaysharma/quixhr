@@ -218,7 +218,34 @@ export class InvitationService {
                 data: { status: 'ACCEPTED' },
             });
 
+            // Queue notification for admins (ORG_ADMIN, HR_ADMIN, SUPER_ADMIN)
+            // Find admin users in the organization
+            const adminUsers = await tx.user.findMany({
+                where: {
+                    role: { in: ['ORG_ADMIN', 'HR_ADMIN', 'SUPER_ADMIN'] },
+                    employee: {
+                        organizationId: invitation.organizationId,
+                    },
+                },
+                select: {
+                    id: true,
+                },
+            });
 
+            // Queue notifications for all admins
+            const { addNotificationToQueue } = require('@/infra/notifications/notification.producer');
+            const { NotificationType } = require('@/infra/notifications/notification.messages');
+
+            for (const admin of adminUsers) {
+                await addNotificationToQueue(
+                    admin.id,
+                    NotificationType.INVITATION_ACCEPTED,
+                    {
+                        employeeName: `${userData.firstName} ${userData.lastName}`,
+                        email: invitation.email,
+                    }
+                );
+            }
 
             return { user, employee };
         });

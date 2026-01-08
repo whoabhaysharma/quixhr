@@ -24,6 +24,7 @@ import { allocationRoutes } from './modules/allocations';
 import { attendanceRoutes } from './modules/attendance';
 import { dashboardRoutes } from './modules/dashboard';
 import { adminRoutes } from './modules/admin';
+import { notificationRoutes } from './modules/notifications';
 import { apiLimiter } from './utils/rateLImiter';
 
 const app = express();
@@ -103,6 +104,7 @@ app.use('/api/v1/allocations', allocationRoutes);
 app.use('/api/v1/attendance', attendanceRoutes);
 app.use('/api/v1/dashboard', dashboardRoutes);
 app.use('/api/v1/admin', adminRoutes);
+app.use('/api/v1', notificationRoutes); // Handles /me/notifications, /org/:id/notifications, /notifications/:id
 
 // ==========================================
 // 3. ERROR HANDLING

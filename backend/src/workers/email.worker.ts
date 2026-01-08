@@ -1,7 +1,7 @@
 import { Worker, Job } from 'bullmq';
-import { QUEUE_NAMES } from '../infra/queues/queue.names';
+import { QUEUE_NAMES } from '@/constants';
 import { sendEmail } from '../infra/email/email.service';
-import { EmailJobData } from '../infra/queues/email.producer';
+import { EmailJobData } from '../infra/queues/email.queue';
 import { Logger } from '../utils/logger';
 
 import { config } from '@/config';

@@ -126,3 +126,22 @@ export const removeMember = catchAsync(async (req: Request, res: Response, next:
 
     sendResponse(res, 200, null, 'Member removed successfully');
 });
+
+export const getOrganizationNotifications = catchAsync(async (req: Request, res: Response, next: NextFunction) => {
+    const organizationId = getOrganizationContext(req, next);
+    const pagination = getPaginationParams(req);
+    const filters = {
+        isRead: req.query.isRead as 'true' | 'false' | undefined,
+    };
+
+    // Import notification service
+    const { NotificationService } = require('../notifications/notifications.service');
+
+    const result = await NotificationService.getOrganizationNotifications(
+        organizationId,
+        pagination,
+        filters
+    );
+
+    sendResponse(res, 200, result, 'Organization notifications retrieved successfully');
+});

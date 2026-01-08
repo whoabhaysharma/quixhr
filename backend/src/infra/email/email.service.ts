@@ -14,6 +14,7 @@ import { verifyEmailTemplate } from './templates/verify-email.template';
 import { resetPasswordTemplate } from './templates/reset-password.template';
 import { inviteUserTemplate } from './templates/invite-user.template';
 import { leaveStatusTemplate } from './templates/leave-status.template';
+import { leaveRequestTemplate } from './templates/leave-request.template';
 import { loginAlertTemplate } from './templates/login-alert.template';
 
 const getHtmlContent = (template: string, data: any): string => {
@@ -28,6 +29,8 @@ const getHtmlContent = (template: string, data: any): string => {
       return inviteUserTemplate(data);
     case 'leave-status':
       return leaveStatusTemplate(data);
+    case 'leave-request':
+      return leaveRequestTemplate(data);
     default:
       return `<p>${JSON.stringify(data)}</p>`;
   }

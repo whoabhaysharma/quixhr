@@ -259,3 +259,44 @@ export const getMyDashboard = catchAsync(
     sendResponse(res, 200, response, 'Dashboard summary retrieved successfully');
   }
 );
+
+/**
+ * @desc    Get unread notification count
+ * @route   GET /api/v1/me/notifications/unread-count
+ * @access  Protected
+ */
+export const getUnreadNotificationCount = catchAsync(
+  async (req: Request, res: Response, next: NextFunction) => {
+    const authContext = getAuthContext(req);
+    const response = await MeService.getUnreadNotificationCount(authContext.userId);
+    sendResponse(res, 200, response, 'Unread count retrieved successfully');
+  }
+);
+
+/**
+ * @desc    Mark multiple notifications as read
+ * @route   PATCH /api/v1/me/notifications/mark-read
+ * @access  Protected
+ */
+export const markNotificationsAsRead = catchAsync(
+  async (req: Request, res: Response, next: NextFunction) => {
+    const authContext = getAuthContext(req);
+    const { notificationIds } = req.body;
+    const response = await MeService.markNotificationsAsRead(authContext.userId, notificationIds);
+    sendResponse(res, 200, response, 'Notifications marked as read');
+  }
+);
+
+/**
+ *@desc    Mark all notifications as read
+ * @route   PATCH /api/v1/me/notifications/mark-all-read
+ * @access  Protected
+ */
+export const markAllNotificationsAsRead = catchAsync(
+  async (req: Request, res: Response, next: NextFunction) => {
+    const authContext = getAuthContext(req);
+    const response = await MeService.markAllNotificationsAsRead(authContext.userId);
+    sendResponse(res, 200, response, 'All notifications marked as read');
+  }
+);
+

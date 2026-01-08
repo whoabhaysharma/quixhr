@@ -1,0 +1,98 @@
+import { Router } from 'express';
+import { protect } from '@/shared/middleware/auth.middleware';
+import {
+    getNotificationById,
+    updateNotificationStatus,
+    markAsRead,
+    markAsUnread,
+    markMultipleAsRead,
+    markAllAsRead,
+    deleteNotification,
+} from './notifications.controller';
+
+const router = Router();
+
+// =========================================================================
+// FLAT ROUTES - /api/v1/notifications - Direct notification access by ID
+// =========================================================================
+
+/**
+ * @desc    Get a single notification by ID
+ * @route   GET /api/v1/notifications/:notificationId
+ * @access  Protected
+ */
+router.get(
+    '/notifications/:notificationId',
+    protect,
+    getNotificationById
+);
+
+/**
+ * @desc    Update notification status (mark as read or unread)
+ * @route   PATCH /api/v1/notifications/:notificationId
+ * @access  Protected
+ * @body    { isRead: boolean }
+ */
+router.patch(
+    '/notifications/:notificationId',
+    protect,
+    updateNotificationStatus
+);
+
+/**
+ * @desc    Mark notification as read
+ * @route   PATCH /api/v1/notifications/:notificationId/read
+ * @access  Protected
+ */
+router.patch(
+    '/notifications/:notificationId/read',
+    protect,
+    markAsRead
+);
+
+/**
+ * @desc    Mark notification as unread
+ * @route   PATCH /api/v1/notifications/:notificationId/unread
+ * @access  Protected
+ */
+router.patch(
+    '/notifications/:notificationId/unread',
+    protect,
+    markAsUnread
+);
+
+/**
+ * @desc    Mark multiple notifications as read
+ * @route   PATCH /api/v1/notifications/mark-read
+ * @access  Protected
+ * @body    { notificationIds: string[] }
+ */
+router.patch(
+    '/notifications/mark-read',
+    protect,
+    markMultipleAsRead
+);
+
+/**
+ * @desc    Mark all user notifications as read
+ * @route   PATCH /api/v1/notifications/mark-all-read
+ * @access  Protected
+ */
+router.patch(
+    '/notifications/mark-all-read',
+    protect,
+    markAllAsRead
+);
+
+/**
+ * @desc    Delete a notification
+ * @route   DELETE /api/v1/notifications/:notificationId
+ * @access  Protected
+ */
+router.delete(
+    '/notifications/:notificationId',
+    protect,
+    deleteNotification
+);
+
+export default router;

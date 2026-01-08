@@ -1,7 +1,9 @@
 import { prisma } from '@/utils/prisma';
-import { addEmailToQueue } from '@/infra/queues/email.producer';
+import { addEmailToQueue, addMultipleEmailsToQueue } from '@/infra/queues/email.queue';
+import { addNotificationToQueue } from '@/infra/queues/notification.queue';
+import { NotificationType } from '@/constants';
 import { AppError } from '@/utils/appError';
-import { LeaveStatus } from '@prisma/client';
+import { LeaveStatus, Role } from '@prisma/client';
 import { ParsedPagination } from '@/utils/pagination';
 import { buildOrderBy, validateOrganizationResource } from '@/utils/prismaHelpers';
 import {
@@ -185,6 +187,121 @@ export class LeaveService {
     // LEAVE REQUESTS
     // =========================================================================
 
+    /**
+     * Helper: Get all users who should receive leave request notifications
+     * Returns: org admins, HR admins, and the employee's manager
+     */
+    private static async getLeaveRequestNotificationRecipients(
+        organizationId: string,
+        employeeId: string
+    ) {
+        // Fetch employee with manager info
+        const employee = await prisma.employee.findUnique({
+            where: { id: employeeId },
+            select: {
+                id: true,
+                firstName: true,
+                lastName: true,
+                code: true,
+                organizationId: true,
+                managerId: true,
+                manager: {
+                    select: {
+                        user: {
+                            select: {
+                                id: true,
+                                email: true,
+                                employee: {
+                                    select: {
+                                        firstName: true,
+                                        lastName: true,
+                                    },
+                                },
+                            },
+                        },
+                    },
+                },
+                organization: {
+                    select: {
+                        name: true,
+                    },
+                },
+            },
+        });
+
+        if (!employee) {
+            throw new AppError('Employee not found', 404);
+        }
+
+        // Fetch all org admins and HR admins
+        const admins = await prisma.user.findMany({
+            where: {
+                role: {
+                    in: [Role.ORG_ADMIN, Role.HR_ADMIN],
+                },
+                employee: {
+                    organizationId,
+                },
+            },
+            select: {
+                id: true,
+                email: true,
+                role: true,
+                employee: {
+                    select: {
+                        firstName: true,
+                        lastName: true,
+                    },
+                },
+            },
+        });
+
+        const recipients: Array<{
+            userId: string;
+            email: string;
+            name: string;
+            role: string;
+        }> = [];
+
+        // Add admins
+        for (const admin of admins) {
+            recipients.push({
+                userId: admin.id,
+                email: admin.email,
+                name: admin.employee
+                    ? `${admin.employee.firstName} ${admin.employee.lastName}`
+                    : 'Admin',
+                role: admin.role,
+            });
+        }
+
+        // Add manager (if exists and not already in list)
+        if (employee.manager?.user) {
+            const isAlreadyIncluded = recipients.some(r => r.userId === employee.manager!.user!.id);
+            if (!isAlreadyIncluded) {
+                recipients.push({
+                    userId: employee.manager.user.id,
+                    email: employee.manager.user.email,
+                    name: employee.manager.user.employee
+                        ? `${employee.manager.user.employee.firstName} ${employee.manager.user.employee.lastName}`
+                        : 'Manager',
+                    role: 'MANAGER',
+                });
+            }
+        }
+
+        return {
+            recipients,
+            employee: {
+                id: employee.id,
+                firstName: employee.firstName,
+                lastName: employee.lastName,
+                code: employee.code,
+                organizationName: employee.organization.name,
+            },
+        };
+    }
+
     static async createRequest(
         organizationId: string,
         employeeId: string,
@@ -198,6 +315,12 @@ export class LeaveService {
         const diffTime = Math.abs(end.getTime() - start.getTime());
         const daysTaken = Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1;
 
+        // Get notification recipients (admins + manager)
+        const { recipients, employee } = await this.getLeaveRequestNotificationRecipients(
+            organizationId,
+            employeeId
+        );
+
         const leaveRequest = await prisma.leaveRequest.create({
             data: {
                 employeeId,
@@ -209,23 +332,53 @@ export class LeaveService {
                 status: LeaveStatus.PENDING,
                 dayDetails: data.dayDetails ?? undefined,
             },
-            include: {
-                employee: {
-                    select: {
-                        id: true,
-                        firstName: true,
-                        lastName: true,
-                        code: true,
-                        managerId: true,
-                        manager: {
-                            select: {
-                                userId: true,
-                            },
-                        },
-                    },
-                },
-            },
         });
+
+        // Format dates for notifications
+        const startDateFormatted = leaveRequest.startDate.toLocaleDateString();
+        const endDateFormatted = leaveRequest.endDate.toLocaleDateString();
+        const employeeName = `${employee.firstName} ${employee.lastName}`;
+
+        // Send email notifications to all recipients (admins + manager)
+        if (recipients.length > 0) {
+            const recipientEmails = recipients.map(r => r.email);
+
+            await addMultipleEmailsToQueue(
+                recipientEmails,
+                'New Leave Request - Action Required',
+                'leave-request',
+                {
+                    recipientName: 'Team', // Generic greeting since it goes to multiple people
+                    employeeName,
+                    employeeCode: employee.code,
+                    leaveType: leaveRequest.type,
+                    startDate: startDateFormatted,
+                    endDate: endDateFormatted,
+                    daysTaken: leaveRequest.daysTaken,
+                    reason: leaveRequest.reason,
+                    organizationName: employee.organizationName,
+                }
+            );
+        }
+
+        // Send in-app notifications to all recipients
+        const notificationData = {
+            employeeName,
+            leaveType: leaveRequest.type,
+            startDate: startDateFormatted,
+            endDate: endDateFormatted,
+            daysTaken: leaveRequest.daysTaken,
+        };
+
+        for (const recipient of recipients) {
+            await addNotificationToQueue(
+                recipient.userId,
+                NotificationType.LEAVE_REQUEST_CREATED,
+                notificationData
+            );
+        }
+
+        return leaveRequest;
     }
 
     static async getRequests(
@@ -337,6 +490,7 @@ export class LeaveService {
                         lastName: true,
                         user: {
                             select: {
+                                id: true,
                                 email: true,
                             },
                         },
@@ -373,6 +527,24 @@ export class LeaveService {
                     reason: updatedRequest.reason,
                 },
             });
+        }
+
+        // Queue in-app notification for employee
+        if (updatedRequest.employee.user) {
+            const notificationType = updatedRequest.status === LeaveStatus.APPROVED
+                ? NotificationType.LEAVE_REQUEST_APPROVED
+                : NotificationType.LEAVE_REQUEST_REJECTED;
+
+            await addNotificationToQueue(
+                updatedRequest.employee.user.id,
+                notificationType,
+                {
+                    leaveType: updatedRequest.type,
+                    startDate: new Date(updatedRequest.startDate).toLocaleDateString(),
+                    endDate: new Date(updatedRequest.endDate).toLocaleDateString(),
+                    daysTaken: updatedRequest.daysTaken,
+                }
+            );
         }
 
         return updatedRequest;

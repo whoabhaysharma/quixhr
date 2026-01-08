@@ -134,11 +134,11 @@ router.post('/attendance/check-out', validate(checkOutSchema), MeController.chec
 router.get('/notifications', MeController.getNotifications);
 
 /**
- * @route   PATCH /api/v1/me/notifications/:notificationId
- * @desc    Mark a notification as read
+ * @route   GET /api/v1/me/notifications/unread-count
+ * @desc    Get my unread notification count
  * @access  Protected
  */
-router.patch('/notifications/:notificationId', MeController.markNotificationAsRead);
+router.get('/notifications/unread-count', MeController.getUnreadNotificationCount);
 
 // =========================================================================
 // AUDIT LOG ENDPOINTS - All scoped to current user

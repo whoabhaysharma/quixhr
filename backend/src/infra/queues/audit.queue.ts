@@ -1,9 +1,8 @@
 import { Queue } from 'bullmq';
 import { redis } from '../redis/redis.connection';
+import { QUEUE_NAMES } from '@/constants';
 
-export const AUDIT_QUEUE_NAME = 'audit-queue';
-
-export const auditQueue = new Queue(AUDIT_QUEUE_NAME, {
+export const auditQueue = new Queue(QUEUE_NAMES.AUDIT_LOGS, {
     connection: redis,
     defaultJobOptions: {
         attempts: 3,

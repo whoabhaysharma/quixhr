@@ -1,6 +1,7 @@
 import { parentPort } from 'worker_threads';
 import { Logger } from '../utils/logger';
 import './email.worker'; // Import to register the worker
+import './notification.worker'; // Import to register the notification worker
 
 Logger.info('Worker process started');
 

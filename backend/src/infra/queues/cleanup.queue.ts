@@ -1,6 +1,6 @@
 import { Queue } from 'bullmq';
 import { redis } from '../redis/redis.connection';
-import { QUEUE_NAMES } from './queue.names';
+import { QUEUE_NAMES } from '@/constants';
 import { Logger } from '../../utils/logger';
 
 /**

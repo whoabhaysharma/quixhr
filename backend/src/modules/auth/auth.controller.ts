@@ -3,7 +3,7 @@ import jwt from 'jsonwebtoken';
 import bcrypt from 'bcryptjs';
 import crypto from 'crypto';
 import { prisma } from '@/utils/prisma';
-import { addEmailToQueue } from '@/infra/queues/email.producer';
+import { addEmailToQueue } from '@/infra/queues/email.queue';
 import { AppError } from '@/utils/appError';
 import { catchAsync } from '@/utils/catchAsync';
 import { sendResponse } from '@/utils/sendResponse';
