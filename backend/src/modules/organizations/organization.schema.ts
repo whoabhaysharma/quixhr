@@ -28,3 +28,18 @@ export const auditLogQuerySchema = {
     })
 };
 
+// Response DTOs
+import { PaginatedResponse } from '@/utils/pagination';
+
+export interface OrganizationResponseDto {
+    id: string;
+    name: string;
+    timezone: string;
+    currency: string;
+    dateFormat: string;
+    logoUrl?: string;
+    createdAt: Date;
+}
+
+export type OrganizationListResponseDto = PaginatedResponse<OrganizationResponseDto>;
+

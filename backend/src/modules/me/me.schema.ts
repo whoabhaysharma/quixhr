@@ -58,7 +58,7 @@ export const leaveRequestSchema = {
     startDate: z.string().datetime(),
     endDate: z.string().datetime(),
     type: z.nativeEnum(LeaveType),
-    reason: z.string().optional(),
+    reason: z.string().max(500, "Reason must be 500 characters or less").optional(),
     dayDetails: z.record(z.string(), z.any()).optional(),
   }),
 };
@@ -134,11 +134,12 @@ export interface NotificationResponseDto {
 /**
  * Notifications list response DTO
  */
-export interface NotificationsListResponseDto {
-  notifications: NotificationResponseDto[];
-  total: number;
-  unreadCount: number;
-}
+import { PaginatedResponse } from '@/utils/pagination';
+
+/**
+ * Notifications list response DTO
+ */
+export type NotificationsListResponseDto = PaginatedResponse<NotificationResponseDto>;
 
 /**
  * Audit log response DTO
@@ -156,10 +157,7 @@ export interface AuditLogResponseDto {
 /**
  * Audit logs list response DTO
  */
-export interface AuditLogsListResponseDto {
-  logs: AuditLogResponseDto[];
-  total: number;
-}
+export type AuditLogsListResponseDto = PaginatedResponse<AuditLogResponseDto>;
 
 // =========================================================================
 // LEAVE & ATTENDANCE RESPONSE DTOs
@@ -221,10 +219,7 @@ export interface LeaveLedgerEntryResponseDto {
 /**
  * My leave ledger response DTO
  */
-export interface MyLeaveLedgerResponseDto {
-  entries: LeaveLedgerEntryResponseDto[];
-  total: number;
-}
+export type MyLeaveLedgerResponseDto = PaginatedResponse<LeaveLedgerEntryResponseDto>;
 
 /**
  * Leave request response DTO
@@ -245,10 +240,7 @@ export interface LeaveRequestResponseDto {
 /**
  * My leave requests response DTO
  */
-export interface MyLeaveRequestsResponseDto {
-  requests: LeaveRequestResponseDto[];
-  total: number;
-}
+export type MyLeaveRequestsResponseDto = PaginatedResponse<LeaveRequestResponseDto>;
 
 /**
  * Attendance response DTO
@@ -268,10 +260,7 @@ export interface AttendanceResponseDto {
 /**
  * My attendance response DTO
  */
-export interface MyAttendanceResponseDto {
-  records: AttendanceResponseDto[];
-  total: number;
-}
+export type MyAttendanceResponseDto = PaginatedResponse<AttendanceResponseDto>;
 
 /**
  * Check-in/Check-out response DTO
@@ -296,6 +285,7 @@ export interface MyDashboardResponseDto {
   nextHoliday?: {
     date: Date;
     name: string;
+    updatedAt?: Date;
   };
   pendingTasksCount: number;
 }

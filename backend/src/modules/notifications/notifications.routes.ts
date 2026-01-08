@@ -42,40 +42,6 @@ router.get(
 );
 
 /**
- * @desc    Update notification status (mark as read or unread)
- * @route   PATCH /api/v1/notifications/:notificationId
- * @access  Protected
- * @body    { isRead: boolean }
- */
-router.patch(
-    '/notifications/:notificationId',
-    protect,
-    updateNotificationStatus
-);
-
-/**
- * @desc    Mark notification as read
- * @route   PATCH /api/v1/notifications/:notificationId/read
- * @access  Protected
- */
-router.patch(
-    '/notifications/:notificationId/read',
-    protect,
-    markAsRead
-);
-
-/**
- * @desc    Mark notification as unread
- * @route   PATCH /api/v1/notifications/:notificationId/unread
- * @access  Protected
- */
-router.patch(
-    '/notifications/:notificationId/unread',
-    protect,
-    markAsUnread
-);
-
-/**
  * @desc    Mark multiple notifications as read
  * @route   PATCH /api/v1/notifications/mark-read
  * @access  Protected
@@ -96,6 +62,18 @@ router.patch(
     '/notifications/mark-all-read',
     protect,
     markAllAsRead
+);
+
+/**
+ * @desc    Update notification status (mark as read or unread)
+ * @route   PATCH /api/v1/notifications/:notificationId
+ * @access  Protected
+ * @body    { isRead: boolean }
+ */
+router.patch(
+    '/notifications/:notificationId',
+    protect,
+    updateNotificationStatus
 );
 
 /**

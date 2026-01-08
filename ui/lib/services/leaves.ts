@@ -145,7 +145,7 @@ export const leavesService = {
     // Delete a leave request (if pending)
     deleteLeave: async (requestId: string): Promise<ApiResponse<void>> => {
         try {
-            const response = await api.delete<ApiResponse<void>>(`/me/leaves/requests/${requestId}`);
+            const response = await api.delete<ApiResponse<void>>(`/leaves/requests/${requestId}`);
             return response.data;
         } catch (error: any) {
             throw new ApiError(

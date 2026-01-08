@@ -10,7 +10,13 @@ export function useLeaves(userId?: string) {
         queryFn: async () => {
             try {
                 const response = await leavesService.getMyLeaves()
-                return response.data.requests
+                // Backend now returns PaginatedResponse: { data: Leave[], pagination: ... }
+                // So response.data.data is the array of leaves.
+                // We cast to any to be safe if types aren't fully updated, or verify types.
+                // response.data is ApiResponse<PaginatedResponse<Leave>>
+                // response.data.data is PaginatedResponse<Leave>
+                // response.data.data.data is Leave[]
+                return (response.data as any).data || []
             } catch (error: any) {
                 const msg = error instanceof ApiError ? error.message : (error.message || 'Failed to load leave records');
                 toast.error(msg)
@@ -40,24 +46,12 @@ export function useOrgLeaves(
         queryFn: async () => {
             try {
                 const response = await leavesService.getOrgLeaveRequests(organizationId, filters)
-                // The backend returns a structure like: { status, message, data: { requests: [], total: 0 } }
-                // So response.data IS the object { requests: [], total: 0 } if standardized
-                // Let's inspect response.data more closely based on service:
-                // createLeave -> ApiResponse<Leave>
-                // getOrgLeaveRequests -> ApiResponse<LeaveListResponse> where LeaveListResponse = { requests: [], total: number }
+                // Backend now returns PaginatedResponse: { data: Leave[], pagination: ... }
+                const result = response.data as any;
+                // result is the data payload from ApiResponse. 
+                // It should have .data (array) and .pagination.
+                const requests = result.data || [];
 
-                // The service getOrgLeaveRequests returns Promise<ApiResponse<LeaveListResponse>>
-                // So response.data is LeaveListResponse which is { requests: Leave[], total: number }
-                // There is no need for `as any` or handling `responseData.data`.
-                const result = response.data;
-                const requests = result.requests || [];
-
-                // Map to frontend Leave interface if needed, or if backend types match we are good.
-                // Assuming backend now returns populated user/employee correctly in 'requests'
-                // If the backend structure is actually nesting 'data' again (e.g. paginated), we need to check.
-                // Based on `leaves.ts` service update, we expect ApiResponse<LeaveListResponse>.
-
-                // Just in case of legacy structure drift, we can robustly handle it, but better to trust types.
                 return requests.map((req: any) => ({
                     ...req,
                     totalDays: req.daysTaken ?? req.totalDays, // fallback/compatibility

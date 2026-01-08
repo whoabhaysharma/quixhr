@@ -26,7 +26,24 @@ import {
     DialogHeader,
     DialogTitle,
     DialogTrigger,
+    DialogFooter,
 } from "@/components/ui/dialog"
+import {
+    AlertDialog,
+    AlertDialogAction,
+    AlertDialogCancel,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle,
+} from "@/components/ui/alert-dialog"
+import {
+    Tooltip,
+    TooltipContent,
+    TooltipProvider,
+    TooltipTrigger,
+} from "@/components/ui/tooltip"
 import {
     DropdownMenu,
     DropdownMenuContent,
@@ -42,21 +59,26 @@ import {
     Filter,
     ChevronDown,
     Check,
-    Plus
+    Plus,
+    Trash2
 } from "lucide-react"
 import { cn } from "@/lib/utils"
-import { useLeaves, useCreateLeave } from "@/lib/hooks/useLeaves"
+// Import useDeleteLeave
+import { useLeaves, useCreateLeave, useDeleteLeave } from "@/lib/hooks/useLeaves"
 import { Leave } from "@/lib/services/leaves"
+import { toast } from "sonner"
 
+// Helper to map backend enum to display names
 // Helper to map backend enum to display names
 const getLeaveTypeDisplay = (type: string): string => {
     const typeMap: Record<string, string> = {
-        'ANNUAL': 'Vacation',
-        'SICK': 'Sick',
-        'CASUAL': 'Personal',
-        'MATERNITY': 'Maternity',
-        'PATERNITY': 'Paternity',
-        'UNPAID': 'Unpaid'
+        'ANNUAL': 'Annual Leave',
+        'SICK': 'Sick Leave',
+        'CASUAL': 'Casual Leave',
+        'MATERNITY': 'Maternity Leave',
+        'PATERNITY': 'Paternity Leave',
+        'UNPAID': 'Unpaid Leave',
+        'OTHER': 'Other'
     };
     return typeMap[type] || type;
 };
@@ -66,8 +88,8 @@ export default function LeavesView() {
     const [isRequestModalOpen, setIsRequestModalOpen] = useState(false)
 
     // Form State
-    const [mode, setMode] = useState<"single" | "range" | "custom">("single")
-    const [leaveType, setLeaveType] = useState("Vacation")
+    const [mode, setMode] = useState<"single" | "range">("single")
+    const [leaveType, setLeaveType] = useState("ANNUAL")
     const [reason, setReason] = useState("")
 
     // Filter State
@@ -78,24 +100,26 @@ export default function LeavesView() {
     const [singleDate, setSingleDate] = useState<Date>()
     const [startDate, setStartDate] = useState<Date>()
     const [endDate, setEndDate] = useState<Date>()
-    const [customDates, setCustomDates] = useState<Date[]>([])
-    const [tempCustomDate, setTempCustomDate] = useState<Date>()
 
     const { data: leaves = [], isLoading } = useLeaves()
     const createLeaveMutation = useCreateLeave()
+    const deleteLeaveMutation = useDeleteLeave()
 
-    const addCustomDate = () => {
-        if (!tempCustomDate) return
-        const exists = customDates.some(d => d.getTime() === tempCustomDate.getTime())
-        if (!exists) {
-            setCustomDates([...customDates, tempCustomDate].sort((a, b) => a.getTime() - b.getTime()))
+    const [deleteId, setDeleteId] = useState<string | null>(null)
+
+    const handleDelete = (id: string) => {
+        setDeleteId(id)
+    }
+
+    const confirmDelete = () => {
+        if (deleteId) {
+            deleteLeaveMutation.mutate(deleteId, {
+                onSuccess: () => setDeleteId(null)
+            })
         }
-        setTempCustomDate(undefined)
     }
 
-    const removeCustomDate = (dateToRemove: Date) => {
-        setCustomDates(customDates.filter(d => d.getTime() !== dateToRemove.getTime()))
-    }
+
 
     const handleRequestLeave = (e: React.FormEvent) => {
         e.preventDefault()
@@ -110,34 +134,21 @@ export default function LeavesView() {
         } else if (mode === "range") {
             finalStartDate = startDate
             finalEndDate = endDate
-        } else if (mode === "custom") {
-            if (customDates.length === 0) return
-            finalStartDate = customDates[0]
-            finalEndDate = customDates[customDates.length - 1]
-            const formattedDates = customDates.map(d => format(d, "MMM dd")).join(", ")
-            finalReason = `${reason} (Selected Dates: ${formattedDates})`
         }
 
-        if (!finalStartDate || !finalEndDate) return
-
-        // Map display names to backend enums
-        const typeMapping: Record<string, string> = {
-            'Vacation': 'ANNUAL',
-            'Sick': 'SICK',
-            'Personal': 'CASUAL'
-        };
+        if (!finalStartDate || !finalEndDate) {
+            toast.error("Please select a valid date range")
+            return
+        }
 
         const payload: any = {
-            type: typeMapping[leaveType] || 'ANNUAL', // Default to ANNUAL if not found
+            type: leaveType, // Now directly using backend enum
             startDate: finalStartDate.toISOString(),
             endDate: finalEndDate.toISOString(),
             reason: finalReason
         };
 
-        // Include customDates array for accurate day count
-        if (mode === "custom" && customDates.length > 0) {
-            payload.dayDetails = customDates.map(d => d.toISOString());
-        }
+
 
         createLeaveMutation.mutate(payload, {
             onSuccess: () => {
@@ -151,9 +162,8 @@ export default function LeavesView() {
         setSingleDate(undefined)
         setStartDate(undefined)
         setEndDate(undefined)
-        setCustomDates([])
         setReason("")
-        setLeaveType("Vacation")
+        setLeaveType("ANNUAL")
         setMode("single")
     }
 
@@ -175,158 +185,135 @@ export default function LeavesView() {
                                 Request Leave
                             </Button>
                         </DialogTrigger>
-                        <DialogContent className="sm:max-w-[550px] bg-white text-slate-900 p-0 overflow-hidden border-0 shadow-2xl rounded-2xl">
-                            <DialogHeader className="px-6 pt-6 pb-4 bg-slate-50 border-b border-slate-100">
-                                <DialogTitle className="text-xl font-bold text-slate-900 flex items-center gap-2">
-                                    <CalendarDays className="w-5 h-5 text-indigo-600" />
+                        <DialogContent className="w-[95vw] sm:w-full sm:max-w-[550px] max-h-[85vh] flex flex-col p-0 gap-0">
+                            <DialogHeader className="px-6 pt-6 pb-4 border-b shrink-0 text-left">
+                                <DialogTitle className="text-xl flex items-center gap-2">
+                                    <CalendarDays className="w-5 h-5 text-primary" />
                                     New Leave Request
                                 </DialogTitle>
-                                <DialogDescription className="text-slate-500">
+                                <DialogDescription>
                                     Fill in the details below to submit your time off request.
                                 </DialogDescription>
                             </DialogHeader>
 
-                            <form onSubmit={handleRequestLeave} className="px-6 py-6 space-y-6">
-                                {/* Leave Type */}
-                                <div className="space-y-3">
-                                    <Label className="text-xs font-bold uppercase tracking-wider text-slate-500">Leave Type</Label>
-                                    <div className="grid grid-cols-3 gap-3">
-                                        {["Vacation", "Sick", "Personal"].map((type) => (
-                                            <div
-                                                key={type}
-                                                onClick={() => setLeaveType(type)}
-                                                className={cn(
-                                                    "cursor-pointer rounded-xl border-2 px-4 py-3 text-center transition-all",
-                                                    leaveType === type
-                                                        ? "border-indigo-600 bg-indigo-50 text-indigo-700 font-bold"
-                                                        : "border-slate-100 bg-white text-slate-600 hover:border-slate-200 hover:bg-slate-50"
-                                                )}
-                                            >
-                                                <div className="text-sm">{type}</div>
-                                            </div>
-                                        ))}
+                            <div className="flex-1 overflow-y-auto min-h-0">
+                                <form id="leave-request-form" onSubmit={handleRequestLeave} className="px-6 py-6 space-y-6">
+                                    {/* Leave Type */}
+                                    <div className="space-y-3">
+                                        <Label>Leave Type</Label>
+                                        <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                                            {[
+                                                { id: 'ANNUAL', label: 'Annual' },
+                                                { id: 'SICK', label: 'Sick' },
+                                                { id: 'CASUAL', label: 'Casual' },
+                                                { id: 'MATERNITY', label: 'Maternity' },
+                                                { id: 'PATERNITY', label: 'Paternity' },
+                                                { id: 'UNPAID', label: 'Unpaid' },
+                                                { id: 'OTHER', label: 'Other' }
+                                            ].map((type) => (
+                                                <div
+                                                    key={type.id}
+                                                    onClick={() => setLeaveType(type.id)}
+                                                    className={cn(
+                                                        "cursor-pointer rounded-md border px-3 py-3 text-center transition-all flex items-center justify-center min-h-[48px] text-sm font-medium",
+                                                        leaveType === type.id
+                                                            ? "border-primary bg-primary/10 text-primary"
+                                                            : "border-input bg-background hover:bg-accent hover:text-accent-foreground"
+                                                    )}
+                                                >
+                                                    {type.label}
+                                                </div>
+                                            ))}
+                                        </div>
                                     </div>
-                                </div>
 
-                                {/* Duration Mode */}
-                                <div className="space-y-3">
-                                    <Label className="text-xs font-bold uppercase tracking-wider text-slate-500">Duration</Label>
-                                    <Tabs value={mode} onValueChange={(v) => setMode(v as any)} className="w-full">
-                                        <TabsList className="grid w-full grid-cols-3 p-1 bg-slate-100 rounded-xl">
-                                            <TabsTrigger value="single" className="rounded-lg data-[state=active]:bg-white data-[state=active]:text-indigo-700 data-[state=active]:shadow-sm">Single Day</TabsTrigger>
-                                            <TabsTrigger value="range" className="rounded-lg data-[state=active]:bg-white data-[state=active]:text-indigo-700 data-[state=active]:shadow-sm">Range</TabsTrigger>
-                                            <TabsTrigger value="custom" className="rounded-lg data-[state=active]:bg-white data-[state=active]:text-indigo-700 data-[state=active]:shadow-sm">Custom Dates</TabsTrigger>
-                                        </TabsList>
+                                    {/* Duration Mode */}
+                                    <div className="space-y-3">
+                                        <Label>Duration</Label>
+                                        <Tabs value={mode} onValueChange={(v) => setMode(v as any)} className="w-full">
+                                            <TabsList className="grid w-full grid-cols-2">
+                                                <TabsTrigger value="single">Single Day</TabsTrigger>
+                                                <TabsTrigger value="range">Range</TabsTrigger>
+                                            </TabsList>
 
-                                        <div className="mt-4 p-4 bg-slate-50 rounded-xl border border-slate-100">
-                                            <TabsContent value="single" className="mt-0 space-y-3">
-                                                <Label>Date</Label>
-                                                <DatePicker
-                                                    date={singleDate}
-                                                    setDate={setSingleDate}
-                                                    className="w-full bg-white border-slate-200 h-11"
-                                                />
-                                            </TabsContent>
-
-                                            <TabsContent value="range" className="mt-0 grid grid-cols-2 gap-4">
-                                                <div className="space-y-2">
-                                                    <Label>Start Date</Label>
+                                            <div className="mt-4">
+                                                <TabsContent value="single" className="mt-0 space-y-3">
+                                                    <Label>Date</Label>
                                                     <DatePicker
-                                                        date={startDate}
-                                                        setDate={setStartDate}
+                                                        date={singleDate}
+                                                        setDate={setSingleDate}
                                                         className="w-full bg-white border-slate-200 h-11"
+                                                        disabled={(date) => date < new Date(new Date().setHours(0, 0, 0, 0))}
                                                     />
-                                                </div>
-                                                <div className="space-y-2">
-                                                    <Label>End Date</Label>
-                                                    <DatePicker
-                                                        date={endDate}
-                                                        setDate={setEndDate}
-                                                        className="w-full bg-white border-slate-200 h-11"
-                                                    />
-                                                </div>
-                                            </TabsContent>
+                                                </TabsContent>
 
-                                            <TabsContent value="custom" className="mt-0 space-y-4">
-                                                <div className="flex gap-2 items-end">
-                                                    <div className="space-y-2 flex-1">
-                                                        <Label>Pick Dates</Label>
+                                                <TabsContent value="range" className="mt-0 grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                                    <div className="space-y-2">
+                                                        <Label>Start Date</Label>
                                                         <DatePicker
-                                                            date={tempCustomDate}
-                                                            setDate={setTempCustomDate}
+                                                            date={startDate}
+                                                            setDate={setStartDate}
                                                             className="w-full bg-white border-slate-200 h-11"
-                                                            placeholder="Pick a date to add"
+                                                            disabled={(date) => date < new Date(new Date().setHours(0, 0, 0, 0))}
                                                         />
                                                     </div>
-                                                    <Button
-                                                        type="button"
-                                                        onClick={addCustomDate}
-                                                        disabled={!tempCustomDate}
-                                                        className="h-11 bg-slate-900 text-white hover:bg-slate-800"
-                                                    >
-                                                        Add
-                                                    </Button>
-                                                </div>
-
-                                                {customDates.length > 0 && (
-                                                    <div className="flex flex-wrap gap-2 pt-2">
-                                                        {customDates.map((date) => (
-                                                            <Badge key={date.toISOString()} variant="secondary" className="px-3 py-1.5 bg-white border border-slate-200 text-slate-700 hover:bg-slate-50 gap-2 text-sm font-medium">
-                                                                {format(date, "MMM dd, yyyy")}
-                                                                <button
-                                                                    type="button"
-                                                                    onClick={() => removeCustomDate(date)}
-                                                                    className="text-slate-400 hover:text-red-500 transition-colors"
-                                                                >
-                                                                    <X className="w-3 h-3" />
-                                                                </button>
-                                                            </Badge>
-                                                        ))}
+                                                    <div className="space-y-2">
+                                                        <Label>End Date</Label>
+                                                        <DatePicker
+                                                            date={endDate}
+                                                            setDate={setEndDate}
+                                                            className="w-full bg-white border-slate-200 h-11"
+                                                            disabled={(date) => date < new Date(new Date().setHours(0, 0, 0, 0)) || (startDate ? date < startDate : false)}
+                                                        />
                                                     </div>
-                                                )}
-                                                {customDates.length === 0 && (
-                                                    <p className="text-sm text-slate-400 italic text-center py-2">No dates selected yet.</p>
-                                                )}
-                                            </TabsContent>
+                                                </TabsContent>
+
+
+                                            </div>
+                                        </Tabs>
+                                    </div>
+
+                                    {/* Reason */}
+                                    <div className="space-y-3">
+                                        <Label>Reason</Label>
+                                        <Textarea
+                                            maxLength={500}
+                                            value={reason}
+                                            onChange={e => setReason(e.target.value)}
+                                            placeholder="e.g. Taking a break to recharge..."
+                                            className="field-sizing-fixed resize-none min-h-[100px] max-h-[200px] overflow-y-auto"
+                                        />
+                                        <div className="text-xs text-right text-muted-foreground">
+                                            {reason.length}/500
                                         </div>
-                                    </Tabs>
-                                </div>
+                                    </div>
 
-                                {/* Reason */}
-                                <div className="space-y-3">
-                                    <Label className="text-xs font-bold uppercase tracking-wider text-slate-500">Reason</Label>
-                                    <Textarea
-                                        value={reason}
-                                        onChange={e => setReason(e.target.value)}
-                                        placeholder="e.g. Taking a break to recharge..."
-                                        className="resize-none min-h-[100px] bg-slate-50 border-slate-200 focus:bg-white focus:ring-indigo-500 transition-all rounded-xl"
-                                    />
-                                </div>
+                                </form>
+                            </div>
 
-                                {/* Actions */}
-                                <div className="pt-2 flex justify-end gap-3">
-                                    <Button
-                                        type="button"
-                                        variant="outline"
-                                        onClick={() => setIsRequestModalOpen(false)}
-                                        className="h-11 px-6 border-slate-200 hover:bg-slate-50 text-slate-600 rounded-xl"
-                                    >
-                                        Cancel
-                                    </Button>
-                                    <Button
-                                        type="submit"
-                                        disabled={createLeaveMutation.isPending}
-                                        className="h-11 px-6 bg-indigo-600 hover:bg-indigo-700 text-white shadow-lg shadow-indigo-200 rounded-xl font-semibold"
-                                    >
-                                        {createLeaveMutation.isPending ? (
-                                            <>
-                                                <Spinner className="mr-2 h-4 w-4 animate-spin" />
-                                                Submitting...
-                                            </>
-                                        ) : 'Submit Request'}
-                                    </Button>
-                                </div>
-                            </form>
+                            <DialogFooter className="p-6 border-t bg-muted/20 gap-2 sm:gap-0">
+                                <Button
+                                    type="button"
+                                    variant="outline"
+                                    onClick={() => setIsRequestModalOpen(false)}
+                                    className="h-10"
+                                >
+                                    Cancel
+                                </Button>
+                                <Button
+                                    type="submit"
+                                    form="leave-request-form"
+                                    disabled={createLeaveMutation.isPending}
+                                    className="h-10 disabled:opacity-70 disabled:cursor-not-allowed"
+                                >
+                                    {createLeaveMutation.isPending ? (
+                                        <>
+                                            <Spinner className="mr-2 h-4 w-4 animate-spin" />
+                                            Submitting...
+                                        </>
+                                    ) : 'Submit Request'}
+                                </Button>
+                            </DialogFooter>
                         </DialogContent>
                     </Dialog>
                 </div>
@@ -404,6 +391,7 @@ export default function LeavesView() {
                                 <TableHead className="px-6 py-3 text-[11px] font-bold text-slate-500 uppercase tracking-wider">Duration</TableHead>
                                 <TableHead className="px-6 py-3 text-[11px] font-bold text-slate-500 uppercase tracking-wider">Reason</TableHead>
                                 <TableHead className="px-6 py-3 text-[11px] font-bold text-slate-500 uppercase tracking-wider w-[120px]">Status</TableHead>
+                                <TableHead className="px-6 py-3 text-[11px] font-bold text-slate-500 uppercase tracking-wider w-[60px]"></TableHead>
                             </TableRow>
                         </TableHeader>
                         <TableBody className="divide-y divide-slate-100">
@@ -425,7 +413,7 @@ export default function LeavesView() {
                                         <TableCell className="px-6 py-4"><Skeleton className="h-6 w-20 rounded-lg" /></TableCell>
                                     </TableRow>
                                 ))
-                            ) : leaves.filter(leave => {
+                            ) : leaves.filter((leave: Leave) => {
                                 // Status Filter
                                 if (statusFilter !== "all" && leave.status !== statusFilter) return false;
 
@@ -450,7 +438,7 @@ export default function LeavesView() {
                                 </TableRow>
                             ) : (
                                 leaves
-                                    .filter(leave => {
+                                    .filter((leave: Leave) => {
                                         // Status Filter
                                         if (statusFilter !== "all" && leave.status !== statusFilter) return false;
 
@@ -467,6 +455,9 @@ export default function LeavesView() {
                                         const startDate = new Date(leave.startDate);
                                         const endDate = new Date(leave.endDate);
                                         const isSingleDay = startDate.toDateString() === endDate.toDateString();
+                                        const isAdmin = ['SUPER_ADMIN', 'ORG_ADMIN', 'HR_ADMIN'].includes(user?.user?.role || '');
+                                        // Can delete if Admin OR if Pending (assuming this is my view, so I am owner)
+                                        const canDelete = isAdmin || leave.status === 'PENDING';
 
                                         return (
                                             <TableRow key={leave.id} className="hover:bg-slate-50 transition-colors border-slate-100 group">
@@ -510,10 +501,19 @@ export default function LeavesView() {
                                                         <span className="text-xs text-slate-500 font-medium">{leave.totalDays === 1 ? 'day' : 'days'}</span>
                                                     </div>
                                                 </TableCell>
-                                                <TableCell className="px-6 py-4">
-                                                    <p className="text-sm text-slate-600 max-w-xs truncate font-medium leading-relaxed">
-                                                        {leave.reason || "No reason provided"}
-                                                    </p>
+                                                <TableCell className="px-6 py-4 max-w-[200px]">
+                                                    <TooltipProvider>
+                                                        <Tooltip>
+                                                            <TooltipTrigger asChild>
+                                                                <p className="text-sm text-muted-foreground truncate font-medium cursor-help">
+                                                                    {leave.reason || "No reason provided"}
+                                                                </p>
+                                                            </TooltipTrigger>
+                                                            <TooltipContent className="max-w-[300px] break-words">
+                                                                <p>{leave.reason || "No reason provided"}</p>
+                                                            </TooltipContent>
+                                                        </Tooltip>
+                                                    </TooltipProvider>
                                                 </TableCell>
                                                 <TableCell className="px-6 py-4">
                                                     <Badge className={cn(
@@ -525,6 +525,18 @@ export default function LeavesView() {
                                                         {leave.status}
                                                     </Badge>
                                                 </TableCell>
+                                                <TableCell className="px-6 py-4">
+                                                    {canDelete && (
+                                                        <Button
+                                                            variant="ghost"
+                                                            size="icon"
+                                                            className="h-8 w-8 text-slate-400 hover:text-red-600 hover:bg-red-50 opacity-0 group-hover:opacity-100 transition-all"
+                                                            onClick={() => handleDelete(leave.id)}
+                                                        >
+                                                            <Trash2 className="w-4 h-4" />
+                                                        </Button>
+                                                    )}
+                                                </TableCell>
                                             </TableRow>
                                         )
                                     })
@@ -533,6 +545,26 @@ export default function LeavesView() {
                     </Table>
                 </div>
             </div>
+
+            <AlertDialog open={!!deleteId} onOpenChange={(open) => !open && setDeleteId(null)}>
+                <AlertDialogContent>
+                    <AlertDialogHeader>
+                        <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+                        <AlertDialogDescription>
+                            This action cannot be undone. This will permanently delete your leave request.
+                        </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                        <AlertDialogCancel>Cancel</AlertDialogCancel>
+                        <AlertDialogAction
+                            onClick={confirmDelete}
+                            className="bg-red-600 hover:bg-red-700 text-white border-0"
+                        >
+                            {deleteLeaveMutation.isPending ? "Deleting..." : "Delete"}
+                        </AlertDialogAction>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
         </div>
     )
 }

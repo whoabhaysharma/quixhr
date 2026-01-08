@@ -233,8 +233,8 @@ export class InvitationService {
             });
 
             // Queue notifications for all admins
-            const { addNotificationToQueue } = require('@/infra/notifications/notification.producer');
-            const { NotificationType } = require('@/infra/notifications/notification.messages');
+            const { addNotificationToQueue } = require('@/infra/queues/notification.queue');
+            const { NotificationType } = require('@/constants');
 
             for (const admin of adminUsers) {
                 await addNotificationToQueue(

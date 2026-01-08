@@ -67,7 +67,7 @@ export const createLeaveRequestSchema = {
         startDate: z.string().datetime().or(z.string().regex(/^\d{4}-\d{2}-\d{2}$/)),
         endDate: z.string().datetime().or(z.string().regex(/^\d{4}-\d{2}-\d{2}$/)),
         type: z.nativeEnum(LeaveType),
-        reason: z.string().optional(),
+        reason: z.string().max(500, "Reason must be 500 characters or less").optional(),
         dayDetails: z.any().optional(),
     }).refine(data => new Date(data.endDate) >= new Date(data.startDate), {
         message: "End date must be after or equal to start date",
@@ -110,3 +110,30 @@ export type CreateLeaveRequestInput = z.infer<typeof createLeaveRequestSchema.bo
 export type UpdateLeaveRequestStatusInput = z.infer<typeof updateLeaveRequestStatusSchema.body>;
 export type LeaveRequestQuery = z.infer<typeof leaveRequestQuerySchema.query>;
 export type LeaveGradeQuery = z.infer<typeof leaveGradeQuerySchema.query>;
+
+// Response DTOs
+import { PaginatedResponse } from '@/utils/pagination';
+
+export interface LeaveGradeResponseDto {
+    id: string;
+    name: string;
+    createdAt: Date;
+    updatedAt: Date;
+}
+
+export type LeaveGradeListResponseDto = PaginatedResponse<LeaveGradeResponseDto>;
+
+export interface LeaveRequestResponseDto {
+    id: string;
+    startDate: Date;
+    endDate: Date;
+    type: LeaveType;
+    status: LeaveStatus;
+    reason?: string;
+    employee: {
+        firstName: string;
+        lastName: string;
+    };
+}
+
+export type LeaveRequestListResponseDto = PaginatedResponse<LeaveRequestResponseDto>;

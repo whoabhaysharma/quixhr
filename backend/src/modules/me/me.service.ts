@@ -224,7 +224,7 @@ export class MeService {
         ]);
 
         return {
-            entries: entries.map((entry) => ({
+            data: entries.map((entry) => ({
                 id: entry.id,
                 createdAt: entry.createdAt,
                 event: entry.event.toString(),
@@ -232,7 +232,12 @@ export class MeService {
                 remarks: entry.remarks || undefined,
                 leaveRequestId: entry.leaveRequestId || undefined,
             })),
-            total,
+            pagination: {
+                total,
+                page,
+                limit,
+                totalPages: Math.ceil(total / limit),
+            },
         };
     }
 
@@ -260,7 +265,7 @@ export class MeService {
         ]);
 
         return {
-            requests: requests.map((req) => ({
+            data: requests.map((req) => ({
                 id: req.id,
                 startDate: req.startDate,
                 endDate: req.endDate,
@@ -272,7 +277,12 @@ export class MeService {
                 approvedBy: req.approvedBy || undefined,
                 createdAt: req.createdAt,
             })),
-            total,
+            pagination: {
+                total,
+                page,
+                limit,
+                totalPages: Math.ceil(total / limit),
+            },
         };
     }
 
@@ -456,7 +466,7 @@ export class MeService {
         ]);
 
         return {
-            records: records.map((record) => ({
+            data: records.map((record) => ({
                 id: record.id,
                 date: record.date,
                 status: record.status as any,
@@ -467,7 +477,12 @@ export class MeService {
                 isLate: record.isLate,
                 isEarlyOut: record.isEarlyOut,
             })),
-            total,
+            pagination: {
+                total,
+                page,
+                limit,
+                totalPages: Math.ceil(total / limit),
+            },
         };
     }
 
@@ -488,24 +503,7 @@ export class MeService {
             m.NotificationService.getUserNotifications(userId, pagination, {})
         );
 
-        // Map the result to match NotificationsListResponseDto structure if needed
-        // NotificationService returns { data, pagination }
-        // We need { notifications, total, unreadCount }
-
-        const unreadCount = await this.getUnreadNotificationCount(userId);
-
-        return {
-            notifications: result.data.map((n) => ({
-                id: n.id,
-                userId: n.userId,
-                title: n.title,
-                message: n.message,
-                isRead: n.isRead,
-                createdAt: n.createdAt,
-            })),
-            total: result.pagination.total,
-            unreadCount: unreadCount.unreadCount,
-        };
+        return result;
     }
 
     /**
@@ -666,7 +664,7 @@ export class MeService {
         ]);
 
         return {
-            logs: logs.map((log) => ({
+            data: logs.map((log) => ({
                 id: log.id,
                 action: log.action,
                 resource: log.resource,
@@ -675,7 +673,12 @@ export class MeService {
                 ipAddress: log.ipAddress || undefined,
                 createdAt: log.createdAt,
             })),
-            total,
+            pagination: {
+                total,
+                page,
+                limit,
+                totalPages: Math.ceil(total / limit),
+            },
         };
     }
     /**

@@ -160,7 +160,7 @@ export default function MemberManagerView() {
                 </div>
 
                 <div className="rounded-xl border border-slate-200 overflow-hidden bg-white">
-                    <Table>
+                    <Table className="border-separate border-spacing-0">
                         <TableHeader className="bg-slate-50 border-b border-slate-100">
                             <TableRow className="hover:bg-transparent border-slate-100">
                                 <TableHead className="px-6 py-3 text-[11px] font-bold text-slate-500 uppercase tracking-wider">User</TableHead>

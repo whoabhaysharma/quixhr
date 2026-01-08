@@ -45,3 +45,13 @@ export const getPaginationParams = (req: Request, defaultSortBy: string = 'creat
         skip: (page - 1) * limit
     };
 };
+
+export interface PaginatedResponse<T> {
+    data: T[];
+    pagination: {
+        total: number;
+        page: number;
+        limit: number;
+        totalPages: number;
+    };
+}

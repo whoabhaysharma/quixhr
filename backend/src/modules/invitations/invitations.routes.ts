@@ -55,8 +55,10 @@ router.get(
     InvitationController.getInvitations
 );
 
+// Resend
 router.post(
     '/:invitationId/resend',
+    resolveTenant,
     InvitationController.resendInvitation
 );
 
@@ -67,6 +69,7 @@ router.post(
  */
 router.patch(
     '/:invitationId/cancel',
+    resolveTenant,
     InvitationController.cancelInvitation
 );
 
@@ -77,6 +80,7 @@ router.patch(
  */
 router.delete(
     '/:invitationId',
+    resolveTenant,
     InvitationController.deleteInvitation
 );
 

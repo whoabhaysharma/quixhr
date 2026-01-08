@@ -110,3 +110,20 @@ export type CreateEmployeeInput = z.infer<typeof createEmployeeSchema.body>;
 export type UpdateEmployeeInput = z.infer<typeof updateEmployeeSchema.body>;
 export type GetEmployeesQuery = z.infer<typeof getEmployeesQuerySchema.query>;
 
+// Response DTOs
+import { PaginatedResponse } from '@/utils/pagination';
+
+export interface EmployeeResponseDto {
+    id: string;
+    firstName: string;
+    lastName: string;
+    email: string;
+    role: Role;
+    status: string;
+    joiningDate: Date;
+    code?: string;
+    organizationId: string;
+}
+
+export type MembersListResponseDto = PaginatedResponse<EmployeeResponseDto>;
+

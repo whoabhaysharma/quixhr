@@ -97,4 +97,11 @@ router.patch(
     LeaveController.updateLeaveRequestStatus
 );
 
+// DELETE /api/v1/leaves/requests/:requestId
+router.delete(
+    '/requests/:requestId',
+    // Permissions handled in service/controller
+    LeaveController.deleteLeaveRequest
+);
+
 export default router;

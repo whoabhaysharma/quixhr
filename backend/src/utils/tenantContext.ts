@@ -29,13 +29,18 @@ import { AppError } from './appError';
  * ```
  */
 export const getOrganizationContext = (req: Request, next: NextFunction): string => {
+    // 1. Try middleware-resolved context first
     const organizationId = req.targetOrganizationId;
 
-    if (!organizationId) {
-        throw new AppError('Organization context is required', 400);
+    if (organizationId) return organizationId;
+
+    // 2. Fallback to authenticated user's organization 
+    // This supports routes where resolveTenant middleware might not be used but user is logged in
+    if (req.user?.organizationId) {
+        return req.user.organizationId;
     }
 
-    return organizationId;
+    throw new AppError('Organization context is required', 400);
 };
 
 /**
@@ -60,5 +65,5 @@ export const getOrganizationContext = (req: Request, next: NextFunction): string
  * ```
  */
 export const tryGetOrganizationContext = (req: Request): string | undefined => {
-    return req.targetOrganizationId;
+    return req.targetOrganizationId || req.user?.organizationId;
 };

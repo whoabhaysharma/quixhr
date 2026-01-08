@@ -1,6 +1,6 @@
 import { z } from 'zod';
 import { Role } from '@prisma/client';
-import { paginationSchema } from '@/utils/pagination';
+import { paginationSchema, PaginatedResponse } from '@/utils/pagination';
 
 // =========================================================================
 // INPUT SCHEMAS
@@ -64,19 +64,7 @@ export interface InvitationResponseDto {
     expiresAt: Date;
 }
 
-export interface InvitationsListResponseDto {
-    success: boolean;
-    message: string;
-    data: {
-        invitations: InvitationResponseDto[];
-        pagination: {
-            total: number;
-            page: number;
-            limit: number;
-            totalPages: number;
-        };
-    };
-}
+export type InvitationsListResponseDto = PaginatedResponse<InvitationResponseDto>;
 
 export interface InvitationDetailsResponseDto {
     success: boolean;

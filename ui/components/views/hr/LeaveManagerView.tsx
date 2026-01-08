@@ -15,6 +15,12 @@ import {
     DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import {
+    Tooltip,
+    TooltipContent,
+    TooltipProvider,
+    TooltipTrigger,
+} from "@/components/ui/tooltip"
+import {
     Table,
     TableBody,
     TableCell,
@@ -142,144 +148,155 @@ export default function LeaveManagerView() {
                 </div>
 
                 <div className="bg-white rounded-xl border border-slate-200 overflow-hidden">
-                    <Table>
-                        <TableHeader className="bg-slate-50 border-b border-slate-100">
-                            <TableRow className="hover:bg-transparent border-slate-100">
-                                <TableHead className="px-6 py-3 text-[11px] font-bold text-slate-500 uppercase tracking-wider">Employee</TableHead>
-                                <TableHead className="px-6 py-3 text-[11px] font-bold text-slate-500 uppercase tracking-wider">Period</TableHead>
-                                <TableHead className="px-6 py-3 text-[11px] font-bold text-slate-500 uppercase tracking-wider">Duration</TableHead>
-                                <TableHead className="px-6 py-3 text-[11px] font-bold text-slate-500 uppercase tracking-wider">Reason</TableHead>
-                                <TableHead className="px-6 py-3 text-[11px] font-bold text-slate-500 uppercase tracking-wider w-[120px]">Status</TableHead>
-                                <TableHead className="px-6 py-3 text-[11px] font-bold text-slate-500 uppercase tracking-wider text-right">Actions</TableHead>
-                            </TableRow>
-                        </TableHeader>
-                        <TableBody className="divide-y divide-slate-100">
-                            {isLoading ? (
-                                Array.from({ length: 5 }).map((_, i) => (
-                                    <TableRow key={i} className="border-slate-100">
-                                        <TableCell className="px-6 py-4">
-                                            <div className="flex items-center gap-3">
-                                                <Skeleton className="h-8 w-8 rounded-lg" />
-                                                <div className="space-y-1">
-                                                    <Skeleton className="h-4 w-24" />
-                                                    <Skeleton className="h-3 w-32" />
-                                                </div>
-                                            </div>
-                                        </TableCell>
-                                        <TableCell className="px-6 py-4"><Skeleton className="h-4 w-32" /></TableCell>
-                                        <TableCell className="px-6 py-4"><Skeleton className="h-4 w-16" /></TableCell>
-                                        <TableCell className="px-6 py-4"><Skeleton className="h-4 w-40" /></TableCell>
-                                        <TableCell className="px-6 py-4"><Skeleton className="h-6 w-20 rounded-full" /></TableCell>
-                                        <TableCell className="px-6 py-4 text-right"><Skeleton className="h-7 w-20 ml-auto" /></TableCell>
-                                    </TableRow>
-                                ))
-                            ) : leaves.length === 0 ? (
-                                <TableRow>
-                                    <TableCell colSpan={6} className="p-12 text-center text-slate-500">
-                                        <p className="text-sm font-medium">No leave requests found</p>
-                                        {(searchQuery || statusFilter !== "all") && (
-                                            <p className="text-xs text-slate-400 mt-1">Try adjusting your filters</p>
-                                        )}
-                                    </TableCell>
+                    <div className="overflow-x-auto">
+                        <Table>
+                            <TableHeader className="bg-slate-50 border-b border-slate-100">
+                                <TableRow className="hover:bg-transparent border-slate-100">
+                                    <TableHead className="px-6 py-3 text-[11px] font-bold text-slate-500 uppercase tracking-wider min-w-[200px]">Employee</TableHead>
+                                    <TableHead className="px-6 py-3 text-[11px] font-bold text-slate-500 uppercase tracking-wider min-w-[150px]">Period</TableHead>
+                                    <TableHead className="px-6 py-3 text-[11px] font-bold text-slate-500 uppercase tracking-wider min-w-[100px]">Duration</TableHead>
+                                    <TableHead className="px-6 py-3 text-[11px] font-bold text-slate-500 uppercase tracking-wider min-w-[200px]">Reason</TableHead>
+                                    <TableHead className="px-6 py-3 text-[11px] font-bold text-slate-500 uppercase tracking-wider w-[120px] min-w-[120px]">Status</TableHead>
+                                    <TableHead className="px-6 py-3 text-[11px] font-bold text-slate-500 uppercase tracking-wider text-right min-w-[180px]">Actions</TableHead>
                                 </TableRow>
-                            ) : (
-                                leaves.map((leave: Leave) => {
-                                    const startDate = new Date(leave.startDate);
-                                    const endDate = new Date(leave.endDate);
-                                    const isSingleDay = startDate.toDateString() === endDate.toDateString();
-                                    const totalDays = leave.totalDays || 1;
-
-                                    return (
-                                        <TableRow key={leave.id} className="hover:bg-slate-50 transition-colors border-slate-100 group">
+                            </TableHeader>
+                            <TableBody className="divide-y divide-slate-100">
+                                {isLoading ? (
+                                    Array.from({ length: 5 }).map((_, i) => (
+                                        <TableRow key={i} className="border-slate-100">
                                             <TableCell className="px-6 py-4">
                                                 <div className="flex items-center gap-3">
-                                                    <Avatar className="h-9 w-9 rounded-lg border border-slate-200 group-hover:border-indigo-200 transition-colors">
-                                                        <AvatarFallback className="bg-gradient-to-br from-indigo-50 to-slate-50 text-indigo-600 font-bold text-xs">
-                                                            {leave.user?.name?.charAt(0) || 'U'}
-                                                        </AvatarFallback>
-                                                    </Avatar>
-                                                    <div>
-                                                        <p className="font-semibold text-slate-900 text-sm leading-tight">{leave.user?.name || 'Unknown'}</p>
-                                                        <p className="text-xs text-slate-500 mt-0.5">{leave.user?.email}</p>
+                                                    <Skeleton className="h-8 w-8 rounded-lg" />
+                                                    <div className="space-y-1">
+                                                        <Skeleton className="h-4 w-24" />
+                                                        <Skeleton className="h-3 w-32" />
                                                     </div>
                                                 </div>
                                             </TableCell>
-                                            <TableCell className="px-6 py-4">
-                                                <div className="flex flex-col gap-0.5">
-                                                    {isSingleDay ? (
-                                                        <span className="text-sm font-semibold text-slate-900">
-                                                            {startDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
-                                                        </span>
-                                                    ) : (
-                                                        <>
+                                            <TableCell className="px-6 py-4"><Skeleton className="h-4 w-32" /></TableCell>
+                                            <TableCell className="px-6 py-4"><Skeleton className="h-4 w-16" /></TableCell>
+                                            <TableCell className="px-6 py-4"><Skeleton className="h-4 w-40" /></TableCell>
+                                            <TableCell className="px-6 py-4"><Skeleton className="h-6 w-20 rounded-full" /></TableCell>
+                                            <TableCell className="px-6 py-4 text-right"><Skeleton className="h-7 w-20 ml-auto" /></TableCell>
+                                        </TableRow>
+                                    ))
+                                ) : leaves.length === 0 ? (
+                                    <TableRow>
+                                        <TableCell colSpan={6} className="p-12 text-center text-slate-500">
+                                            <p className="text-sm font-medium">No leave requests found</p>
+                                            {(searchQuery || statusFilter !== "all") && (
+                                                <p className="text-xs text-slate-400 mt-1">Try adjusting your filters</p>
+                                            )}
+                                        </TableCell>
+                                    </TableRow>
+                                ) : (
+                                    leaves.map((leave: Leave) => {
+                                        const startDate = new Date(leave.startDate);
+                                        const endDate = new Date(leave.endDate);
+                                        const isSingleDay = startDate.toDateString() === endDate.toDateString();
+                                        const totalDays = leave.totalDays || 1;
+
+                                        return (
+                                            <TableRow key={leave.id} className="hover:bg-slate-50 transition-colors border-slate-100 group">
+                                                <TableCell className="px-6 py-4">
+                                                    <div className="flex items-center gap-3">
+                                                        <Avatar className="h-9 w-9 rounded-lg border border-slate-200 group-hover:border-indigo-200 transition-colors">
+                                                            <AvatarFallback className="bg-gradient-to-br from-indigo-50 to-slate-50 text-indigo-600 font-bold text-xs">
+                                                                {leave.user?.name?.charAt(0) || 'U'}
+                                                            </AvatarFallback>
+                                                        </Avatar>
+                                                        <div>
+                                                            <p className="font-semibold text-slate-900 text-sm leading-tight">{leave.user?.name || 'Unknown'}</p>
+                                                            <p className="text-xs text-slate-500 mt-0.5">{leave.user?.email}</p>
+                                                        </div>
+                                                    </div>
+                                                </TableCell>
+                                                <TableCell className="px-6 py-4">
+                                                    <div className="flex flex-col gap-0.5">
+                                                        {isSingleDay ? (
                                                             <span className="text-sm font-semibold text-slate-900">
-                                                                {startDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
-                                                                <span className="text-slate-400 mx-1.5">→</span>
-                                                                {endDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+                                                                {startDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
                                                             </span>
-                                                        </>
-                                                    )}
-                                                    <span className="text-[10px] text-slate-400 font-medium uppercase tracking-wide">
-                                                        {isSingleDay ? 'Single Day' : 'Date Range'}
-                                                    </span>
-                                                </div>
-                                            </TableCell>
-                                            <TableCell className="px-6 py-4">
-                                                <div className="flex items-center gap-1.5">
-                                                    <span className="text-sm font-bold text-slate-900">{totalDays}</span>
-                                                    <span className="text-xs text-slate-500 font-medium">{totalDays === 1 ? 'day' : 'days'}</span>
-                                                </div>
-                                            </TableCell>
-                                            <TableCell className="px-6 py-4">
-                                                <p className="text-sm text-slate-600 max-w-xs truncate font-medium leading-relaxed">
-                                                    {leave.reason || 'No reason provided'}
-                                                </p>
-                                            </TableCell>
-                                            <TableCell className="px-6 py-4">
-                                                <Badge className={`
+                                                        ) : (
+                                                            <>
+                                                                <span className="text-sm font-semibold text-slate-900">
+                                                                    {startDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+                                                                    <span className="text-slate-400 mx-1.5">→</span>
+                                                                    {endDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+                                                                </span>
+                                                            </>
+                                                        )}
+                                                        <span className="text-[10px] text-slate-400 font-medium uppercase tracking-wide">
+                                                            {isSingleDay ? 'Single Day' : 'Date Range'}
+                                                        </span>
+                                                    </div>
+                                                </TableCell>
+                                                <TableCell className="px-6 py-4">
+                                                    <div className="flex items-center gap-1.5">
+                                                        <span className="text-sm font-bold text-slate-900">{totalDays}</span>
+                                                        <span className="text-xs text-slate-500 font-medium">{totalDays === 1 ? 'day' : 'days'}</span>
+                                                    </div>
+                                                </TableCell>
+                                                <TableCell className="px-6 py-4">
+                                                    <TooltipProvider>
+                                                        <Tooltip>
+                                                            <TooltipTrigger asChild>
+                                                                <p className="text-sm text-slate-600 max-w-xs truncate font-medium leading-relaxed cursor-help">
+                                                                    {leave.reason || 'No reason provided'}
+                                                                </p>
+                                                            </TooltipTrigger>
+                                                            <TooltipContent>
+                                                                <p className="max-w-xs break-words text-sm">{leave.reason || 'No reason provided'}</p>
+                                                            </TooltipContent>
+                                                        </Tooltip>
+                                                    </TooltipProvider>
+                                                </TableCell>
+                                                <TableCell className="px-6 py-4">
+                                                    <Badge className={`
                                                     font-bold border-0 px-2.5 py-1 text-[10px] uppercase tracking-tight rounded-lg shadow-none
                                                     ${leave.status === 'APPROVED' ? 'bg-emerald-100 text-emerald-700 hover:bg-emerald-100' :
-                                                        leave.status === 'REJECTED' ? 'bg-rose-100 text-rose-700 hover:bg-rose-100' :
-                                                            'bg-amber-100 text-amber-700 hover:bg-amber-100'}
+                                                            leave.status === 'REJECTED' ? 'bg-rose-100 text-rose-700 hover:bg-rose-100' :
+                                                                'bg-amber-100 text-amber-700 hover:bg-amber-100'}
                                                 `}>
-                                                    {leave.status}
-                                                </Badge>
-                                            </TableCell>
-                                            <TableCell className="px-6 py-4 text-right">
-                                                {leave.status === 'PENDING' ? (
-                                                    <div className="flex justify-end gap-2">
-                                                        <Button
-                                                            onClick={() => handleStatusUpdate(leave.id, 'APPROVED')}
-                                                            size="sm"
-                                                            disabled={updateLeaveStatusMutation.isPending && updateLeaveStatusMutation.variables?.requestId === leave.id}
-                                                            className="h-8 px-4 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-xs font-bold shadow-sm hover:shadow-md transition-all"
-                                                        >
-                                                            {updateLeaveStatusMutation.isPending && updateLeaveStatusMutation.variables?.requestId === leave.id && updateLeaveStatusMutation.variables?.status === 'APPROVED' ? (
-                                                                <Spinner className="h-3 w-3 animate-spin" />
-                                                            ) : 'Approve'}
-                                                        </Button>
-                                                        <Button
-                                                            onClick={() => handleStatusUpdate(leave.id, 'REJECTED')}
-                                                            size="sm"
-                                                            variant="outline"
-                                                            disabled={updateLeaveStatusMutation.isPending && updateLeaveStatusMutation.variables?.requestId === leave.id}
-                                                            className="h-8 px-4 text-rose-600 hover:text-rose-700 hover:bg-rose-50 border-rose-200 rounded-lg text-xs font-bold shadow-sm hover:shadow-md transition-all"
-                                                        >
-                                                            {updateLeaveStatusMutation.isPending && updateLeaveStatusMutation.variables?.requestId === leave.id && updateLeaveStatusMutation.variables?.status === 'REJECTED' ? (
-                                                                <Spinner className="h-3 w-3 animate-spin" />
-                                                            ) : 'Reject'}
-                                                        </Button>
-                                                    </div>
-                                                ) : (
-                                                    <span className="text-xs text-slate-400 font-medium italic">Completed</span>
-                                                )}
-                                            </TableCell>
-                                        </TableRow>
-                                    )
-                                })
-                            )}
-                        </TableBody>
-                    </Table>
+                                                        {leave.status}
+                                                    </Badge>
+                                                </TableCell>
+                                                <TableCell className="px-6 py-4 text-right">
+                                                    {leave.status === 'PENDING' ? (
+                                                        <div className="flex justify-end gap-2">
+                                                            <Button
+                                                                onClick={() => handleStatusUpdate(leave.id, 'APPROVED')}
+                                                                size="sm"
+                                                                disabled={updateLeaveStatusMutation.isPending && updateLeaveStatusMutation.variables?.requestId === leave.id}
+                                                                className="h-8 px-4 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-xs font-bold shadow-sm hover:shadow-md transition-all"
+                                                            >
+                                                                {updateLeaveStatusMutation.isPending && updateLeaveStatusMutation.variables?.requestId === leave.id && updateLeaveStatusMutation.variables?.status === 'APPROVED' ? (
+                                                                    <Spinner className="h-3 w-3 animate-spin" />
+                                                                ) : 'Approve'}
+                                                            </Button>
+                                                            <Button
+                                                                onClick={() => handleStatusUpdate(leave.id, 'REJECTED')}
+                                                                size="sm"
+                                                                variant="outline"
+                                                                disabled={updateLeaveStatusMutation.isPending && updateLeaveStatusMutation.variables?.requestId === leave.id}
+                                                                className="h-8 px-4 text-rose-600 hover:text-rose-700 hover:bg-rose-50 border-rose-200 rounded-lg text-xs font-bold shadow-sm hover:shadow-md transition-all"
+                                                            >
+                                                                {updateLeaveStatusMutation.isPending && updateLeaveStatusMutation.variables?.requestId === leave.id && updateLeaveStatusMutation.variables?.status === 'REJECTED' ? (
+                                                                    <Spinner className="h-3 w-3 animate-spin" />
+                                                                ) : 'Reject'}
+                                                            </Button>
+                                                        </div>
+                                                    ) : (
+                                                        <span className="text-xs text-slate-400 font-medium italic">Completed</span>
+                                                    )}
+                                                </TableCell>
+                                            </TableRow>
+                                        )
+                                    })
+                                )}
+                            </TableBody>
+                        </Table>
+                    </div>
                 </div>
             </div>
         </div>

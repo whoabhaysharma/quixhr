@@ -107,8 +107,8 @@ export function AppShell({
         return null
     }
 
-    const notifications = notificationsData?.data?.notifications || []
-    const unreadCount = unreadCountData?.data?.count || 0
+    const notifications = notificationsData?.data?.data || []
+    const unreadCount = unreadCountData?.data?.unreadCount || 0
 
     const handleMarkAsRead = (notificationId: string) => {
         markAsReadMutation.mutate(notificationId)
@@ -259,14 +259,13 @@ export function AppShell({
                                     <Button variant="ghost" size="icon" className="relative w-9 h-9 rounded-full text-slate-500 hover:text-slate-900 transition-colors">
                                         <Bell className="w-5 h-5" />
                                         {unreadCount > 0 && (
-                                            <span className="absolute top-2 right-2 flex h-2 w-2">
-                                                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-slate-400 opacity-75"></span>
-                                                <span className="relative inline-flex rounded-full h-2 w-2 bg-slate-800"></span>
+                                            <span className="absolute -top-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full bg-red-500 text-[10px] font-bold text-white shadow-sm ring-1 ring-white">
+                                                {unreadCount > 9 ? '9+' : unreadCount}
                                             </span>
                                         )}
                                     </Button>
                                 </PopoverTrigger>
-                                <PopoverContent className="w-96 mt-2 p-0 rounded-2xl shadow-2xl border-slate-200" align="end">
+                                <PopoverContent className="w-96 mt-2 p-0 rounded-2xl shadow-2xl border-slate-200 overflow-hidden" align="end">
                                     <div className="p-4 bg-slate-50/50 rounded-t-2xl border-b border-slate-100 flex items-center justify-between">
                                         <h4 className="font-bold text-xs uppercase tracking-widest text-slate-500">Notifications</h4>
                                         {notifications.length > 0 && (

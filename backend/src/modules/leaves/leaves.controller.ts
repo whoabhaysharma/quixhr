@@ -3,6 +3,7 @@ import { catchAsync } from '@/utils/catchAsync';
 import { sendResponse } from '@/utils/sendResponse';
 import { AppError } from '@/utils/appError';
 import { LeaveService } from './leaves.service';
+import { getOrganizationContext } from '@/utils/tenantContext';
 import { getPaginationParams } from '@/utils/pagination';
 import {
     CreateLeaveGradeInput, UpdateLeaveGradeInput,
@@ -16,12 +17,7 @@ import { LeaveType, LeaveStatus } from '@prisma/client';
 // =========================================================================
 
 export const createLeaveGrade = catchAsync(async (req: Request, res: Response, next: NextFunction) => {
-    // If not extracted by tenant middleware, fallback
-    const organizationId = req.targetOrganizationId || req.user?.organizationId;
-
-    if (!organizationId) {
-        return next(new AppError('Organization context required', 400));
-    }
+    const organizationId = getOrganizationContext(req, next);
 
     // Role check usually handled by middleware, but extra safety:
     if (req.user!.role !== 'SUPER_ADMIN' && req.user!.organizationId !== organizationId) {
@@ -38,11 +34,7 @@ export const createLeaveGrade = catchAsync(async (req: Request, res: Response, n
 
 export const getLeaveGradeById = catchAsync(async (req: Request, res: Response, next: NextFunction) => {
     const id = req.params.id || req.params.gradeId;
-    const organizationId = req.targetOrganizationId || req.user?.organizationId;
-
-    if (!organizationId) {
-        return next(new AppError('Organization context required', 400));
-    }
+    const organizationId = getOrganizationContext(req, next);
 
     const grade = await LeaveService.getGradeById(organizationId, id);
 
@@ -58,11 +50,7 @@ export const getLeaveGradeById = catchAsync(async (req: Request, res: Response, 
 });
 
 export const getLeaveGrades = catchAsync(async (req: Request, res: Response, next: NextFunction) => {
-    const organizationId = req.targetOrganizationId || req.user?.organizationId;
-
-    if (!organizationId) {
-        return next(new AppError('Organization context is required', 400));
-    }
+    const organizationId = getOrganizationContext(req, next);
 
     const pagination = getPaginationParams(req);
     // Construct filter object to satisfy LeaveGradeQuery type
@@ -80,9 +68,7 @@ export const getLeaveGrades = catchAsync(async (req: Request, res: Response, nex
 
 export const updateLeaveGrade = catchAsync(async (req: Request, res: Response, next: NextFunction) => {
     const id = req.params.id || req.params.gradeId;
-    const organizationId = req.targetOrganizationId || req.user?.organizationId;
-
-    if (!organizationId) return next(new AppError('Organization context required', 400));
+    const organizationId = getOrganizationContext(req, next);
 
     // Verify existence & ownership via service (it throws if not found/unauthorized for org usually,
     // but here we check before calling update as service expects valid orgId)
@@ -100,9 +86,7 @@ export const updateLeaveGrade = catchAsync(async (req: Request, res: Response, n
 
 export const deleteLeaveGrade = catchAsync(async (req: Request, res: Response, next: NextFunction) => {
     const id = req.params.id || req.params.gradeId;
-    const organizationId = req.targetOrganizationId || req.user?.organizationId;
-
-    if (!organizationId) return next(new AppError('Organization context required', 400));
+    const organizationId = getOrganizationContext(req, next);
 
     if (req.user!.role !== 'SUPER_ADMIN' && req.user!.organizationId !== organizationId) {
         return next(new AppError('Permission denied', 403));
@@ -118,8 +102,7 @@ export const deleteLeaveGrade = catchAsync(async (req: Request, res: Response, n
 
 export const getPolicies = catchAsync(async (req: Request, res: Response, next: NextFunction) => {
     const { gradeId } = req.params;
-    const organizationId = req.targetOrganizationId || req.user?.organizationId;
-    if (!organizationId) return next(new AppError('Organization context required', 400));
+    const organizationId = getOrganizationContext(req, next);
 
     // Service handles parent validation
     const policies = await LeaveService.getPolicies(organizationId, gradeId);
@@ -128,8 +111,7 @@ export const getPolicies = catchAsync(async (req: Request, res: Response, next: 
 
 export const createPolicy = catchAsync(async (req: Request, res: Response, next: NextFunction) => {
     const { gradeId } = req.params;
-    const organizationId = req.targetOrganizationId || req.user?.organizationId;
-    if (!organizationId) return next(new AppError('Organization context required', 400));
+    const organizationId = getOrganizationContext(req, next);
 
     const input: CreateLeavePolicyInput = { ...req.body };
     const policy = await LeaveService.createPolicy(organizationId, gradeId, input);
@@ -142,8 +124,7 @@ export const updatePolicy = catchAsync(async (req: Request, res: Response, next:
     // or rely on service to do it if we pass orgId.
     // The issue is Routes might NOT have gradeId in params for this endpoint.
 
-    const organizationId = req.targetOrganizationId || req.user?.organizationId;
-    if (!organizationId) return next(new AppError('Organization context required', 400));
+    const organizationId = getOrganizationContext(req, next);
 
     const existingPolicy = await LeaveService.getPolicyById(policyId);
     if (!existingPolicy) return next(new AppError('Policy not found', 404));
@@ -159,8 +140,7 @@ export const updatePolicy = catchAsync(async (req: Request, res: Response, next:
 
 export const deletePolicy = catchAsync(async (req: Request, res: Response, next: NextFunction) => {
     const { policyId } = req.params;
-    const organizationId = req.targetOrganizationId || req.user?.organizationId;
-    if (!organizationId) return next(new AppError('Organization context required', 400));
+    const organizationId = getOrganizationContext(req, next);
 
     const existingPolicy = await LeaveService.getPolicyById(policyId);
     if (!existingPolicy) return next(new AppError('Policy not found', 404));
@@ -179,7 +159,7 @@ export const deletePolicy = catchAsync(async (req: Request, res: Response, next:
 
 export const createLeaveRequest = catchAsync(async (req: Request, res: Response, next: NextFunction) => {
     const { employeeId } = req.params;
-    const organizationId = req.targetOrganizationId || req.user?.organizationId;
+    const organizationId = getOrganizationContext(req, next);
 
     // Fallback if not set (e.g. employee requesting for themselves, we interpret context)
     // Ideally Middleware sets targetOrganizationId.
@@ -189,8 +169,6 @@ export const createLeaveRequest = catchAsync(async (req: Request, res: Response,
         // If regular user, they should only create for themselves (handled largely by route protection/middleware)
         // But let's assume we proceed if they are authenticated in this org.
     }
-
-    if (!organizationId) return next(new AppError('Organization context required', 400));
 
     const input: CreateLeaveRequestInput = {
         ...req.body
@@ -203,9 +181,7 @@ export const createLeaveRequest = catchAsync(async (req: Request, res: Response,
 export const getLeaveRequests = catchAsync(async (req: Request, res: Response, next: NextFunction) => {
     // Determine context: Employee-Specific OR Organization-Wide (Admin)
     const { employeeId } = req.params;
-    const organizationId = req.targetOrganizationId || req.user?.organizationId;
-
-    if (!organizationId) return next(new AppError('Organization context required', 400));
+    const organizationId = getOrganizationContext(req, next);
 
     const pagination = getPaginationParams(req);
 
@@ -238,9 +214,7 @@ export const getLeaveRequests = catchAsync(async (req: Request, res: Response, n
 
 export const updateLeaveRequestStatus = catchAsync(async (req: Request, res: Response, next: NextFunction) => {
     const { requestId } = req.params;
-    const organizationId = req.targetOrganizationId || req.user?.organizationId;
-
-    if (!organizationId) return next(new AppError('Organization context required', 400));
+    const organizationId = getOrganizationContext(req, next);
 
     // Service will fetch request and verify basic things. 
     // We need to pass approvedBy (User ID)
@@ -250,4 +224,17 @@ export const updateLeaveRequestStatus = catchAsync(async (req: Request, res: Res
 
     const updated = await LeaveService.updateRequestStatus(organizationId, requestId, input, req.user!.userId);
     sendResponse(res, 200, updated, `Leave request ${input.status.toLowerCase()} successfully`);
+});
+
+export const deleteLeaveRequest = catchAsync(async (req: Request, res: Response, next: NextFunction) => {
+    const { requestId } = req.params;
+    const organizationId = getOrganizationContext(req, next);
+
+    await LeaveService.deleteRequest(organizationId, requestId, {
+        userId: req.user!.userId,
+        role: req.user!.role,
+        employeeId: req.user!.employeeId
+    });
+
+    sendResponse(res, 204, null, 'Leave request deleted successfully');
 });

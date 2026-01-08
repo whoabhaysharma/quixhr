@@ -416,6 +416,11 @@ export class LeaveService {
                             firstName: true,
                             lastName: true,
                             code: true,
+                            user: {
+                                select: {
+                                    email: true
+                                }
+                            }
                         },
                     },
                 },
@@ -426,8 +431,16 @@ export class LeaveService {
             prisma.leaveRequest.count({ where }),
         ]);
 
+        const mappedData = data.map(leave => ({
+            ...leave,
+            user: {
+                name: `${leave.employee.firstName} ${leave.employee.lastName}`,
+                email: leave.employee.user?.email || 'N/A'
+            }
+        }));
+
         return {
-            data,
+            data: mappedData,
             pagination: {
                 total,
                 page,
@@ -548,5 +561,54 @@ export class LeaveService {
         }
 
         return updatedRequest;
+    }
+    static async deleteRequest(
+        organizationId: string,
+        requestId: string,
+        user: { userId: string; role: string; employeeId?: string }
+    ) {
+        const request = await prisma.leaveRequest.findUnique({
+            where: { id: requestId },
+            include: {
+                employee: {
+                    select: {
+                        id: true,
+                        userId: true,
+                        organizationId: true,
+                        managerId: true,
+                    },
+                },
+            },
+        });
+
+        if (!request) {
+            throw new AppError('Leave request not found', 404);
+        }
+
+        // Validate Organization Scope (skip for Super Admin)
+        if (user.role !== 'SUPER_ADMIN' && request.employee.organizationId !== organizationId) {
+            throw new AppError('Access denied', 403);
+        }
+
+        const isSuperAdmin = user.role === 'SUPER_ADMIN';
+        const isOrgAdmin = user.role === Role.ORG_ADMIN;
+        const isHrAdmin = user.role === Role.HR_ADMIN;
+        const isOwner = request.employee.userId === user.userId;
+
+        // Authorization Logic
+        if (isSuperAdmin || isOrgAdmin || isHrAdmin) {
+            // Admins can delete any request
+            // Clean up related notifications could be added here if necessary
+        } else if (isOwner) {
+            // Owner can only delete if PENDING
+            if (request.status !== LeaveStatus.PENDING) {
+                throw new AppError('You can only delete pending leave requests', 400);
+            }
+        } else {
+            // Anyone else is denied
+            throw new AppError('Permission denied', 403);
+        }
+
+        await prisma.leaveRequest.delete({ where: { id: requestId } });
     }
 }

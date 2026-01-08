@@ -13,13 +13,17 @@ export interface Notification {
 }
 
 export interface NotificationResponse {
-    notifications: Notification[];
-    total: number;
-    unreadCount: number;
+    data: Notification[];
+    pagination: {
+        total: number;
+        page: number;
+        limit: number;
+        totalPages: number;
+    };
 }
 
 export interface UnreadCountResponse {
-    count: number;
+    unreadCount: number;
 }
 
 /**

@@ -28,12 +28,6 @@ export interface NotificationResponseDto {
     createdAt: Date;
 }
 
-export interface NotificationsListResponseDto {
-    data: NotificationResponseDto[];
-    pagination: {
-        total: number;
-        page: number;
-        limit: number;
-        totalPages: number;
-    };
-}
+import { PaginatedResponse } from '@/utils/pagination';
+
+export type NotificationsListResponseDto = PaginatedResponse<NotificationResponseDto>;

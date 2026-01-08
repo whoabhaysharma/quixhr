@@ -13,14 +13,17 @@ import {
     PopoverTrigger,
 } from "@/components/ui/popover"
 
+import { Matcher } from "react-day-picker"
+
 interface DatePickerProps {
     date?: Date
     setDate: (date?: Date) => void
     placeholder?: string
     className?: string
+    disabled?: Matcher | Matcher[]
 }
 
-export function DatePicker({ date, setDate, placeholder = "Pick a date", className }: DatePickerProps) {
+export function DatePicker({ date, setDate, placeholder = "Pick a date", className, disabled }: DatePickerProps) {
     return (
         <Popover>
             <PopoverTrigger asChild>
@@ -42,6 +45,7 @@ export function DatePicker({ date, setDate, placeholder = "Pick a date", classNa
                     selected={date}
                     onSelect={setDate}
                     initialFocus
+                    disabled={disabled}
                 />
             </PopoverContent>
         </Popover>
