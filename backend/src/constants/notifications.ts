@@ -57,21 +57,21 @@ export const generateNotificationMessage = (
         case NotificationType.LEAVE_REQUEST_CREATED:
             const createdData = data as LeaveRequestCreatedData;
             return {
-                title: '📝 New Leave Request',
+                title: 'New Leave Request',
                 message: `${createdData.employeeName} has requested ${createdData.daysTaken} day(s) of ${createdData.leaveType} leave from ${createdData.startDate} to ${createdData.endDate}. Please review and approve or reject this request.`
             };
 
         case NotificationType.LEAVE_REQUEST_APPROVED:
             const approvedData = data as LeaveRequestStatusData;
             return {
-                title: '✅ Leave Request Approved',
+                title: 'Leave Request Approved',
                 message: `Great news! Your ${approvedData.leaveType} leave request from ${approvedData.startDate} to ${approvedData.endDate} has been approved.`
             };
 
         case NotificationType.LEAVE_REQUEST_REJECTED:
             const rejectedData = data as LeaveRequestStatusData;
             return {
-                title: '❌ Leave Request Rejected',
+                title: 'Leave Request Rejected',
                 message: `Unfortunately, your ${rejectedData.leaveType} leave request from ${rejectedData.startDate} to ${rejectedData.endDate} has been rejected. Please contact your manager for more details.`
             };
 

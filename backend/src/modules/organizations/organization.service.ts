@@ -252,3 +252,9 @@ export const getAuditLogs = async (
 
     return { logs, total };
 };
+
+import { DashboardService } from '../dashboard/dashboard.service';
+
+export const getAvailability = async (organizationId: string, query: { startDate?: string; endDate?: string }) => {
+    return DashboardService.getAvailability(organizationId, query);
+};

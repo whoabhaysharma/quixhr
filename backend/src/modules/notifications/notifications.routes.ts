@@ -63,7 +63,27 @@ router.patch(
     protect,
     markAllAsRead
 );
+/**
+ * @desc    Mark notification as read
+ * @route   PATCH /api/v1/notifications/:notificationId/read
+ * @access  Protected
+ */
+router.patch(
+    '/notifications/:notificationId/read',
+    protect,
+    markAsRead
+);
 
+/**
+ * @desc    Mark notification as unread
+ * @route   PATCH /api/v1/notifications/:notificationId/unread
+ * @access  Protected
+ */
+router.patch(
+    '/notifications/:notificationId/unread',
+    protect,
+    markAsUnread
+);
 /**
  * @desc    Update notification status (mark as read or unread)
  * @route   PATCH /api/v1/notifications/:notificationId

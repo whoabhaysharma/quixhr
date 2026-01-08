@@ -8,7 +8,9 @@ import { getPaginationParams } from '@/utils/pagination';
 import {
     CreateLeaveGradeInput, UpdateLeaveGradeInput,
     CreateLeavePolicyInput, UpdateLeavePolicyInput,
-    CreateLeaveRequestInput, UpdateLeaveRequestStatusInput
+    CreateLeaveRequestInput,
+    UpdateLeaveRequestStatusInput,
+    UpdateLeaveRequestInput
 } from './leaves.schema';
 import { LeaveType, LeaveStatus } from '@prisma/client';
 
@@ -158,7 +160,8 @@ export const deletePolicy = catchAsync(async (req: Request, res: Response, next:
 // =========================================================================
 
 export const createLeaveRequest = catchAsync(async (req: Request, res: Response, next: NextFunction) => {
-    const { employeeId } = req.params;
+    // employeeId check: Params (legacy/admin specific route if any) OR Body (Organization route)
+    const employeeId = req.params.employeeId || req.body.employeeId;
     const organizationId = getOrganizationContext(req, next);
 
     // Fallback if not set (e.g. employee requesting for themselves, we interpret context)
@@ -174,7 +177,18 @@ export const createLeaveRequest = catchAsync(async (req: Request, res: Response,
         ...req.body
     };
 
-    const request = await LeaveService.createRequest(organizationId, employeeId, input);
+    // Auto-approve if created by Admins or Manager (assuming Managers can approve own team's requests they create)
+    // For now, restricting auto-approve to Admins for safety, or check if user is manager of the employee.
+    // Simplified: Admins (Super, Org, HR) get auto-approve.
+    let status: LeaveStatus = LeaveStatus.PENDING;
+    let approvedBy: string | undefined;
+
+    if (['SUPER_ADMIN', 'ORG_ADMIN', 'HR_ADMIN'].includes(req.user!.role)) {
+        status = LeaveStatus.APPROVED;
+        approvedBy = req.user!.userId;
+    }
+
+    const request = await LeaveService.createRequest(organizationId, employeeId, input, status, approvedBy);
     sendResponse(res, 201, request, 'Leave request created successfully');
 });
 
@@ -210,6 +224,18 @@ export const getLeaveRequests = catchAsync(async (req: Request, res: Response, n
 
     const result = await LeaveService.getRequests(organizationId, pagination, filter);
     sendResponse(res, 200, result, 'Leave requests retrieved successfully');
+});
+
+export const updateLeaveRequest = catchAsync(async (req: Request, res: Response, next: NextFunction) => {
+    const { requestId } = req.params;
+    const organizationId = getOrganizationContext(req, next);
+
+    const input: UpdateLeaveRequestInput = {
+        ...req.body
+    };
+
+    const updated = await LeaveService.updateRequest(organizationId, requestId, input, req.user!.role);
+    sendResponse(res, 200, updated, 'Leave request updated successfully');
 });
 
 export const updateLeaveRequestStatus = catchAsync(async (req: Request, res: Response, next: NextFunction) => {

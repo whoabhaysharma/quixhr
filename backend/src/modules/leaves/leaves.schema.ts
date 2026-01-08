@@ -69,6 +69,7 @@ export const createLeaveRequestSchema = {
         type: z.nativeEnum(LeaveType),
         reason: z.string().max(500, "Reason must be 500 characters or less").optional(),
         dayDetails: z.any().optional(),
+        employeeId: z.string().uuid().optional(),
     }).refine(data => new Date(data.endDate) >= new Date(data.startDate), {
         message: "End date must be after or equal to start date",
         path: ["endDate"]
@@ -78,6 +79,23 @@ export const createLeaveRequestSchema = {
 export const updateLeaveRequestStatusSchema = {
     body: z.object({
         status: z.nativeEnum(LeaveStatus),
+    }),
+};
+
+export const updateLeaveRequestSchema = {
+    body: z.object({
+        startDate: z.string().datetime().or(z.string().regex(/^\d{4}-\d{2}-\d{2}$/)).optional(),
+        endDate: z.string().datetime().or(z.string().regex(/^\d{4}-\d{2}-\d{2}$/)).optional(),
+        type: z.nativeEnum(LeaveType).optional(),
+        reason: z.string().max(500).optional(),
+    }).refine(data => {
+        if (data.startDate && data.endDate) {
+            return new Date(data.endDate) >= new Date(data.startDate);
+        }
+        return true;
+    }, {
+        message: "End date must be after or equal to start date",
+        path: ["endDate"]
     }),
 };
 
@@ -108,6 +126,7 @@ export type CreateLeavePolicyInput = z.infer<typeof createLeavePolicySchema.body
 export type UpdateLeavePolicyInput = z.infer<typeof updateLeavePolicySchema.body>;
 export type CreateLeaveRequestInput = z.infer<typeof createLeaveRequestSchema.body>;
 export type UpdateLeaveRequestStatusInput = z.infer<typeof updateLeaveRequestStatusSchema.body>;
+export type UpdateLeaveRequestInput = z.infer<typeof updateLeaveRequestSchema.body>;
 export type LeaveRequestQuery = z.infer<typeof leaveRequestQuerySchema.query>;
 export type LeaveGradeQuery = z.infer<typeof leaveGradeQuerySchema.query>;
 

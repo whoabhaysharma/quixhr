@@ -78,7 +78,14 @@ export interface AvailabilityData {
         role: string;
         dept: string;
         avatar: string;
-        availability: string[];
+        availability: {
+            status: string;
+            meta: {
+                leaveId?: string;
+                leaveType?: string;
+                reason?: string;
+            } | null;
+        }[];
     }[];
 }
 

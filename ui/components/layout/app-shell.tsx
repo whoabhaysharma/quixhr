@@ -12,8 +12,7 @@ import {
     ChevronDown,
     User,
     Settings,
-    Search,
-    Plus
+    Check,
 } from "lucide-react"
 import {
     Popover,
@@ -256,33 +255,91 @@ export function AppShell({
                             {/* Notifications */}
                             <Popover>
                                 <PopoverTrigger asChild>
-                                    <Button variant="ghost" size="icon" className="relative w-9 h-9 rounded-full text-slate-500 hover:text-slate-900 transition-colors">
-                                        <Bell className="w-5 h-5" />
+                                    <Button variant="ghost" size="icon" className="relative w-10 h-10 rounded-full text-slate-500 hover:text-slate-900 hover:bg-slate-100 transition-all duration-200">
+                                        <Bell className="w-5 h-5 stroke-[1.5px]" />
                                         {unreadCount > 0 && (
-                                            <span className="absolute -top-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full bg-red-500 text-[10px] font-bold text-white shadow-sm ring-1 ring-white">
+                                            <span className="absolute top-1.5 right-1.5 flex items-center justify-center h-4 w-4 rounded-full bg-rose-500 text-[9px] font-bold text-white shadow-sm ring-2 ring-white">
                                                 {unreadCount > 9 ? '9+' : unreadCount}
                                             </span>
                                         )}
                                     </Button>
                                 </PopoverTrigger>
-                                <PopoverContent className="w-96 mt-2 p-0 rounded-2xl shadow-2xl border-slate-200 overflow-hidden" align="end">
-                                    <div className="p-4 bg-slate-50/50 rounded-t-2xl border-b border-slate-100 flex items-center justify-between">
-                                        <h4 className="font-bold text-xs uppercase tracking-widest text-slate-500">Notifications</h4>
+                                <PopoverContent className="w-[380px] mt-2 p-0 rounded-2xl shadow-xl border-slate-100/60 ring-1 ring-slate-900/5 overflow-hidden" align="end" sideOffset={8}>
+                                    <div className="px-5 py-4 bg-white/50 backdrop-blur-xl border-b border-slate-50 flex items-center justify-between sticky top-0 z-10">
+                                        <div className="flex items-center gap-2">
+                                            <h4 className="font-bold text-sm text-slate-800">Notifications</h4>
+                                            {unreadCount > 0 && (
+                                                <span className="bg-rose-50 text-rose-600 text-[10px] px-2 py-0.5 rounded-full font-bold border border-rose-100">
+                                                    {unreadCount} new
+                                                </span>
+                                            )}
+                                        </div>
                                         {notifications.length > 0 && (
-                                            <button onClick={handleMarkAllAsRead} className="text-[10px] text-slate-900 font-bold hover:underline">Mark all read</button>
+                                            <button
+                                                onClick={handleMarkAllAsRead}
+                                                className="text-[11px] font-semibold text-slate-500 hover:text-indigo-600 transition-colors"
+                                            >
+                                                Mark all as read
+                                            </button>
                                         )}
                                     </div>
-                                    <div className="max-h-96 overflow-y-auto divide-y divide-slate-100">
+                                    <div className="max-h-[450px] overflow-y-auto scrollbar-thin scrollbar-thumb-slate-200 scrollbar-track-transparent">
                                         {notifications.length === 0 ? (
-                                            <div className="p-8 text-center text-slate-400 text-sm">No notifications</div>
-                                        ) : (
-                                            notifications.map((n: any) => (
-                                                <div key={n.id} className={`p-4 hover:bg-slate-50 cursor-pointer ${!n.isRead ? 'bg-indigo-50/30' : ''}`} onClick={() => !n.isRead && handleMarkAsRead(n.id)}>
-                                                    <p className={`text-sm font-semibold ${getNotificationColor(n.type)}`}>{n.title}</p>
-                                                    <p className="text-xs text-slate-600 mt-1">{n.message}</p>
-                                                    <p className="text-[10px] text-slate-400 mt-2">{formatDistanceToNow(new Date(n.createdAt), { addSuffix: true })}</p>
+                                            <div className="flex flex-col items-center justify-center py-12 px-4 text-center">
+                                                <div className="w-12 h-12 bg-slate-50 rounded-full flex items-center justify-center mb-3">
+                                                    <Bell className="w-6 h-6 text-slate-300" />
                                                 </div>
-                                            ))
+                                                <p className="text-sm font-medium text-slate-900">No notifications</p>
+                                                <p className="text-xs text-slate-500 mt-1 max-w-[200px]">We'll notify you when something important happens.</p>
+                                            </div>
+                                        ) : (
+                                            <div className="divide-y divide-slate-50">
+                                                {notifications.map((n: any) => (
+                                                    <div
+                                                        key={n.id}
+                                                        className={`
+                                                            group relative px-6 py-5 hover:bg-slate-50 transition-all duration-200
+                                                            ${!n.isRead ? 'bg-white' : 'bg-slate-50/30'}
+                                                        `}
+                                                    >
+                                                        {/* Unread Indicator Ligne */}
+                                                        {!n.isRead && (
+                                                            <div className="absolute left-0 top-5 bottom-5 w-1 rounded-r-lg bg-indigo-500" />
+                                                        )}
+
+                                                        <div className="flex gap-4 items-start">
+                                                            <div className="flex-1 min-w-0 space-y-1.5">
+                                                                <div className="flex items-start justify-between gap-3">
+                                                                    <p className={`text-sm font-medium leading-snug ${!n.isRead ? 'text-slate-900' : 'text-slate-600'}`}>
+                                                                        {n.title}
+                                                                    </p>
+                                                                    {!n.isRead && (
+                                                                        <button
+                                                                            onClick={(e) => {
+                                                                                e.stopPropagation();
+                                                                                handleMarkAsRead(n.id);
+                                                                            }}
+                                                                            className="opacity-0 group-hover:opacity-100 transition-opacity p-1.5 hover:bg-slate-100 rounded-full text-slate-400 hover:text-indigo-600 -mr-2 -mt-1"
+                                                                            title="Mark as read"
+                                                                        >
+                                                                            <span className="sr-only">Mark as read</span>
+                                                                            <div className="w-4 h-4 border-2 border-current rounded-full flex items-center justify-center">
+                                                                                <div className="w-2 h-2 rounded-full bg-current opacity-0 hover:opacity-100" />
+                                                                            </div>
+                                                                        </button>
+                                                                    )}
+                                                                </div>
+                                                                <p className="text-xs text-slate-500 leading-relaxed line-clamp-2 pr-4">
+                                                                    {n.message}
+                                                                </p>
+                                                                <p className="text-[10px] font-medium text-slate-400 flex items-center gap-1 mt-2">
+                                                                    <span>{formatDistanceToNow(new Date(n.createdAt), { addSuffix: true })}</span>
+                                                                </p>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                ))}
+                                            </div>
                                         )}
                                     </div>
                                 </PopoverContent>

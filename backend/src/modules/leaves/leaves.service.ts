@@ -13,6 +13,7 @@ import {
     UpdateLeavePolicyInput,
     CreateLeaveRequestInput,
     UpdateLeaveRequestStatusInput,
+    UpdateLeaveRequestInput,
     LeaveRequestQuery,
     LeaveGradeQuery,
 } from './leaves.schema';
@@ -305,7 +306,9 @@ export class LeaveService {
     static async createRequest(
         organizationId: string,
         employeeId: string,
-        data: CreateLeaveRequestInput
+        data: CreateLeaveRequestInput,
+        initialStatus: LeaveStatus = LeaveStatus.PENDING,
+        approvedBy?: string
     ) {
         await validateOrganizationResource('employee', employeeId, organizationId, 'Employee');
 
@@ -329,8 +332,9 @@ export class LeaveService {
                 type: data.type,
                 reason: data.reason,
                 daysTaken,
-                status: LeaveStatus.PENDING,
+                status: initialStatus,
                 dayDetails: data.dayDetails ?? undefined,
+                approvedBy: initialStatus === LeaveStatus.APPROVED ? approvedBy : undefined,
             },
         });
 
@@ -559,6 +563,64 @@ export class LeaveService {
                 }
             );
         }
+
+        return updatedRequest;
+    }
+
+    static async updateRequest(
+        organizationId: string,
+        requestId: string,
+        data: UpdateLeaveRequestInput,
+        userRole: string
+    ) {
+        const request = await this.getRequestById(organizationId, requestId);
+
+        // Validation: Only allow updates if PENDING or if user is Admin
+        if (request.status !== LeaveStatus.PENDING && !['SUPER_ADMIN', 'ORG_ADMIN', 'HR_ADMIN'].includes(userRole)) {
+            throw new AppError('Cannot edit approved/rejected leaves', 400);
+        }
+
+        const updates: any = {};
+        if (data.type) updates.type = data.type;
+        if (data.reason) updates.reason = data.reason;
+
+        let newDaysTaken = request.daysTaken;
+
+        // Handle date updates explicitly to recalculate daysTaken
+        let newStart = request.startDate;
+        let newEnd = request.endDate;
+
+        if (data.startDate) {
+            newStart = new Date(data.startDate);
+            updates.startDate = newStart;
+        }
+        if (data.endDate) {
+            newEnd = new Date(data.endDate);
+            updates.endDate = newEnd;
+        }
+
+        if (data.startDate || data.endDate) {
+            const diffTime = Math.abs(newEnd.getTime() - newStart.getTime());
+            newDaysTaken = Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1;
+            updates.daysTaken = newDaysTaken;
+        }
+
+        const updatedRequest = await prisma.leaveRequest.update({
+            where: { id: requestId },
+            data: updates,
+            include: {
+                employee: {
+                    select: {
+                        id: true,
+                        firstName: true,
+                        lastName: true,
+                        organization: {
+                            select: { name: true }
+                        }
+                    }
+                }
+            }
+        });
 
         return updatedRequest;
     }

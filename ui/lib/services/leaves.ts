@@ -91,6 +91,33 @@ export const leavesService = {
         }
     },
 
+    // Create a leave request on behalf of employee (Admin)
+    createAdminLeave: async (
+        organizationId: string,
+        employeeId: string,
+        leaveData: {
+            type: string;
+            startDate: string;
+            endDate: string;
+            reason?: string;
+            dayDetails?: any;
+        }
+    ): Promise<ApiResponse<Leave>> => {
+        try {
+            const response = await api.post<ApiResponse<Leave>>(`/org/${organizationId}/leaves`, {
+                ...leaveData,
+                employeeId
+            });
+            return response.data;
+        } catch (error: any) {
+            throw new ApiError(
+                error.response?.data?.message || 'Failed to create leave request',
+                error.response?.data?.status,
+                error.response?.status
+            );
+        }
+    },
+
     // Get all leave requests for an organization (Admin/Manager)
     getOrgLeaveRequests: async (
         organizationId: string,
@@ -136,6 +163,28 @@ export const leavesService = {
         } catch (error: any) {
             throw new ApiError(
                 error.response?.data?.message || 'Failed to update leave status',
+                error.response?.data?.status,
+                error.response?.status
+            );
+        }
+    },
+
+    // Update leave details (Admin/Manager) - Flat API
+    updateLeaveDetails: async (
+        requestId: string,
+        data: {
+            type?: string;
+            startDate?: string;
+            endDate?: string;
+            reason?: string;
+        }
+    ): Promise<ApiResponse<Leave>> => {
+        try {
+            const response = await api.patch<ApiResponse<Leave>>(`/leaves/requests/${requestId}`, data);
+            return response.data;
+        } catch (error: any) {
+            throw new ApiError(
+                error.response?.data?.message || 'Failed to update leave details',
                 error.response?.data?.status,
                 error.response?.status
             );

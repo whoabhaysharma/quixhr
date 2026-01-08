@@ -63,6 +63,14 @@ export const getOrganizationAuditLogs = catchAsync(async (req: Request, res: Res
     sendResponse(res, 200, logs, 'Audit logs retrieved');
 });
 
+export const getAvailability = catchAsync(async (req: Request, res: Response, next: NextFunction) => {
+    const organizationId = getOrganizationContext(req, next);
+    const { startDate, endDate } = req.query as { startDate?: string, endDate?: string };
+
+    const data = await OrganizationService.getAvailability(organizationId, { startDate, endDate });
+    sendResponse(res, 200, data, 'Availability data retrieved');
+});
+
 // =========================================================================
 // MEMBER MANAGEMENT (Restricted Strict RBAC)
 // =========================================================================

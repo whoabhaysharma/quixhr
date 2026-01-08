@@ -116,7 +116,16 @@ router.post(
 );
 
 // --- Leave Requests (Nested List) ---
-import { leaveRequestQuerySchema } from '../leaves/leaves.schema';
+import { leaveRequestQuerySchema, createLeaveRequestSchema } from '../leaves/leaves.schema';
+
+// POST /api/v1/org/:organizationId/leaves (Admin Create for Employee)
+router.post(
+    '/:organizationId/leaves',
+    resolveTenant,
+    restrictTo(Role.ORG_ADMIN, Role.HR_ADMIN, Role.MANAGER, Role.SUPER_ADMIN),
+    validate(createLeaveRequestSchema),
+    LeaveController.createLeaveRequest
+);
 
 // GET /api/v1/org/:organizationId/leaves
 router.get(
@@ -209,10 +218,20 @@ router.patch(
  * @route   GET /api/v1/org/:organizationId/dashboard
  */
 router.get(
-    '/:organizationId/dashboard',
+    '/:organizationId/dashboard/stats',
     resolveTenant,
     restrictTo(Role.ORG_ADMIN, Role.HR_ADMIN, Role.SUPER_ADMIN),
     OrganizationController.getDashboardStats
+);
+
+/**
+ * @route   GET /api/v1/org/:organizationId/dashboard/availability
+ */
+router.get(
+    '/:organizationId/dashboard/availability',
+    resolveTenant,
+    restrictTo(Role.ORG_ADMIN, Role.HR_ADMIN, Role.SUPER_ADMIN),
+    OrganizationController.getAvailability
 );
 
 /**

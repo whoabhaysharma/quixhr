@@ -136,17 +136,17 @@ export function AvailabilityWeekView() {
                                             </div>
                                         </div>
                                     </td>
-                                    {employee.availability.map((status, index) => (
+                                    {employee.availability.map((dayStatus, index) => (
                                         <td key={index} className="h-10 w-14">
                                             <TooltipProvider delayDuration={0}>
                                                 <Tooltip>
                                                     <TooltipTrigger asChild>
                                                         <div className="h-full w-full cursor-default">
-                                                            <StatusCell status={status} />
+                                                            <StatusCell status={dayStatus.status} />
                                                         </div>
                                                     </TooltipTrigger>
                                                     <TooltipContent className="text-xs font-medium">
-                                                        <p>{StatusTooltip({ status })}</p>
+                                                        <p>{StatusTooltip({ status: dayStatus.status })}</p>
                                                     </TooltipContent>
                                                 </Tooltip>
                                             </TooltipProvider>
