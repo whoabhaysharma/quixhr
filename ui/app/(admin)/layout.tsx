@@ -3,7 +3,10 @@
 import { AppShell, NavGroup } from "@/components/layout/app-shell"
 import { Users, Clock, Calendar, FileText, LayoutDashboard } from "lucide-react"
 
+import { useAuth } from "@/context/auth-context"
+
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
+    const { user } = useAuth()
     const navGroups: NavGroup[] = [
         {
             title: "Overview",

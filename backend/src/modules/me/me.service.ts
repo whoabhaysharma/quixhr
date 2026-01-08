@@ -291,29 +291,15 @@ export class MeService {
      */
     static async createLeaveRequest(userId: string, data: any) {
         const employee = await this.getEmployeeContext(userId);
-        const { startDate, endDate, type, reason, dayDetails } = data;
 
-        const start = new Date(startDate);
-        const end = new Date(endDate);
+        // Delegate to LeaveService to ensure all validations (overlaps) and side-effects (notifications) run
+        const { LeaveService } = await import('../leaves/leaves.service');
 
-        if (start > end) {
-            throw new AppError('Start date must be before end date', 400);
-        }
-
-        const daysTaken = Math.ceil((end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24)) + 1;
-
-        const leaveRequest = await prisma.leaveRequest.create({
-            data: {
-                employeeId: employee.id,
-                startDate: start,
-                endDate: end,
-                daysTaken,
-                type,
-                status: 'PENDING',
-                reason,
-                dayDetails,
-            },
-        });
+        const leaveRequest = await LeaveService.createRequest(
+            employee.organizationId,
+            employee.id,
+            data
+        );
 
         return {
             id: leaveRequest.id,

@@ -152,9 +152,19 @@ export function AppShell({
                                 Q
                             </span>
                         </div>
-                        <div className="flex flex-col">
+                        <div className="flex flex-col min-w-0">
                             <span className="text-xl font-bold tracking-tight text-slate-900 leading-none">{brand.name}</span>
-                            {brand.badge && <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mt-1">{brand.badge}</span>}
+                            <div className="flex items-center gap-1.5 mt-1">
+                                {brand.badge && <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">{brand.badge}</span>}
+                                {user?.organization?.name && (
+                                    <>
+                                        <span className="text-[10px] text-slate-300">•</span>
+                                        <span className="text-[10px] font-medium text-slate-600 truncate max-w-[100px]" title={user.organization.name}>
+                                            {user.organization.name}
+                                        </span>
+                                    </>
+                                )}
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -380,12 +390,16 @@ export function AppShell({
                                         </p>
                                     </div>
                                     <div className="p-1.5">
-                                        <Button variant="ghost" className="w-full justify-start h-9 px-3 text-sm font-medium text-slate-700">
-                                            <User className="w-4 h-4 mr-2" /> Profile
-                                        </Button>
-                                        <Button variant="ghost" className="w-full justify-start h-9 px-3 text-sm font-medium text-slate-700">
-                                            <Settings className="w-4 h-4 mr-2" /> Preferences
-                                        </Button>
+                                        <Link href={`${basePath}/profile`} onClick={() => setSidebarOpen(false)}>
+                                            <Button variant="ghost" className="w-full justify-start h-9 px-3 text-sm font-medium text-slate-700">
+                                                <User className="w-4 h-4 mr-2" /> Profile
+                                            </Button>
+                                        </Link>
+                                        <Link href={`${basePath}/preferences`} onClick={() => setSidebarOpen(false)}>
+                                            <Button variant="ghost" className="w-full justify-start h-9 px-3 text-sm font-medium text-slate-700">
+                                                <Settings className="w-4 h-4 mr-2" /> Preferences
+                                            </Button>
+                                        </Link>
                                         <div className="h-px bg-slate-100 my-1"></div>
                                         <Button onClick={logout} variant="ghost" className="w-full justify-start h-9 px-3 text-sm font-bold text-rose-600 hover:text-rose-700 hover:bg-rose-50">
                                             <LogOut className="w-4 h-4 mr-2" /> Sign Out

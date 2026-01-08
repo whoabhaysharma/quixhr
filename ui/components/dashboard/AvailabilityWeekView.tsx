@@ -85,7 +85,7 @@ export function AvailabilityWeekView() {
                     <CardTitle className="text-base font-semibold text-slate-900">People Availability</CardTitle>
                     <p className="text-sm text-slate-500">Upcoming absences this week</p>
                 </div>
-                <Link href="/a/availability">
+                <Link href="/a/people/availability">
                     <Button variant="ghost" size="sm" className="text-xs text-indigo-600 hover:text-indigo-700 hover:bg-indigo-50 font-medium h-8">
                         View Full Schedule <ArrowRight className="ml-1.5 h-3.5 w-3.5" />
                     </Button>

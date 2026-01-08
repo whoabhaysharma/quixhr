@@ -6,7 +6,13 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
-import { CheckCircle2, UserX, Minus, ChevronLeft, ChevronRight, Search, FileDown, Calendar as CalendarIcon, Filter, X, Loader2 } from "lucide-react"
+import {
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuItem,
+    DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
+import { CheckCircle2, UserX, Minus, ChevronLeft, ChevronRight, Search, FileDown, Calendar as CalendarIcon, Filter, X, Loader2, ChevronDown } from "lucide-react"
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
 import { dashboardService } from "@/lib/services/dashboard"
 import { leavesService } from "@/lib/services/leaves"
@@ -143,7 +149,7 @@ export default function AvailabilityFullView() {
 
     const handleConfirmAbsent = () => {
         if (!selectedEmployee || !selectedDate) return;
-        const formattedDate = selectedDate.split('T')[0];
+        const formattedDate = format(parseISO(selectedDate), 'yyyy-MM-dd');
 
         if (editingLeaveId) {
             updateLeaveMutation.mutate({
@@ -357,17 +363,29 @@ export default function AvailabilityFullView() {
                     <div className="space-y-4 py-4">
                         <div className="space-y-2">
                             <Label htmlFor="leaveType">Leave Type</Label>
-                            <select
-                                id="leaveType"
-                                className="flex h-9 w-full items-center justify-between rounded-md border border-slate-200 bg-transparent px-3 py-2 text-sm shadow-sm placeholder:text-slate-500 focus:outline-none focus:ring-1 focus:ring-emerald-500 disabled:cursor-not-allowed disabled:opacity-50"
-                                value={leaveType}
-                                onChange={(e) => setLeaveType(e.target.value)}
-                            >
-                                <option value="UNPAID">Unpaid Leave</option>
-                                <option value="SICK">Sick Leave</option>
-                                <option value="CASUAL">Casual Leave</option>
-                                <option value="ANNUAL">Annual Leave</option>
-                            </select>
+                            <DropdownMenu>
+                                <DropdownMenuTrigger asChild>
+                                    <Button variant="outline" className="w-full justify-between font-normal">
+                                        {leaveType ? (
+                                            {
+                                                'UNPAID': 'Unpaid Leave',
+                                                'SICK': 'Sick Leave',
+                                                'CASUAL': 'Casual Leave',
+                                                'ANNUAL': 'Annual Leave'
+                                            }[leaveType] || leaveType
+                                        ) : (
+                                            <span className="text-muted-foreground">Select leave type</span>
+                                        )}
+                                        <ChevronDown className="h-4 w-4 opacity-50" />
+                                    </Button>
+                                </DropdownMenuTrigger>
+                                <DropdownMenuContent className="w-[--radix-popover-trigger-width] min-w-[200px]" align="start">
+                                    <DropdownMenuItem onClick={() => setLeaveType("UNPAID")}>Unpaid Leave</DropdownMenuItem>
+                                    <DropdownMenuItem onClick={() => setLeaveType("SICK")}>Sick Leave</DropdownMenuItem>
+                                    <DropdownMenuItem onClick={() => setLeaveType("CASUAL")}>Casual Leave</DropdownMenuItem>
+                                    <DropdownMenuItem onClick={() => setLeaveType("ANNUAL")}>Annual Leave</DropdownMenuItem>
+                                </DropdownMenuContent>
+                            </DropdownMenu>
                         </div>
                         <div className="space-y-2">
                             <Label htmlFor="reason">Reason</Label>
@@ -376,7 +394,12 @@ export default function AvailabilityFullView() {
                                 placeholder="Enter reason for absence..."
                                 value={absentReason}
                                 onChange={(e) => setAbsentReason(e.target.value)}
+                                className="max-h-[200px] overflow-y-auto resize-none w-full max-w-full break-all"
+                                maxLength={500}
                             />
+                            <p className="text-xs text-slate-400 text-right">
+                                {absentReason.length}/500 characters
+                            </p>
                         </div>
                     </div>
                     <DialogFooter className="flex items-center justify-between sm:justify-between w-full">

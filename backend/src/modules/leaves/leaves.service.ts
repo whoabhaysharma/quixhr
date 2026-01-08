@@ -314,9 +314,55 @@ export class LeaveService {
 
         // Calculate days taken (simplified - should account for weekends/holidays)
         const start = new Date(data.startDate);
+        start.setHours(0, 0, 0, 0); // Normalize to start of day
+
         const end = new Date(data.endDate);
+        end.setHours(23, 59, 59, 999); // Normalize to end of day
+
         const diffTime = Math.abs(end.getTime() - start.getTime());
-        const daysTaken = Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1;
+        // Add 1 day worth of ms to diff before dividing to include the full last day
+        // Or simpler: (End - Start) around 24*days. Since we stretched end to 23:59, diff is almost n days.
+        // Let's stick to the original days calculation logic but using clean dates roughly?
+        // Actually for daysTaken calculation, usually we want simple dates. 
+        // Let's use clean clones for calculation to avoid off-by-one due to 23:59
+        const calcStart = new Date(data.startDate); calcStart.setHours(0, 0, 0, 0);
+        const calcEnd = new Date(data.endDate); calcEnd.setHours(0, 0, 0, 0);
+        const daysTaken = Math.ceil(Math.abs(calcEnd.getTime() - calcStart.getTime()) / (1000 * 60 * 60 * 24)) + 1;
+
+        console.log('Checking Overlap:', {
+            start: start.toISOString(),
+            end: end.toISOString()
+        });
+
+        // Check for overlapping requests
+        const overlappingRequest = await prisma.leaveRequest.findFirst({
+            where: {
+                employeeId,
+                status: {
+                    not: LeaveStatus.REJECTED,
+                },
+                AND: [
+                    // Existing Start <= New End
+                    { startDate: { lte: end } },
+                    // Existing End >= New Start
+                    { endDate: { gte: start } },
+                ],
+            },
+        });
+
+        console.log('Found Overlap:', overlappingRequest ? {
+            id: overlappingRequest.id,
+            start: overlappingRequest.startDate.toISOString(),
+            end: overlappingRequest.endDate.toISOString()
+        } : 'None');
+        console.log('---------------------------');
+
+        if (overlappingRequest) {
+            throw new AppError(
+                `Leave request overlaps with an existing request (${overlappingRequest.startDate.toLocaleDateString()} - ${overlappingRequest.endDate.toLocaleDateString()})`,
+                400
+            );
+        }
 
         // Get notification recipients (admins + manager)
         const { recipients, employee } = await this.getLeaveRequestNotificationRecipients(
