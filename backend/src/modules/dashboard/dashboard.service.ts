@@ -90,9 +90,10 @@ export class DashboardService {
 
                 // Rule 2: Check Approved Leaves
                 const leave = leaves.find(l => {
-                    const checkDate = format(currentDayDate, 'yyyy-MM-dd');
-                    const sDate = format(new Date(l.startDate), 'yyyy-MM-dd');
-                    const eDate = format(new Date(l.endDate), 'yyyy-MM-dd');
+                    // Compare using UTC date strings to ensure calendar date fidelity
+                    const checkDate = dayObj.date.split('T')[0];
+                    const sDate = l.startDate instanceof Date ? l.startDate.toISOString().split('T')[0] : new Date(l.startDate).toISOString().split('T')[0];
+                    const eDate = l.endDate instanceof Date ? l.endDate.toISOString().split('T')[0] : new Date(l.endDate).toISOString().split('T')[0];
 
                     return l.employeeId === emp.id &&
                         checkDate >= sDate &&

@@ -67,7 +67,7 @@ export default function AvailabilityFullView() {
         queryKey: ['dashboard-availability', organizationId, start.toISOString()],
         queryFn: () => {
             if (!organizationId) return Promise.reject("No Org ID");
-            return dashboardService.getAvailability(organizationId, start.toISOString(), end.toISOString())
+            return dashboardService.getAvailability(organizationId, format(start, 'yyyy-MM-dd'), format(end, 'yyyy-MM-dd'))
         },
         enabled: !!organizationId
     });
@@ -149,7 +149,10 @@ export default function AvailabilityFullView() {
 
     const handleConfirmAbsent = () => {
         if (!selectedEmployee || !selectedDate) return;
-        const formattedDate = format(parseISO(selectedDate), 'yyyy-MM-dd');
+
+        // Use the selected date string directly (it comes from the day object which is already in correct format)
+        // or parse the YYYY-MM-DD part from it safely
+        const formattedDate = selectedDate.split('T')[0];
 
         if (editingLeaveId) {
             updateLeaveMutation.mutate({
@@ -234,14 +237,19 @@ export default function AvailabilityFullView() {
                                 <tr>
                                     <th className="text-left font-semibold text-xs text-slate-500 uppercase tracking-wider py-4 px-6 border-b border-slate-100 sticky left-0 bg-slate-50/95 z-10 w-[250px]">Employee</th>
                                     {dates?.map((day) => {
-                                        const d = parseISO(day.date);
-                                        const isToday = format(d, 'yyyy-MM-dd') === format(new Date(), 'yyyy-MM-dd');
+                                        // Parse YYYY-MM-DD directly from the ISO string to avoid timezone shifts
+                                        const datePart = day.date.split('T')[0];
+                                        const [y, m, d] = datePart.split('-').map(Number);
+                                        // const dateObj = new Date(y, m - 1, d);
+
+                                        const isToday = datePart === new Date().toISOString().split('T')[0];
+
                                         return (
                                             <th key={day.date} className="text-center border-b border-slate-100 py-4 px-2">
                                                 <div className="flex flex-col items-center">
                                                     <span className="text-[10px] uppercase font-bold text-slate-400">{day.dayName}</span>
                                                     <span className={`text-sm font-bold mt-1 ${isToday ? "text-indigo-600 bg-indigo-50 h-6 w-6 flex items-center justify-center rounded" : "text-slate-700"}`}>
-                                                        {format(d, 'dd')}
+                                                        {d}
                                                     </span>
                                                 </div>
                                             </th>

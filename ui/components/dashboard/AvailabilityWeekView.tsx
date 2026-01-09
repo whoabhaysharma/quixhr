@@ -61,7 +61,7 @@ export function AvailabilityWeekView() {
         queryKey: ['dashboard-availability', organizationId, start.toISOString()],
         queryFn: () => {
             if (!organizationId) return Promise.reject("No Org ID");
-            return dashboardService.getAvailability(organizationId, start.toISOString(), end.toISOString())
+            return dashboardService.getAvailability(organizationId, format(start, 'yyyy-MM-dd'), format(end, 'yyyy-MM-dd'))
         },
         enabled: !!organizationId
     });
@@ -98,14 +98,19 @@ export function AvailabilityWeekView() {
                             <tr>
                                 <th className="text-left font-medium text-xs text-slate-500 uppercase tracking-wider pb-2 w-[200px] pl-2">Employee</th>
                                 {dates?.map((day) => {
-                                    const d = parseISO(day.date);
-                                    const isToday = format(d, 'yyyy-MM-dd') === format(new Date(), 'yyyy-MM-dd');
+                                    // Parse YYYY-MM-DD directly from the ISO string to avoid timezone shifts
+                                    const datePart = day.date.split('T')[0];
+                                    const [y, m, d] = datePart.split('-').map(Number);
+                                    const dateObj = new Date(y, m - 1, d);
+
+                                    const isToday = datePart === new Date().toISOString().split('T')[0];
+
                                     return (
                                         <th key={day.date} className="pb-2">
                                             <div className="flex flex-col items-center">
                                                 <span className="text-[10px] uppercase font-bold text-slate-400">{day.dayName}</span>
                                                 <span className={`text-[10px] font-bold mt-0.5 ${isToday ? "text-indigo-600 bg-indigo-50 px-1.5 py-0.5 rounded" : "text-slate-600"}`}>
-                                                    {format(d, 'dd')}
+                                                    {d}
                                                 </span>
                                             </div>
                                         </th>

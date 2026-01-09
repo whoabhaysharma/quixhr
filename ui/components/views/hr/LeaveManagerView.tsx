@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
+import { format } from "date-fns"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
@@ -191,10 +192,21 @@ export default function LeaveManagerView() {
                                     </TableRow>
                                 ) : (
                                     leaves.map((leave: Leave) => {
-                                        const startDate = new Date(leave.startDate);
-                                        const endDate = new Date(leave.endDate);
-                                        const isSingleDay = startDate.toDateString() === endDate.toDateString();
-                                        const totalDays = leave.totalDays || 1;
+                                        // Check if start and end date are the same calendar day
+                                        const isSingleDay = leave.startDate.split('T')[0] === leave.endDate.split('T')[0];
+                                        const daysTaken = leave.daysTaken || 1;
+
+                                        // Helper to format date strings without timezone shifts
+                                        const formatSafeDate = (isoString: string, includeYear: boolean = true) => {
+                                            if (!isoString) return '';
+                                            try {
+                                                const [y, m, d] = isoString.split('T')[0].split('-').map(Number);
+                                                const date = new Date(y, m - 1, d);
+                                                return format(date, includeYear ? 'MMM dd, yyyy' : 'MMM dd');
+                                            } catch (e) {
+                                                return isoString;
+                                            }
+                                        };
 
                                         return (
                                             <TableRow key={leave.id} className="hover:bg-slate-50 transition-colors border-slate-100 group">
@@ -215,14 +227,14 @@ export default function LeaveManagerView() {
                                                     <div className="flex flex-col gap-0.5">
                                                         {isSingleDay ? (
                                                             <span className="text-sm font-semibold text-slate-900">
-                                                                {startDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+                                                                {formatSafeDate(leave.startDate)}
                                                             </span>
                                                         ) : (
                                                             <>
                                                                 <span className="text-sm font-semibold text-slate-900">
-                                                                    {startDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+                                                                    {formatSafeDate(leave.startDate, false)}
                                                                     <span className="text-slate-400 mx-1.5">→</span>
-                                                                    {endDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+                                                                    {formatSafeDate(leave.endDate)}
                                                                 </span>
                                                             </>
                                                         )}
@@ -233,8 +245,8 @@ export default function LeaveManagerView() {
                                                 </TableCell>
                                                 <TableCell className="px-6 py-4">
                                                     <div className="flex items-center gap-1.5">
-                                                        <span className="text-sm font-bold text-slate-900">{totalDays}</span>
-                                                        <span className="text-xs text-slate-500 font-medium">{totalDays === 1 ? 'day' : 'days'}</span>
+                                                        <span className="text-sm font-bold text-slate-900">{daysTaken}</span>
+                                                        <span className="text-xs text-slate-500 font-medium">{daysTaken === 1 ? 'day' : 'days'}</span>
                                                     </div>
                                                 </TableCell>
                                                 <TableCell className="px-6 py-4">

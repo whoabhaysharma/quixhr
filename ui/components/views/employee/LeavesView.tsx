@@ -120,7 +120,6 @@ export default function LeavesView() {
     }
 
 
-
     const handleRequestLeave = (e: React.FormEvent) => {
         e.preventDefault()
 
@@ -452,12 +451,24 @@ export default function LeavesView() {
                                         return true;
                                     })
                                     .map((leave: Leave) => {
-                                        const startDate = new Date(leave.startDate);
-                                        const endDate = new Date(leave.endDate);
-                                        const isSingleDay = startDate.toDateString() === endDate.toDateString();
                                         const isAdmin = ['SUPER_ADMIN', 'ORG_ADMIN', 'HR_ADMIN'].includes(user?.user?.role || '');
-                                        // Can delete if Admin OR if Pending (assuming this is my view, so I am owner)
                                         const canDelete = isAdmin || leave.status === 'PENDING';
+
+                                        // Check if start and end date are the same calendar day
+                                        const isSingleDay = leave.startDate.split('T')[0] === leave.endDate.split('T')[0];
+
+                                        // Helper to format date strings without timezone shifts
+                                        // We basically take the YYYY-MM-DD part from the ISO string and treat it as the intended date
+                                        const formatSafeDate = (isoString: string, includeYear: boolean = true) => {
+                                            if (!isoString) return '';
+                                            try {
+                                                const [y, m, d] = isoString.split('T')[0].split('-').map(Number);
+                                                const date = new Date(y, m - 1, d); // Construct date in local time using the components
+                                                return format(date, includeYear ? 'MMM dd, yyyy' : 'MMM dd');
+                                            } catch (e) {
+                                                return isoString;
+                                            }
+                                        };
 
                                         return (
                                             <TableRow key={leave.id} className="hover:bg-slate-50 transition-colors border-slate-100 group">
@@ -481,13 +492,13 @@ export default function LeavesView() {
                                                     <div className="flex flex-col gap-0.5">
                                                         {isSingleDay ? (
                                                             <span className="text-sm font-semibold text-slate-900">
-                                                                {startDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+                                                                {formatSafeDate(leave.startDate)}
                                                             </span>
                                                         ) : (
                                                             <span className="text-sm font-semibold text-slate-900">
-                                                                {startDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+                                                                {formatSafeDate(leave.startDate, false)}
                                                                 <span className="text-slate-400 mx-1.5">→</span>
-                                                                {endDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+                                                                {formatSafeDate(leave.endDate)}
                                                             </span>
                                                         )}
                                                         <span className="text-[10px] text-slate-400 font-medium uppercase tracking-wide">
@@ -497,8 +508,8 @@ export default function LeavesView() {
                                                 </TableCell>
                                                 <TableCell className="px-6 py-4">
                                                     <div className="flex items-center gap-1.5">
-                                                        <span className="text-sm font-bold text-slate-900">{leave.totalDays}</span>
-                                                        <span className="text-xs text-slate-500 font-medium">{leave.totalDays === 1 ? 'day' : 'days'}</span>
+                                                        <span className="text-sm font-bold text-slate-900">{leave.daysTaken}</span>
+                                                        <span className="text-xs text-slate-500 font-medium">{leave.daysTaken === 1 ? 'day' : 'days'}</span>
                                                     </div>
                                                 </TableCell>
                                                 <TableCell className="px-6 py-4 max-w-[200px]">
