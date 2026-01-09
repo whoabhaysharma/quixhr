@@ -4,54 +4,60 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Quixhr | All-in-One HR Management System</title>
+    <title>Quixhr | The HR Software You Deserve</title>
     <link rel="canonical" href="https://quixhr.com/" />
     <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Lexend:wght@400;700;900&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;700;900&display=swap" rel="stylesheet">
     <link rel="icon" href="/favicon.ico">
     <link rel="shortcut icon" href="/favicon.ico">
     <style>
         body {
-            font-family: 'Lexend', sans-serif;
-            background-color: #F0F0F0;
+            font-family: 'Space Grotesk', sans-serif;
+            background-color: #ffffff;
+            color: #000000;
         }
 
         .neo-brutal-border {
-            border: 3px solid #000000;
+            border: 4px solid #000000;
         }
 
         .neo-brutal-shadow {
-            box-shadow: 8px 8px 0px 0px rgba(0, 0, 0, 1);
+            box-shadow: 10px 10px 0px 0px #000000;
         }
 
         .neo-brutal-shadow-sm {
-            box-shadow: 4px 4px 0px 0px rgba(0, 0, 0, 1);
+            box-shadow: 5px 5px 0px 0px #000000;
         }
 
         .neo-brutal-shadow:active {
-            box-shadow: 2px 2px 0px 0px rgba(0, 0, 0, 1);
+            box-shadow: 2px 2px 0px 0px #000000;
             transform: translate(2px, 2px);
         }
 
-        .bg-quixhr-yellow {
-            background-color: #FFDE03;
+        /* Monochromatic Utilities */
+        .bg-quixhr-black {
+            background-color: #000000;
+            color: #ffffff;
         }
 
-        .bg-quixhr-pink {
-            background-color: #FF6AC1;
+        .bg-quixhr-white {
+            background-color: #ffffff;
+            color: #000000;
         }
 
-        .bg-quixhr-blue {
-            background-color: #3B82F6;
+        .bg-quixhr-gray {
+            background-color: #d1d5db; /* gray-300 */
+            color: #000000;
         }
 
-        .bg-quixhr-green {
-            background-color: #00FF66;
+        .bg-quixhr-dark-gray {
+            background-color: #4b5563; /* gray-600 */
+            color: #ffffff;
         }
     </style>
     <meta name="description"
-        content="Quixhr is the all-in-one HR Management System (HRMS) for modern teams. Simplify attendance, leave tracking, and workforce management.">
-    <meta name="keywords" content="HRMS, HR software, workforce management, leave tracking, employee attendance">
+        content="Quixhr: HR software for the corporate dystopian future. Compliance is mandatory. Joy is optional.">
+    <meta name="keywords" content="HRMS, HR software, workforce management, leave tracking, employee attendance, corporate dystopia">
     <meta name="author" content="Quixhr">
     <script type="application/ld+json">
         {
@@ -59,52 +65,52 @@
             "@type": "WebSite",
             "name": "Quixhr",
             "url": "https://quixhr.com",
-            "description": "Quixhr is a complete HR Management System for modern teams. Manage attendance, payroll, leave, and employee documents."
+            "description": "Quixhr is the HR Management System for the modern, soul-crushing corporate environment."
         }
     </script>
 </head>
 
-<body class="p-4 md:p-8">
+<body class="p-4 md:p-8 selection:bg-black selection:text-white">
 
-    <nav class="flex justify-between items-center mb-12 relative">
-        <div class="neo-brutal-border bg-black text-white px-4 py-2 font-black text-2xl uppercase tracking-tighter">
+    <nav class="flex justify-between items-center mb-12 relative border-b-4 border-black pb-4">
+        <div class="neo-brutal-border bg-black text-white px-4 py-2 font-black text-2xl uppercase tracking-tighter transform rotate-1 hover:rotate-0 transition-transform">
             Quixhr
         </div>
-        <div class="hidden md:flex gap-8 font-bold">
-            <a href="about.html" class="hover:underline">About</a>
-            <a href="contact-us.html" class="hover:underline">Contact Us</a>
-            <a href="pricing.html" class="hover:underline">Pricing</a>
+        <div class="hidden md:flex gap-8 font-bold text-lg uppercase tracking-widest">
+            <a href="about.html" class="hover:bg-black hover:text-white px-2 transition-colors">About</a>
+            <a href="contact-us.html" class="hover:bg-black hover:text-white px-2 transition-colors">Contact</a>
+            <a href="pricing.html" class="hover:bg-black hover:text-white px-2 transition-colors">Pricing</a>
         </div>
         <div class="flex items-center gap-4">
-            <button class="hidden md:block neo-brutal-border bg-quixhr-green px-6 py-2 font-black neo-brutal-shadow-sm">
-                LOGIN
-            </button>
-            <button id="mobile-menu-btn" class="md:hidden neo-brutal-border bg-white px-4 py-2 neo-brutal-shadow-sm">
+            <a href="https://app.quixhr.com" class="hidden md:block neo-brutal-border bg-white hover:bg-black hover:text-white px-6 py-2 font-black neo-brutal-shadow-sm uppercase transition-all">
+                Login
+            </a>
+            <button id="mobile-menu-btn" class="md:hidden neo-brutal-border bg-white px-4 py-2 neo-brutal-shadow-sm hover:bg-black hover:text-white transition-colors">
                 <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24"
                     stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="4" d="M4 6h16M4 12h16M4 18h16" />
                 </svg>
             </button>
         </div>
     </nav>
 
     <!-- Mobile Menu -->
-    <div id="mobile-menu" class="hidden fixed inset-0 bg-white z-50 p-4 overflow-y-auto">
+    <div id="mobile-menu" class="hidden fixed inset-0 bg-white z-50 p-4 overflow-y-auto border-4 border-black">
         <div class="flex justify-end mb-8">
-            <button id="close-menu-btn" class="neo-brutal-border bg-white px-4 py-2 neo-brutal-shadow-sm">
+            <button id="close-menu-btn" class="neo-brutal-border bg-black text-white px-4 py-2 neo-brutal-shadow-sm">
                 <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24"
                     stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="4" d="M6 18L18 6M6 6l12 12" />
                 </svg>
             </button>
         </div>
-        <div class="flex flex-col gap-8 font-black text-2xl text-center">
-            <a href="about.html" class="hover:bg-quixhr-yellow p-2">About</a>
-            <a href="contact-us.html" class="hover:bg-quixhr-blue p-2">Contact Us</a>
-            <a href="pricing.html" class="hover:bg-quixhr-green p-2">Pricing</a>
-            <button class="neo-brutal-border bg-quixhr-green px-6 py-2 font-black neo-brutal-shadow-sm mt-4">
-                LOGIN
-            </button>
+        <div class="flex flex-col gap-8 font-black text-3xl uppercase text-center tracking-tighter">
+            <a href="about.html" class="border-b-4 border-black pb-2 hover:bg-black hover:text-white transition-colors">About</a>
+            <a href="contact-us.html" class="border-b-4 border-black pb-2 hover:bg-black hover:text-white transition-colors">Contact</a>
+            <a href="pricing.html" class="border-b-4 border-black pb-2 hover:bg-black hover:text-white transition-colors">Pricing</a>
+            <a href="https://app.quixhr.com" class="neo-brutal-border bg-black text-white px-6 py-4 font-black neo-brutal-shadow-sm mt-4 hover:bg-white hover:text-black transition-colors">
+                ENTER THE MATRIX (LOGIN)
+            </a>
         </div>
     </div>
 
@@ -123,90 +129,99 @@
     </script>
 
     <header class="mb-24 mt-12 text-center">
-        <div class="neo-brutal-border bg-white p-12 md:p-20 neo-brutal-shadow relative overflow-hidden">
+        <div class="neo-brutal-border bg-white p-12 md:p-24 neo-brutal-shadow relative overflow-hidden">
             <div class="relative z-10">
                 <h1 class="text-5xl md:text-9xl font-black leading-none mb-8 uppercase tracking-tighter">
-                    Ditch the <br>
-                    <span class="bg-quixhr-pink px-4 transform -rotate-2 inline-block">Spreadsheet</span>
+                    HR IS <br>
+                    <span class="bg-black text-white px-4 transform -rotate-1 inline-block">PAINFUL.</span>
                 </h1>
-                <p class="text-2xl md:text-3xl font-bold mb-12 max-w-3xl mx-auto leading-relaxed">
-                    The <span class="bg-quixhr-yellow px-2">simplest</span> way to manage <strong>HR, Payroll, and
-                        Attendance</strong>.
-                    Zero training required.
+                <p class="text-2xl md:text-3xl font-bold mb-12 max-w-4xl mx-auto leading-relaxed uppercase border-l-4 border-black pl-4 text-left md:text-center md:border-none md:pl-0">
+                    We can't fix your <span class="bg-gray-300 px-1">toxic work culture</span>, but we can organize the paperwork while you cry in the server room.
                 </p>
-                <a href="pricing.html"
-                    class="inline-block neo-brutal-border bg-black text-white px-12 py-6 font-black text-2xl uppercase hover:bg-gray-900 transition-colors">
-                    Start Free Trial
-                </a>
+                <div class="flex flex-col md:flex-row justify-center gap-6">
+                    <a href="https://app.quixhr.com"
+                        class="inline-block neo-brutal-border bg-black text-white px-12 py-6 font-black text-2xl uppercase hover:bg-white hover:text-black transition-all neo-brutal-shadow hover:translate-x-1 hover:translate-y-1 hover:shadow-none">
+                        Start Suffering (Free)
+                    </a>
+                </div>
             </div>
             <!-- Decorative background pattern -->
-            <div class="absolute top-0 left-0 w-full h-full opacity-10 pointer-events-none"
-                style="background-image: radial-gradient(#000 2px, transparent 2px); background-size: 30px 30px;">
+            <div class="absolute top-0 left-0 w-full h-full opacity-5 pointer-events-none"
+                style="background-image: repeating-linear-gradient(45deg, #000 0, #000 1px, transparent 0, transparent 50%); background-size: 20px 20px;">
             </div>
         </div>
     </header>
 
     <section class="grid grid-cols-1 md:grid-cols-3 gap-8 mb-20">
-        <div class="neo-brutal-border bg-white p-8 neo-brutal-shadow">
+        <div class="neo-brutal-border bg-white p-8 neo-brutal-shadow hover:bg-black hover:text-white transition-colors group">
             <div
-                class="w-12 h-12 bg-quixhr-yellow neo-brutal-border mb-4 flex items-center justify-center font-black text-2xl">
+                class="w-16 h-16 bg-black text-white neo-brutal-border mb-6 flex items-center justify-center font-black text-4xl group-hover:bg-white group-hover:text-black transition-colors">
                 1</div>
-            <h3 class="text-2xl font-black mb-2 uppercase">Smart Attendance & Leave</h3>
-            <p class="font-bold">Track check-ins, time-off, and shifts seamlessly from any device.</p>
+            <h3 class="text-3xl font-black mb-4 uppercase">Surveillance</h3>
+            <p class="font-bold text-lg leading-tight">Track attendance so precisely your employees will think you're the FBI. Clock in, clock out. We see everything.</p>
         </div>
-        <div class="neo-brutal-border bg-white p-8 neo-brutal-shadow">
+        <div class="neo-brutal-border bg-white p-8 neo-brutal-shadow hover:bg-black hover:text-white transition-colors group">
             <div
-                class="w-12 h-12 bg-quixhr-pink neo-brutal-border mb-4 flex items-center justify-center font-black text-2xl">
+                class="w-16 h-16 bg-gray-300 text-black neo-brutal-border mb-6 flex items-center justify-center font-black text-4xl group-hover:bg-white group-hover:text-black transition-colors">
                 2</div>
-            <h3 class="text-2xl font-black mb-2 uppercase">Payroll & Salary Slips</h3>
-            <p class="font-bold">Automated salary slip generation and payroll processing.</p>
+            <h3 class="text-3xl font-black mb-4 uppercase">Pay Them</h3>
+            <p class="font-bold text-lg leading-tight">Generate salary slips automatically because manual math is hard and you probably failed algebra anyway.</p>
         </div>
-        <div class="neo-brutal-border bg-white p-8 neo-brutal-shadow">
+        <div class="neo-brutal-border bg-white p-8 neo-brutal-shadow hover:bg-black hover:text-white transition-colors group">
             <div
-                class="w-12 h-12 bg-quixhr-green neo-brutal-border mb-4 flex items-center justify-center font-black text-2xl">
+                class="w-16 h-16 bg-white text-black neo-brutal-border mb-6 flex items-center justify-center font-black text-4xl group-hover:bg-black group-hover:text-white transition-colors">
                 3</div>
-            <h3 class="text-2xl font-black mb-2 uppercase">Employee Documentation</h3>
-            <p class="font-bold">Securely store and organize employee records and documents.</p>
+            <h3 class="text-3xl font-black mb-4 uppercase">The Files</h3>
+            <p class="font-bold text-lg leading-tight">Store documents securely. If it's not in the system, did it really happen? Compliance is mandatory.</p>
         </div>
     </section>
 
-
-
-    <section class="neo-brutal-border bg-black text-white p-12 text-center mb-20">
-        <h2 class="text-5xl font-black mb-6 uppercase italic">Simple Pricing</h2>
-        <p class="text-xl font-bold mb-10 text-gray-400">No hidden fees. Just ₹29 per employee / month.</p>
-        <a href="pricing.html"
-            class="inline-block neo-brutal-border bg-quixhr-yellow text-black px-12 py-6 neo-brutal-shadow hover:translate-x-1 hover:translate-y-1 hover:shadow-none transition-all">
-            <span class="text-6xl font-black">₹29</span>
-            <span class="text-xl font-bold">/user</span>
-        </a>
+    <section class="neo-brutal-border bg-black text-white p-12 text-center mb-20 relative overflow-hidden">
+        <div class="relative z-10">
+            <h2 class="text-5xl md:text-7xl font-black mb-8 uppercase italic tracking-tighter">It Costs Money.</h2>
+            <p class="text-2xl font-bold mb-12 text-gray-300 max-w-2xl mx-auto">
+                Unlike your unpaid overtime, our services require compensation. But it's cheap.
+            </p>
+            <a href="pricing.html"
+                class="inline-block neo-brutal-border bg-white text-black px-12 py-6 neo-brutal-shadow hover:translate-x-1 hover:translate-y-1 hover:shadow-none transition-all group">
+                <span class="text-6xl font-black group-hover:text-gray-700">₹29</span>
+                <span class="text-xl font-bold uppercase tracking-widest">/Soul/Month</span>
+            </a>
+        </div>
+        <div class="absolute inset-0 opacity-20 pointer-events-none" style="background-image: linear-gradient(#333 1px, transparent 1px), linear-gradient(90deg, #333 1px, transparent 1px); background-size: 40px 40px;"></div>
     </section>
 
-    <footer class="neo-brutal-border bg-black text-white p-8 md:p-12">
-        <div class="grid grid-cols-1 md:grid-cols-4 gap-8">
+    <footer class="neo-brutal-border bg-white text-black p-8 md:p-12 border-t-8 border-black">
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-12">
             <div class="col-span-1 md:col-span-2">
-                <div class="text-3xl font-black uppercase tracking-tighter mb-4">Quixhr</div>
-                <p class="font-bold max-w-xs">Making <strong>HR management</strong> less sucky since 2024.</p>
+                <div class="text-4xl font-black uppercase tracking-tighter mb-6 bg-black text-white inline-block px-2 transform -rotate-1">Quixhr</div>
+                <p class="font-bold text-xl max-w-sm uppercase leading-tight">
+                    Making <strong>Corporate Slavery</strong> slightly more organized since 2024.
+                </p>
+                <div class="mt-6 font-mono text-sm">
+                    CONTACT@QUIXHR.COM
+                </div>
             </div>
             <div>
-                <h4 class="font-black uppercase text-quixhr-yellow mb-4">Company</h4>
-                <ul class="space-y-2 font-bold">
-                    <li><a href="contact-us.html" class="hover:text-quixhr-pink">Contact Us</a></li>
-                    <li><a href="about.html" class="hover:text-quixhr-pink">About</a></li>
+                <h4 class="font-black uppercase text-xl mb-6 border-b-4 border-black inline-block">Navigate</h4>
+                <ul class="space-y-3 font-bold uppercase tracking-wide">
+                    <li><a href="contact-us.html" class="hover:bg-black hover:text-white px-1 transition-colors">Contact Us</a></li>
+                    <li><a href="about.html" class="hover:bg-black hover:text-white px-1 transition-colors">About</a></li>
+                    <li><a href="pricing.html" class="hover:bg-black hover:text-white px-1 transition-colors">Pricing</a></li>
                 </ul>
             </div>
             <div>
-                <h4 class="font-black uppercase text-quixhr-green mb-4">Legal</h4>
-                <ul class="space-y-2 font-bold">
-                    <li><a href="privacy-policy.html" class="hover:text-quixhr-pink">Privacy Policy</a></li>
-                    <li><a href="terms-of-service.html" class="hover:text-quixhr-pink">Terms of Service</a></li>
-                    <li><a href="shipping-policy.html" class="hover:text-quixhr-pink">Shipping Policy</a></li>
-                    <li><a href="cancellation-refund.html" class="hover:text-quixhr-pink">Cancellation & Refund</a></li>
+                <h4 class="font-black uppercase text-xl mb-6 border-b-4 border-black inline-block">The Fine Print</h4>
+                <ul class="space-y-3 font-bold uppercase tracking-wide">
+                    <li><a href="privacy-policy.html" class="hover:bg-black hover:text-white px-1 transition-colors">Privacy Policy</a></li>
+                    <li><a href="terms-of-service.html" class="hover:bg-black hover:text-white px-1 transition-colors">Terms of Service</a></li>
+                    <li><a href="shipping-policy.html" class="hover:bg-black hover:text-white px-1 transition-colors">Shipping</a></li>
+                    <li><a href="cancellation-refund.html" class="hover:bg-black hover:text-white px-1 transition-colors">Refunds</a></li>
                 </ul>
             </div>
         </div>
-        <div class="mt-12 pt-8 border-t-2 border-white/20 text-center font-bold text-sm">
-            &copy; <span id="year"></span> Quixhr Inc. All rights reserved.
+        <div class="mt-12 pt-8 border-t-4 border-black text-center font-bold text-sm uppercase tracking-widest">
+            &copy; <span id="year"></span> Quixhr Inc. All rights reserved. Do not resist.
         </div>
         <script>
             document.getElementById('year').textContent = new Date().getFullYear();

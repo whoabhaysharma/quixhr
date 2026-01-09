@@ -6,106 +6,80 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Contact Us | Quixhr</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Lexend:wght@400;700;900&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;700;900&display=swap" rel="stylesheet">
     <link rel="icon" href="/favicon.ico">
     <link rel="shortcut icon" href="/favicon.ico">
     <style>
         body {
-            font-family: 'Lexend', sans-serif;
-            background-color: #F0F0F0;
+            font-family: 'Space Grotesk', sans-serif;
+            background-color: #ffffff;
+            color: #000000;
         }
 
         .neo-brutal-border {
-            border: 3px solid #000000;
+            border: 4px solid #000000;
         }
 
         .neo-brutal-shadow {
-            box-shadow: 8px 8px 0px 0px rgba(0, 0, 0, 1);
+            box-shadow: 10px 10px 0px 0px #000000;
         }
 
         .neo-brutal-shadow-sm {
-            box-shadow: 4px 4px 0px 0px rgba(0, 0, 0, 1);
+            box-shadow: 5px 5px 0px 0px #000000;
         }
 
         .neo-brutal-shadow:active {
-            box-shadow: 2px 2px 0px 0px rgba(0, 0, 0, 1);
+            box-shadow: 2px 2px 0px 0px #000000;
             transform: translate(2px, 2px);
-        }
-
-        .bg-quixhr-yellow {
-            background-color: #FFDE03;
-        }
-
-        .bg-quixhr-pink {
-            background-color: #FF6AC1;
-        }
-
-        .bg-quixhr-blue {
-            background-color: #3B82F6;
-        }
-
-        .bg-quixhr-green {
-            background-color: #00FF66;
         }
     </style>
     <meta name="description"
-        content="Quixhr is the all-in-one HR Management System (HRMS) for modern teams. Simplify attendance, leave tracking, and workforce management.">
-    <meta name="keywords" content="HRMS, HR software, workforce management, leave tracking, employee attendance">
-    <meta name="author" content="Quixhr">
-    <script type="application/ld+json">
-        {
-            "@context": "https://schema.org",
-            "@type": "ContactPage",
-            "name": "Contact Quixhr",
-            "url": "https://quixhr.com/contact-us.html",
-            "description": "Reach out to Quixhr for support and queries."
-        }
-    </script>
+        content="Contact Quixhr. We promise we might read it.">
 </head>
 
-<body class="p-4 md:p-8">
+<body class="p-4 md:p-8 selection:bg-black selection:text-white">
 
-    <nav class="flex justify-between items-center mb-12 relative">
+    <nav class="flex justify-between items-center mb-12 relative border-b-4 border-black pb-4">
         <a href="index.html"
-            class="neo-brutal-border bg-black text-white px-4 py-2 font-black text-2xl uppercase tracking-tighter">
+            class="neo-brutal-border bg-black text-white px-4 py-2 font-black text-2xl uppercase tracking-tighter transform rotate-1 hover:rotate-0 transition-transform">
             Quixhr
         </a>
-        <div class="hidden md:flex gap-8 font-bold">
-            <a href="index.html" class="hover:underline">Home</a>
-            <a href="about.html" class="hover:underline">About</a>
-            <a href="contact-us.html" class="hover:underline text-quixhr-pink">Contact Us</a>
-            <a href="pricing.html" class="hover:underline">Pricing</a>
+        <div class="hidden md:flex gap-8 font-bold text-lg uppercase tracking-widest">
+            <a href="index.html" class="hover:bg-black hover:text-white px-2 transition-colors">Home</a>
+            <a href="about.html" class="hover:bg-black hover:text-white px-2 transition-colors">About</a>
+            <a href="contact-us.html" class="bg-black text-white px-2">Contact</a>
+            <a href="pricing.html" class="hover:bg-black hover:text-white px-2 transition-colors">Pricing</a>
         </div>
         <div class="flex items-center gap-4">
-            <button class="hidden md:block neo-brutal-border bg-quixhr-green px-6 py-2 font-black neo-brutal-shadow-sm">
-                LOGIN
-            </button>
-            <button id="mobile-menu-btn" class="md:hidden neo-brutal-border bg-white px-4 py-2 neo-brutal-shadow-sm">
+            <a href="https://app.quixhr.com" class="hidden md:block neo-brutal-border bg-white hover:bg-black hover:text-white px-6 py-2 font-black neo-brutal-shadow-sm uppercase transition-all">
+                Login
+            </a>
+            <button id="mobile-menu-btn" class="md:hidden neo-brutal-border bg-white px-4 py-2 neo-brutal-shadow-sm hover:bg-black hover:text-white transition-colors">
                 <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24"
                     stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="4" d="M4 6h16M4 12h16M4 18h16" />
                 </svg>
             </button>
         </div>
     </nav>
     <!-- Mobile Menu -->
-    <div id="mobile-menu" class="hidden fixed inset-0 bg-white z-50 p-4 overflow-y-auto">
+    <div id="mobile-menu" class="hidden fixed inset-0 bg-white z-50 p-4 overflow-y-auto border-4 border-black">
         <div class="flex justify-end mb-8">
-            <button id="close-menu-btn" class="neo-brutal-border bg-white px-4 py-2 neo-brutal-shadow-sm">
+            <button id="close-menu-btn" class="neo-brutal-border bg-black text-white px-4 py-2 neo-brutal-shadow-sm">
                 <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24"
                     stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="4" d="M6 18L18 6M6 6l12 12" />
                 </svg>
             </button>
         </div>
-        <div class="flex flex-col gap-8 font-black text-2xl text-center">
-            <a href="index.html" class="hover:bg-quixhr-yellow p-2">Home</a>
-            <a href="about.html" class="hover:bg-quixhr-pink p-2">About</a>
-            <a href="contact-us.html" class="hover:bg-quixhr-blue p-2">Contact Us</a>
-            <a href="pricing.html" class="hover:bg-quixhr-green p-2">Pricing</a>
-            <button class="neo-brutal-border bg-quixhr-green px-6 py-2 font-black neo-brutal-shadow-sm mt-4">
+        <div class="flex flex-col gap-8 font-black text-3xl uppercase text-center tracking-tighter">
+            <a href="index.html" class="border-b-4 border-black pb-2 hover:bg-black hover:text-white transition-colors">Home</a>
+            <a href="about.html" class="border-b-4 border-black pb-2 hover:bg-black hover:text-white transition-colors">About</a>
+            <a href="contact-us.html" class="border-b-4 border-black pb-2 bg-black text-white">Contact</a>
+            <a href="pricing.html" class="border-b-4 border-black pb-2 hover:bg-black hover:text-white transition-colors">Pricing</a>
+            <a href="https://app.quixhr.com" class="neo-brutal-border bg-black text-white px-6 py-4 font-black neo-brutal-shadow-sm mt-4 hover:bg-white hover:text-black transition-colors">
                 LOGIN
-            </button>
+            </a>
         </div>
     </div>
 
@@ -124,79 +98,85 @@
     </script>
 
     <div class="max-w-4xl mx-auto mb-20">
-        <h1 class="text-5xl md:text-7xl font-black uppercase mb-8 text-center">
-            <span class="bg-quixhr-yellow px-2">Contact</span> Us
+        <h1 class="text-5xl md:text-8xl font-black uppercase mb-8 text-center tracking-tighter">
+            <span class="bg-black text-white px-2">Yell</span> At Us
         </h1>
 
         <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
             <div class="neo-brutal-border bg-white p-8 neo-brutal-shadow">
-                <h2 class="text-2xl font-black uppercase mb-6">Get in Touch</h2>
+                <h2 class="text-2xl font-black uppercase mb-6">Complaint Form</h2>
                 <form class="space-y-4">
                     <div>
-                        <label class="block font-bold mb-2 uppercase text-sm">Name</label>
+                        <label class="block font-bold mb-2 uppercase text-sm">Who are you?</label>
                         <input type="text"
-                            class="w-full neo-brutal-border p-3 font-bold focus:outline-none focus:bg-quixhr-blue/10"
+                            class="w-full neo-brutal-border p-3 font-bold focus:outline-none focus:bg-black focus:text-white transition-colors"
                             placeholder="John Doe">
                     </div>
                     <div>
-                        <label class="block font-bold mb-2 uppercase text-sm">Email</label>
+                        <label class="block font-bold mb-2 uppercase text-sm">Where should we ignore you?</label>
                         <input type="email"
-                            class="w-full neo-brutal-border p-3 font-bold focus:outline-none focus:bg-quixhr-blue/10"
+                            class="w-full neo-brutal-border p-3 font-bold focus:outline-none focus:bg-black focus:text-white transition-colors"
                             placeholder="john@company.com">
                     </div>
                     <div>
-                        <label class="block font-bold mb-2 uppercase text-sm">Message</label>
+                        <label class="block font-bold mb-2 uppercase text-sm">What is your problem?</label>
                         <textarea
-                            class="w-full neo-brutal-border p-3 font-bold h-32 focus:outline-none focus:bg-quixhr-blue/10"
-                            placeholder="How can we help?"></textarea>
+                            class="w-full neo-brutal-border p-3 font-bold h-32 focus:outline-none focus:bg-black focus:text-white transition-colors"
+                            placeholder="Vent here. We can take it."></textarea>
                     </div>
                     <button
-                        class="w-full neo-brutal-border bg-quixhr-pink px-6 py-3 font-black uppercase neo-brutal-shadow hover:bg-quixhr-pink/90">
-                        Send Message
+                        class="w-full neo-brutal-border bg-black text-white px-6 py-3 font-black uppercase neo-brutal-shadow hover:bg-white hover:text-black hover:translate-x-1 hover:translate-y-1 hover:shadow-none transition-all">
+                        Send Into The Void
                     </button>
                 </form>
             </div>
 
             <div class="space-y-8">
-                <div class="neo-brutal-border bg-quixhr-blue p-8 neo-brutal-shadow text-white">
+                <div class="neo-brutal-border bg-black text-white p-8 neo-brutal-shadow transform rotate-1">
                     <h3 class="text-2xl font-black uppercase mb-2">Support</h3>
-                    <p class="font-bold mb-4">Need help with your account?</p>
-                    <a href="mailto:support@quixhr.com" class="font-black underline text-xl">support@quixhr.com</a>
+                    <p class="font-bold mb-4 text-gray-300">Something broken? It's probably a feature.</p>
+                    <a href="mailto:contact@quixhr.com" class="font-black underline text-xl hover:text-gray-300">contact@quixhr.com</a>
                 </div>
 
-                <div class="neo-brutal-border bg-quixhr-green p-8 neo-brutal-shadow">
+                <div class="neo-brutal-border bg-white p-8 neo-brutal-shadow transform -rotate-1 hover:bg-black hover:text-white transition-colors group">
                     <h3 class="text-2xl font-black uppercase mb-2">Sales</h3>
-                    <p class="font-bold mb-4">Want a demo for your team?</p>
-                    <a href="mailto:sales@quixhr.com" class="font-black underline text-xl">sales@quixhr.com</a>
+                    <p class="font-bold mb-4 group-hover:text-gray-300">Want to give us money?</p>
+                    <a href="mailto:contact@quixhr.com" class="font-black underline text-xl group-hover:text-gray-300">contact@quixhr.com</a>
                 </div>
             </div>
         </div>
     </div>
 
-    <footer class="neo-brutal-border bg-black text-white p-8 md:p-12">
-        <div class="grid grid-cols-1 md:grid-cols-4 gap-8">
+    <footer class="neo-brutal-border bg-white text-black p-8 md:p-12 border-t-8 border-black">
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-12">
             <div class="col-span-1 md:col-span-2">
-                <div class="text-3xl font-black uppercase tracking-tighter mb-4">Quixhr</div>
-                <p class="font-bold max-w-xs">Making <strong>HR management</strong> less sucky since 2024.</p>
+                <div class="text-4xl font-black uppercase tracking-tighter mb-6 bg-black text-white inline-block px-2 transform -rotate-1">Quixhr</div>
+                <p class="font-bold text-xl max-w-sm uppercase leading-tight">
+                    Making <strong>Corporate Slavery</strong> slightly more organized since 2024.
+                </p>
+                <div class="mt-6 font-mono text-sm">
+                    CONTACT@QUIXHR.COM
+                </div>
             </div>
             <div>
-                <h4 class="font-black uppercase text-quixhr-yellow mb-4">Company</h4>
-                <ul class="space-y-2 font-bold">
-                    <li><a href="contact-us.html" class="hover:text-quixhr-pink">Contact Us</a></li>
-                    <li><a href="about.html" class="hover:text-quixhr-pink">About</a></li>
+                <h4 class="font-black uppercase text-xl mb-6 border-b-4 border-black inline-block">Navigate</h4>
+                <ul class="space-y-3 font-bold uppercase tracking-wide">
+                    <li><a href="contact-us.html" class="hover:bg-black hover:text-white px-1 transition-colors">Contact Us</a></li>
+                    <li><a href="about.html" class="hover:bg-black hover:text-white px-1 transition-colors">About</a></li>
+                    <li><a href="pricing.html" class="hover:bg-black hover:text-white px-1 transition-colors">Pricing</a></li>
                 </ul>
             </div>
             <div>
-                <h4 class="font-black uppercase text-quixhr-green mb-4">Legal</h4>
-                <ul class="space-y-2 font-bold">
-                    <li><a href="privacy-policy.html" class="hover:text-quixhr-pink">Privacy Policy</a></li>
-                    <li><a href="terms-of-service.html" class="hover:text-quixhr-pink">Terms of Service</a></li>
-                    <li><a href="shipping-policy.html" class="hover:text-quixhr-pink">Shipping Policy</a></li>
-                    <li><a href="cancellation-refund.html" class="hover:text-quixhr-pink">Cancellation & Refund</a></li>
+                <h4 class="font-black uppercase text-xl mb-6 border-b-4 border-black inline-block">The Fine Print</h4>
+                <ul class="space-y-3 font-bold uppercase tracking-wide">
+                    <li><a href="privacy-policy.html" class="hover:bg-black hover:text-white px-1 transition-colors">Privacy Policy</a></li>
+                    <li><a href="terms-of-service.html" class="hover:bg-black hover:text-white px-1 transition-colors">Terms of Service</a></li>
+                    <li><a href="shipping-policy.html" class="hover:bg-black hover:text-white px-1 transition-colors">Shipping</a></li>
+                    <li><a href="cancellation-refund.html" class="hover:bg-black hover:text-white px-1 transition-colors">Refunds</a></li>
                 </ul>
             </div>
         </div>
-        <div class="mt-12 pt-8 border-t-2 border-white/20 text-center font-bold text-sm">
+        <div class="mt-12 pt-8 border-t-4 border-black text-center font-bold text-sm uppercase tracking-widest">
             &copy; <span id="year"></span> Quixhr Inc. All rights reserved.
         </div>
         <script>
