@@ -225,16 +225,17 @@ export const login = catchAsync(
     };
 
     // Send Login Alert (Fire and Forget)
-    addEmailToQueue({
-      to: user.email,
-      subject: 'New Login Alert - QuixHR',
-      template: 'login-alert',
-      data: {
-        name: user.employee?.firstName || user.email,
-        device: req.headers['user-agent'] || 'Unknown Device',
-        time: new Date().toLocaleString()
-      }
-    }).catch(err => Logger.error('Failed to queue login alert:', { error: err.message }));
+    // Send Login Alert (Disabled to reduce spam)
+    // addEmailToQueue({
+    //   to: user.email,
+    //   subject: 'New Login Alert - QuixHR',
+    //   template: 'login-alert',
+    //   data: {
+    //     name: user.employee?.firstName || user.email,
+    //     device: req.headers['user-agent'] || 'Unknown Device',
+    //     time: new Date().toLocaleString()
+    //   }
+    // }).catch(err => Logger.error('Failed to queue login alert:', { error: err.message }));
 
     sendResponse(res, 200, response, 'User logged in successfully');
   }

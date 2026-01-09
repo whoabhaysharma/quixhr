@@ -50,9 +50,10 @@ export const emailLayout = ({ title, content, previewText }: EmailLayoutProps): 
                 <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="600" style="max-width: 600px; margin: 0 auto; background-color: #ffffff;">
                     
                     <!-- Logo Header -->
+                    <!-- Logo Header -->
                     <tr>
                         <td align="center" style="padding: 48px 0 32px 0; background-color: #ffffff;">
-                            <img src="https://pub-095b402ef0464a1a9e39d4606123a399.r2.dev/quixhr-logo.png" alt="QuixHR" width="64" height="64" style="display: block; border: 0; outline: none; text-decoration: none; -ms-interpolation-mode: bicubic;">
+                            <img src="https://media.quixhr.com/quixhr-logo.png" alt="QuixHR" width="150" style="display: block; border: 0; outline: none; text-decoration: none; -ms-interpolation-mode: bicubic; max-width: 100%;">
                         </td>
                     </tr>
                     
@@ -67,8 +68,13 @@ export const emailLayout = ({ title, content, previewText }: EmailLayoutProps): 
                     <tr>
                         <td align="center" style="padding: 40px 20px; background-color: #fafafa; border-top: 1px solid #e5e5e5;">
                             <p style="margin: 0 0 8px 0; color: #000000; font-size: 13px; font-weight: 600; font-family: 'Lexend', Arial, sans-serif;">QuixHR</p>
-                            <p style="margin: 0 0 8px 0; color: #737373; font-size: 13px; font-family: 'Lexend', Arial, sans-serif;">&copy; ${new Date().getFullYear()} QuixHR. All rights reserved.</p>
-                            <p style="margin: 0; color: #737373; font-size: 12px; font-family: 'Lexend', Arial, sans-serif;">This is an automated message. Please do not reply to this email.</p>
+                            <p style="margin: 0 0 8px 0; color: #737373; font-size: 12px; font-family: 'Lexend', Arial, sans-serif;">
+                                You are receiving this email because you are a registered user of QuixHR.
+                            </p>
+                            <p style="margin: 0 0 8px 0; color: #737373; font-size: 12px; font-family: 'Lexend', Arial, sans-serif;">
+                                123 Business Park, Tech City, India
+                            </p>
+                            <p style="margin: 0 0 8px 0; color: #737373; font-size: 12px; font-family: 'Lexend', Arial, sans-serif;">&copy; ${new Date().getFullYear()} QuixHR. All rights reserved.</p>
                         </td>
                     </tr>
                     

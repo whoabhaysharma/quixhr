@@ -279,7 +279,8 @@ export default function LeaveManagerView() {
                                                             <Button
                                                                 onClick={() => handleStatusUpdate(leave.id, 'APPROVED')}
                                                                 size="sm"
-                                                                disabled={updateLeaveStatusMutation.isPending && updateLeaveStatusMutation.variables?.requestId === leave.id}
+                                                                // Disable while ANY request is being updated to prevent race conditions or double clicks
+                                                                disabled={updateLeaveStatusMutation.isPending}
                                                                 className="h-8 px-4 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-xs font-bold shadow-sm hover:shadow-md transition-all"
                                                             >
                                                                 {updateLeaveStatusMutation.isPending && updateLeaveStatusMutation.variables?.requestId === leave.id && updateLeaveStatusMutation.variables?.status === 'APPROVED' ? (
@@ -290,7 +291,7 @@ export default function LeaveManagerView() {
                                                                 onClick={() => handleStatusUpdate(leave.id, 'REJECTED')}
                                                                 size="sm"
                                                                 variant="outline"
-                                                                disabled={updateLeaveStatusMutation.isPending && updateLeaveStatusMutation.variables?.requestId === leave.id}
+                                                                disabled={updateLeaveStatusMutation.isPending}
                                                                 className="h-8 px-4 text-rose-600 hover:text-rose-700 hover:bg-rose-50 border-rose-200 rounded-lg text-xs font-bold shadow-sm hover:shadow-md transition-all"
                                                             >
                                                                 {updateLeaveStatusMutation.isPending && updateLeaveStatusMutation.variables?.requestId === leave.id && updateLeaveStatusMutation.variables?.status === 'REJECTED' ? (

@@ -8,6 +8,7 @@ export interface Leave {
     startDate: string;
     endDate: string;
     totalDays: number;
+    daysTaken: number;
     reason?: string;
     status: 'PENDING' | 'APPROVED' | 'REJECTED';
     createdAt: string;

@@ -36,6 +36,20 @@ const getHtmlContent = (template: string, data: any): string => {
   }
 };
 
+// Helper to strip HTML for plain text version (Crucial for spam scores)
+const stripHtml = (html: string): string => {
+  return html
+    .replace(/<style[^>]*>[\s\S]*?<\/style>/gi, '') // Remove style tags
+    .replace(/<br\s*\/?>/gi, '\n') // Replace breaks with newlines
+    .replace(/<\/p>/gi, '\n\n') // Paragraphs to double newlines
+    .replace(/<\/tr>/gi, '\n') // Table rows to newlines
+    .replace(/<\/td>/gi, ' ') // Table cells to space
+    .replace(/<[^>]+>/g, '') // Remove remaining tags
+    .replace(/&nbsp;/g, ' ')
+    .replace(/\s+/g, ' ') // Collapse whitespace
+    .trim();
+};
+
 export const sendEmail = async (options: EmailOptions): Promise<void> => {
   if (!config.aws.accessKeyId || !config.aws.secretAccessKey) {
     Logger.warn('⚠️ AWS credentials not found. Emails will behave as mock.');
@@ -44,6 +58,9 @@ export const sendEmail = async (options: EmailOptions): Promise<void> => {
   }
 
   try {
+    const htmlContent = getHtmlContent(options.template, options.data);
+    const textContent = stripHtml(htmlContent);
+
     const command = new SendEmailCommand({
       Source: config.email.from, // Must be a verified email in SES
       Destination: {
@@ -56,16 +73,24 @@ export const sendEmail = async (options: EmailOptions): Promise<void> => {
         },
         Body: {
           Html: {
-            Data: getHtmlContent(options.template, options.data),
+            Data: htmlContent,
             Charset: 'UTF-8',
           },
+          // Include Plain Text version for better deliverability and spam score
+          Text: {
+            Data: textContent,
+            Charset: 'UTF-8',
+          }
         },
       },
+      // ReplyToAddresses: ['support@quixhr.com'], // Good practice to have
     });
 
     const response = await sesClient.send(command);
     Logger.info('Message sent: %s', { messageId: response.MessageId });
   } catch (error: any) {
     Logger.error('Error sending email via SES:', { error: error.message });
+    // Rethrow to allow worker to handle retries (or decide not to)
+    throw error;
   }
 };
